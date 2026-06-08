@@ -37,9 +37,7 @@ export default function StudentDetail() {
         return (
             <Card>
                 <Empty description="ไม่พบข้อมูลนิสิต" />
-                <Button onClick={() => navigate('/students')}>
-                    กลับ
-                </Button>
+                <Button onClick={() => navigate('/students')}>กลับ</Button>
             </Card>
         )
     }
@@ -47,6 +45,22 @@ export default function StudentDetail() {
     const requiredCredits = student?.required_credits ?? 0
     const earnedCredits = student?.earned_credits ?? 0
     const remainingCredits = Math.max(requiredCredits - earnedCredits, 0)
+
+    const fullNameTh = student
+        ? `${student.title?.title_name_th ?? ''} ${student.first_name_th} ${student.last_name_th}`.trim()
+        : '-'
+
+    const fullNameEn = student
+        ? `${student.title?.title_name_en ?? ''} ${student.first_name_en} ${student.last_name_en}`.trim()
+        : '-'
+
+    const teacherName = student?.teacher
+        ? `${student.teacher?.title?.title_name_th ?? ''} ${student.teacher.first_name_th} ${student.teacher.last_name_th}`
+        : '-'
+
+    const teacherNameEn = student?.teacher
+        ? `${student.teacher?.title?.title_name_en ?? ''} ${student.teacher.first_name_en} ${student.teacher.last_name_en}`
+        : '-'
 
     return (
         <Card
@@ -57,7 +71,7 @@ export default function StudentDetail() {
                 </Button>
             }
         >
-            <Skeleton loading={loading} active paragraph={{ rows: 12 }}>
+            <Skeleton loading={loading} active paragraph={{ rows: 18 }}>
                 {student && (
                     <Descriptions bordered column={1}>
                         <Descriptions.Item label="รหัสนิสิต">
@@ -65,11 +79,11 @@ export default function StudentDetail() {
                         </Descriptions.Item>
 
                         <Descriptions.Item label="ชื่อ-นามสกุล">
-                            {student.first_name_th} {student.last_name_th}
+                            {fullNameTh || '-'}
                         </Descriptions.Item>
 
                         <Descriptions.Item label="ชื่อภาษาอังกฤษ">
-                            {student.first_name_en} {student.last_name_en}
+                            {fullNameEn || '-'}
                         </Descriptions.Item>
 
                         <Descriptions.Item label="เบอร์โทร">
@@ -84,13 +98,50 @@ export default function StudentDetail() {
                             {student.entry_year}
                         </Descriptions.Item>
 
+                        <Descriptions.Item label="สถานะนิสิต">
+                            {student.student_status?.status_name ?? '-'}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="ช่องทางรับเข้า">
+                            {student.admission_channel?.channel_name ?? '-'}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="โรงเรียนเดิม">
+                            {student.high_school?.school_name ?? '-'}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="อาจารย์ที่ปรึกษา">
+                            {teacherName}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="อาจารย์ที่ปรึกษา ภาษาอังกฤษ">
+                            {teacherNameEn}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="สังกัด">
+                            {student.affiliation?.affiliation_name_th ?? '-'}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="วิทยาเขต">
+                            {student.campus?.campus_name_th ?? '-'}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="คณะ">
+                            {student.faculty?.faculty_name_th ?? '-'}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="ภาควิชา">
+                            {student.department?.department_name ?? '-'}
+                        </Descriptions.Item>
+
                         <Descriptions.Item label="GPAX">
                             {student.gpa ? Number(student.gpa).toFixed(2) : '-'}
                         </Descriptions.Item>
 
                         <Descriptions.Item label="ประเภทหลักสูตร">
-                            {student.study_plan?.curriculum
-                                ?.degree_short_name_th ?? '-'}
+                            {student.curriculum?.degree_short_name_th ??
+                                student.study_plan?.curriculum?.degree_short_name_th ??
+                                '-'}
                         </Descriptions.Item>
 
                         <Descriptions.Item label="แผนการเรียน">
@@ -98,16 +149,26 @@ export default function StudentDetail() {
                         </Descriptions.Item>
 
                         <Descriptions.Item label="หลักสูตร">
-                            {student.study_plan?.curriculum?.name_th ?? '-'}
+                            {student.curriculum?.name_th ??
+                                student.study_plan?.curriculum?.name_th ??
+                                '-'}
+                        </Descriptions.Item>
+
+                        <Descriptions.Item label="ชื่อหลักสูตรที่แสดง">
+                            {student.curriculum?.display_name_th ??
+                                student.study_plan?.curriculum?.display_name_th ??
+                                '-'}
                         </Descriptions.Item>
 
                         <Descriptions.Item label="ชื่อปริญญา">
-                            {student.study_plan?.curriculum?.degree_name_th ??
+                            {student.curriculum?.degree_name_th ??
+                                student.study_plan?.curriculum?.degree_name_th ??
                                 '-'}
                         </Descriptions.Item>
 
                         <Descriptions.Item label="รหัสหลักสูตร">
-                            {student.study_plan?.curriculum?.curriculum_code ??
+                            {student.curriculum?.curriculum_code ??
+                                student.study_plan?.curriculum?.curriculum_code ??
                                 '-'}
                         </Descriptions.Item>
 
@@ -121,50 +182,6 @@ export default function StudentDetail() {
 
                         <Descriptions.Item label="หน่วยกิตคงเหลือ">
                             {remainingCredits}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Title ID">
-                            {student.title_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Teacher ID">
-                            {student.teacher_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Student Status ID">
-                            {student.student_status_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Admission Channel ID">
-                            {student.admission_channel_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="High School ID">
-                            {student.high_school_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Affiliation ID">
-                            {student.affiliation_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Study Plan ID">
-                            {student.study_plan_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Curriculum ID">
-                            {student.curriculum_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Department ID">
-                            {student.department_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Faculty ID">
-                            {student.faculty_id}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Campus ID">
-                            {student.campus_id}
                         </Descriptions.Item>
                     </Descriptions>
                 )}

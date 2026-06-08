@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Input, Space, Table } from 'antd'
 import type { TableProps } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
 
 const { Search } = Input
 
@@ -34,6 +35,7 @@ export default function CustomTable<T extends object>({
     searchPlaceholder = 'ค้นหา...',
     dataSource = [],
     pagination,
+    columns = [],
     ...props
 }: CustomTableProps<T>) {
     const [keyword, setKeyword] = useState('')
@@ -52,6 +54,16 @@ export default function CustomTable<T extends object>({
         )
     }, [dataSource, keyword])
 
+    const customColumns: ColumnsType<T> = [
+        {
+            title: 'No.',
+            width: 70,
+            align: 'center',
+            render: (_, __, index) => index + 1,
+        },
+        ...(columns as ColumnsType<T>),
+    ]
+
     return (
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <Search
@@ -63,6 +75,7 @@ export default function CustomTable<T extends object>({
 
             <Table
                 {...props}
+                columns={customColumns}
                 dataSource={filteredData}
                 pagination={{
                     defaultPageSize: 10,
