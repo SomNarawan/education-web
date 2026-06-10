@@ -35,7 +35,7 @@ export default function StudentTable({
             title: 'ชื่อ-นามสกุล',
             width: 180,
             render: (_, record) =>
-                `${record.first_name_th} ${record.last_name_th}`,
+                `${record.title?.title_name_th ?? ''} ${record.first_name_th} ${record.last_name_th}`,
         },
         {
             title: 'ประเภทหลักสูตร',

@@ -1,9 +1,33 @@
 export interface Title {
     id: number
+    title_abbr_th?: string
+    title_abbr_en?: string | null
     title_name_th: string
     title_name_en: string | null
     created_at?: string
     updated_at?: string
+}
+
+export interface Province {
+    id: number
+    province_name: string
+    province_name_th?: string
+    province_name_en?: string | null
+}
+
+export interface District {
+    id: number
+    district_name: string
+    province_id: number
+    province?: Province
+}
+
+export interface Subdistrict {
+    id: number
+    subdistrict_name: string
+    postal_code: string
+    district_id: number
+    district?: District
 }
 
 export interface Teacher {
@@ -35,6 +59,8 @@ export interface AdmissionChannel {
 export interface HighSchool {
     id: number
     school_name: string
+    subdistrict_id?: number
+    subdistrict?: Subdistrict
 }
 
 export interface Affiliation {
@@ -52,6 +78,7 @@ export interface Department {
 
 export interface Faculty {
     id: number
+    faculty_code?: string
     faculty_name_th: string
     faculty_name_en: string | null
 }
@@ -105,7 +132,7 @@ export interface Student {
     high_school_id: number
     affiliation_id: number
     study_plan_id: number
-    curriculum_id: number
+    curriculum_id?: number
     department_id: number
     faculty_id: number
     campus_id: number

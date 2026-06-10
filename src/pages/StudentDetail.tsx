@@ -1,8 +1,31 @@
-import { Button, Card, Descriptions, Empty, Skeleton, message } from 'antd'
+import { Button, Card, Col, Empty, Row, Skeleton, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Student } from '../types/student'
 import { getStudentDetail } from '../services/studentService'
+
+const { Text } = Typography
+
+function DetailItem({
+    label,
+    value,
+}: {
+    label: string
+    value?: React.ReactNode
+}) {
+    return (
+        <Row style={{ marginBottom: 18 }}>
+            <Col span={10}>
+                <Text strong style={{ color: '#000000' }}>
+                    {label} :
+                </Text>
+            </Col>
+            <Col span={14}>
+                <Text>{value || '-'}</Text>
+            </Col>
+        </Row>
+    )
+}
 
 export default function StudentDetail() {
     const { id } = useParams()
@@ -20,7 +43,6 @@ export default function StudentDetail() {
             setLoading(true)
 
             const students = await getStudentDetail()
-
             const foundStudent = students.find(
                 (item) => item.id === Number(id),
             )
@@ -58,132 +80,63 @@ export default function StudentDetail() {
         ? `${student.teacher?.title?.title_name_th ?? ''} ${student.teacher.first_name_th} ${student.teacher.last_name_th}`
         : '-'
 
-    const teacherNameEn = student?.teacher
-        ? `${student.teacher?.title?.title_name_en ?? ''} ${student.teacher.first_name_en} ${student.teacher.last_name_en}`
-        : '-'
+    const provinceName = student?.high_school?.subdistrict?.district?.province?.province_name
+
+    const addressSchool =
+        provinceName === 'กรุงเทพมหานคร'
+            ? `แขวง${student?.high_school?.subdistrict?.subdistrict_name ?? '-'}
+            ${student?.high_school?.subdistrict?.district?.district_name ?? '-'}
+            ${provinceName}
+            ${student?.high_school?.subdistrict?.postal_code ?? '-'}`
+            : `ตำบล${student?.high_school?.subdistrict?.subdistrict_name ?? '-'}
+            อำเภอ${student?.high_school?.subdistrict?.district?.district_name ?? '-'}
+            จังหวัด${provinceName ?? '-'}
+            ${student?.high_school?.subdistrict?.postal_code ?? '-'}`
 
     return (
         <Card
-            title="รายละเอียดนิสิต"
+            title={
+                student
+                    ? `${student.student_code} ${fullNameTh}`
+                    : 'รายละเอียดนิสิต'
+            }
             extra={
                 <Button onClick={() => navigate('/students')}>
                     กลับ
                 </Button>
             }
         >
-            <Skeleton loading={loading} active paragraph={{ rows: 18 }}>
+            <Skeleton loading={loading} active paragraph={{ rows: 10 }}>
                 {student && (
-                    <Descriptions bordered column={1}>
-                        <Descriptions.Item label="รหัสนิสิต">
-                            {student.student_code}
-                        </Descriptions.Item>
+                    <Row gutter={[48, 8]}>
+                        <Col xs={24} md={12}>
+                            <DetailItem label="ชื่อ-นามสกุล ภาษาอังกฤษ" value={fullNameEn} />
+                            <DetailItem label="เบอร์โทรศัพท์" value={student.phone} />
+                            <DetailItem label="e-Mail" value={student.email} />
+                            <DetailItem label="สาขาวิชา" value={student.department?.department_name} />
+                            <DetailItem label="การศึกษาระดับมัธยม" value={student.high_school?.school_name} />
+                            <DetailItem label="ช่องทางรับเข้า" value={student.admission_channel?.channel_name} />
+                            <DetailItem label="GPAX" value={student.gpa ? Number(student.gpa).toFixed(2) : '-'} />
+                            <DetailItem label="หน่วยกิตที่ผ่าน" value={earnedCredits} />
+                        </Col>
 
-                        <Descriptions.Item label="ชื่อ-นามสกุล">
-                            {fullNameTh || '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="ชื่อภาษาอังกฤษ">
-                            {fullNameEn || '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="เบอร์โทร">
-                            {student.phone || '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="อีเมล">
-                            {student.email || '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="ปีเข้าเรียน">
-                            {student.entry_year}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="สถานะนิสิต">
-                            {student.student_status?.status_name ?? '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="ช่องทางรับเข้า">
-                            {student.admission_channel?.channel_name ?? '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="โรงเรียนเดิม">
-                            {student.high_school?.school_name ?? '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="อาจารย์ที่ปรึกษา">
-                            {teacherName}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="อาจารย์ที่ปรึกษา ภาษาอังกฤษ">
-                            {teacherNameEn}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="สังกัด">
-                            {student.affiliation?.affiliation_name_th ?? '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="วิทยาเขต">
-                            {student.campus?.campus_name_th ?? '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="คณะ">
-                            {student.faculty?.faculty_name_th ?? '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="ภาควิชา">
-                            {student.department?.department_name ?? '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="GPAX">
-                            {student.gpa ? Number(student.gpa).toFixed(2) : '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="ประเภทหลักสูตร">
-                            {student.curriculum?.degree_short_name_th ??
-                                student.study_plan?.curriculum?.degree_short_name_th ??
-                                '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="แผนการเรียน">
-                            {student.study_plan?.name_th ?? '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="หลักสูตร">
-                            {student.curriculum?.name_th ??
-                                student.study_plan?.curriculum?.name_th ??
-                                '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="ชื่อหลักสูตรที่แสดง">
-                            {student.curriculum?.display_name_th ??
-                                student.study_plan?.curriculum?.display_name_th ??
-                                '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="ชื่อปริญญา">
-                            {student.curriculum?.degree_name_th ??
-                                student.study_plan?.curriculum?.degree_name_th ??
-                                '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="รหัสหลักสูตร">
-                            {student.curriculum?.curriculum_code ??
-                                student.study_plan?.curriculum?.curriculum_code ??
-                                '-'}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="หน่วยกิตทั้งหมด">
-                            {requiredCredits}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="หน่วยกิตที่ผ่าน">
-                            {earnedCredits}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="หน่วยกิตคงเหลือ">
-                            {remainingCredits}
-                        </Descriptions.Item>
-                    </Descriptions>
+                        <Col xs={24} md={12}>
+                            <DetailItem label="เบอร์โทรศัพท์ผู้ปกครอง" value="-" />
+                            <DetailItem label="อาจารย์ที่ปรึกษา" value={teacherName} />
+                            <DetailItem
+                                label="ประเภทหลักสูตร"
+                                value={
+                                    student.curriculum?.degree_short_name_th ??
+                                    student.study_plan?.curriculum?.degree_short_name_th
+                                }
+                            />
+                            <DetailItem label="ที่อยู่โรงเรียน" value={addressSchool} />
+                            <DetailItem label="สถานะ" value={student.student_status?.status_name} />
+                            <DetailItem label="ปีเข้าเรียน" value={student.entry_year} />
+                            <DetailItem label="หน่วยกิตทั้งหมด" value={requiredCredits} />
+                            <DetailItem label="หน่วยกิตคงเหลือ" value={remainingCredits} />
+                        </Col>
+                    </Row>
                 )}
             </Skeleton>
         </Card>
