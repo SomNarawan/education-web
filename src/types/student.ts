@@ -41,7 +41,6 @@ export interface Teacher {
     email?: string
     created_at?: string
     updated_at?: string
-
     title?: Title
 }
 
@@ -154,7 +153,6 @@ export interface Student {
     created_at: string
     updated_at: string
     deleted_at: string | null
-
     is_deleted: number
 
     title?: Title
@@ -176,22 +174,52 @@ export interface StudentApiResponse {
     data: Student[]
 }
 
-export type StudentFormValues = Omit<
-    Student,
-    | 'id'
-    | 'created_at'
-    | 'updated_at'
-    | 'deleted_at'
-    | 'is_deleted'
-    | 'title'
-    | 'teacher'
-    | 'student_status'
-    | 'admission_channel'
-    | 'high_school'
-    | 'affiliation'
-    | 'study_plan'
-    | 'curriculum'
-    | 'department'
-    | 'faculty'
-    | 'campus'
->
+export interface StudentFormValues {
+    student_code: string
+
+    title_id?: number
+    teacher_id?: number
+    student_status_id?: number
+    admission_channel_id?: number
+    high_school_id?: number
+    affiliation_id?: number
+    study_plan_id?: number
+    curriculum_id?: number
+    department_id?: number
+    faculty_id?: number
+    campus_id?: number
+
+    first_name_th: string
+    last_name_th: string
+    first_name_en?: string
+    last_name_en?: string
+
+    phone?: string
+    email?: string
+    entry_year?: string
+    gpa?: string | number
+
+    earned_credits?: number
+    required_credits?: number
+
+    title_name?: string
+    teacher_name?: string
+    student_status_name?: string
+    admission_channel_name?: string
+
+    high_school_name?: string
+    district_name?: string
+    province_name?: string
+
+    affiliation_name?: string
+    study_plan_name?: string
+    curriculum_name?: string
+    department_name?: string
+    faculty_name?: string
+    campus_name?: string
+
+    father_name?: string
+    father_phone?: string
+    mother_name?: string
+    mother_phone?: string
+}
