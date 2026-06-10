@@ -77,21 +77,32 @@ export default function StudentDetail() {
         : '-'
 
     const teacherName = student?.teacher
-        ? `${student.teacher?.title?.title_name_th ?? ''} ${student.teacher.first_name_th} ${student.teacher.last_name_th}`
+        ? `${student.teacher.title?.title_name_th ?? ''} ${student.teacher.first_name_th} ${student.teacher.last_name_th}`.trim()
         : '-'
 
-    const provinceName = student?.high_school?.subdistrict?.district?.province?.province_name
+    const guardianName = student
+        ? `${student.guardian_title?.title_name_th ?? ''} ${student.guardian_first_name_th ?? ''} ${student.guardian_last_name_th ?? ''}`.trim()
+        : '-'
+
+    const provinceName =
+        student?.high_school?.subdistrict?.district?.province?.province_name
+
+    const districtName =
+        student?.high_school?.subdistrict?.district?.district_name
+
+    const subdistrictName =
+        student?.high_school?.subdistrict?.subdistrict_name
+
+    const postalCode =
+        student?.high_school?.subdistrict?.postal_code
 
     const addressSchool =
         provinceName === 'กรุงเทพมหานคร'
-            ? `แขวง${student?.high_school?.subdistrict?.subdistrict_name ?? '-'}
-            ${student?.high_school?.subdistrict?.district?.district_name ?? '-'}
-            ${provinceName}
-            ${student?.high_school?.subdistrict?.postal_code ?? '-'}`
-            : `ตำบล${student?.high_school?.subdistrict?.subdistrict_name ?? '-'}
-            อำเภอ${student?.high_school?.subdistrict?.district?.district_name ?? '-'}
-            จังหวัด${provinceName ?? '-'}
-            ${student?.high_school?.subdistrict?.postal_code ?? '-'}`
+            ? `แขวง${subdistrictName ?? '-'} ${districtName ?? '-'} ${provinceName} ${postalCode ?? '-'}`
+            : `ตำบล${subdistrictName ?? '-'} อำเภอ${districtName ?? '-'} จังหวัด${provinceName ?? '-'} ${postalCode ?? '-'}`
+
+    const curriculum =
+        student?.study_plan?.curriculum ?? student?.curriculum
 
     return (
         <Card
@@ -106,35 +117,119 @@ export default function StudentDetail() {
                 </Button>
             }
         >
-            <Skeleton loading={loading} active paragraph={{ rows: 10 }}>
+            <Skeleton loading={loading} active paragraph={{ rows: 16 }}>
                 {student && (
-                    <Row gutter={[48, 8]}>
-                        <Col xs={24} md={12}>
-                            <DetailItem label="ชื่อ-นามสกุล ภาษาอังกฤษ" value={fullNameEn} />
-                            <DetailItem label="เบอร์โทรศัพท์" value={student.phone} />
-                            <DetailItem label="e-Mail" value={student.email} />
-                            <DetailItem label="สาขาวิชา" value={student.department?.department_name} />
-                            <DetailItem label="การศึกษาระดับมัธยม" value={student.high_school?.school_name} />
-                            <DetailItem label="ช่องทางรับเข้า" value={student.admission_channel?.channel_name} />
-                            <DetailItem label="GPAX" value={student.gpa ? Number(student.gpa).toFixed(2) : '-'} />
-                            <DetailItem label="หน่วยกิตที่ผ่าน" value={earnedCredits} />
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24}>
+                            <Card title="ข้อมูลส่วนตัว" size="small">
+                                <Row gutter={[48, 8]}>
+                                    <Col xs={24} md={12}>
+                                        <DetailItem label="รหัสนิสิต" value={student.student_code} />
+                                        <DetailItem label="ชื่อ-นามสกุล ภาษาไทย" value={fullNameTh} />
+                                        <DetailItem label="ชื่อ-นามสกุล ภาษาอังกฤษ" value={fullNameEn} />
+                                    </Col>
+
+                                    <Col xs={24} md={12}>
+                                        <DetailItem label="เบอร์โทรศัพท์" value={student.phone} />
+                                        <DetailItem label="e-Mail" value={student.email} />
+                                        <DetailItem label="สถานะนิสิต" value={student.student_status?.status_name} />
+                                    </Col>
+                                </Row>
+                            </Card>
                         </Col>
 
-                        <Col xs={24} md={12}>
-                            <DetailItem label="เบอร์โทรศัพท์ผู้ปกครอง" value="-" />
-                            <DetailItem label="อาจารย์ที่ปรึกษา" value={teacherName} />
-                            <DetailItem
-                                label="ประเภทหลักสูตร"
-                                value={
-                                    student.curriculum?.degree_short_name_th ??
-                                    student.study_plan?.curriculum?.degree_short_name_th
-                                }
-                            />
-                            <DetailItem label="ที่อยู่โรงเรียน" value={addressSchool} />
-                            <DetailItem label="สถานะ" value={student.student_status?.status_name} />
-                            <DetailItem label="ปีเข้าเรียน" value={student.entry_year} />
-                            <DetailItem label="หน่วยกิตทั้งหมด" value={requiredCredits} />
-                            <DetailItem label="หน่วยกิตคงเหลือ" value={remainingCredits} />
+                        <Col xs={24}>
+                            <Card title="ข้อมูลผู้ปกครอง" size="small">
+                                <Row gutter={[48, 8]}>
+                                    <Col xs={24} md={12}>
+                                        <DetailItem label="ชื่อผู้ปกครอง" value={guardianName} />
+                                        <DetailItem
+                                            label="ความสัมพันธ์กับนิสิต"
+                                            value={student.guardian_relationship?.relationship_name}
+                                        />
+                                    </Col>
+
+                                    <Col xs={24} md={12}>
+                                        <DetailItem
+                                            label="เบอร์โทรศัพท์ผู้ปกครอง"
+                                            value={student.guardian_phone}
+                                        />
+                                    </Col>
+                                </Row>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24}>
+                            <Card title="ข้อมูลการศึกษา" size="small">
+                                <Row gutter={[48, 8]}>
+                                    <Col xs={24} md={12}>
+                                        <DetailItem label="ปีเข้าเรียน" value={student.entry_year} />
+                                        <DetailItem label="ช่องทางรับเข้า" value={student.admission_channel?.channel_name} />
+                                        <DetailItem label="อาจารย์ที่ปรึกษา" value={teacherName} />
+                                        <DetailItem label="เบอร์โทรอาจารย์ที่ปรึกษา" value={student.teacher?.phone} />
+                                        <DetailItem label="อีเมลอาจารย์ที่ปรึกษา" value={student.teacher?.email} />
+                                    </Col>
+
+                                    <Col xs={24} md={12}>
+                                        <DetailItem label="สังกัด" value={student.affiliation?.affiliation_name_th} />
+                                        <DetailItem label="คณะ" value={student.faculty?.faculty_name_th} />
+                                        <DetailItem label="ภาควิชา" value={student.department?.department_name} />
+                                        <DetailItem label="วิทยาเขต" value={student.campus?.campus_name_th} />
+                                    </Col>
+
+                                    <Col xs={24} md={12}>
+                                        <DetailItem
+                                            label="หลักสูตร"
+                                            value={
+                                                curriculum?.display_name_th ??
+                                                curriculum?.name_th
+                                            }
+                                        />
+                                        <DetailItem
+                                            label="แผนการเรียน"
+                                            value={student.study_plan?.name_th}
+                                        />
+                                        <DetailItem
+                                            label="ชื่อปริญญา"
+                                            value={curriculum?.degree_name_th}
+                                        />
+                                        <DetailItem
+                                            label="ชื่อย่อปริญญา"
+                                            value={curriculum?.degree_short_name_th}
+                                        />
+                                    </Col>
+
+                                    <Col xs={24} md={12}>
+                                        <DetailItem
+                                            label="GPAX"
+                                            value={student.gpa ? Number(student.gpa).toFixed(2) : '-'}
+                                        />
+                                        <DetailItem label="หน่วยกิตที่ผ่าน" value={earnedCredits} />
+                                        <DetailItem label="หน่วยกิตทั้งหมด" value={requiredCredits} />
+                                        <DetailItem label="หน่วยกิตคงเหลือ" value={remainingCredits} />
+                                    </Col>
+                                </Row>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24}>
+                            <Card title="ข้อมูลโรงเรียนเดิม" size="small">
+                                <Row gutter={[48, 8]}>
+                                    <Col xs={24} md={12}>
+                                        <DetailItem
+                                            label="โรงเรียนมัธยม"
+                                            value={student.high_school?.school_name}
+                                        />
+                                    </Col>
+
+                                    <Col xs={24} md={12}>
+                                        <DetailItem
+                                            label="ที่อยู่โรงเรียน"
+                                            value={addressSchool}
+                                        />
+                                    </Col>
+                                </Row>
+                            </Card>
                         </Col>
                     </Row>
                 )}

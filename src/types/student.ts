@@ -33,14 +33,18 @@ export interface Subdistrict {
 export interface Teacher {
     id: number
     teacher_code: string
+    title_id?: number
     first_name_th: string
     last_name_th: string
     first_name_en: string
     last_name_en: string
     phone?: string
     email?: string
+    department_id?: number
     created_at?: string
     updated_at?: string
+    deleted_at?: string | null
+    is_deleted?: number
     title?: Title
 }
 
@@ -120,6 +124,11 @@ export interface StudyPlan {
     curriculum?: Curriculum
 }
 
+export interface GuardianRelationship {
+    id: number
+    relationship_name: string
+}
+
 export interface Student {
     id: number
     student_code: string
@@ -150,6 +159,12 @@ export interface Student {
     earned_credits: number
     required_credits: number
 
+    guardian_title_id?: number | null
+    guardian_first_name_th?: string | null
+    guardian_last_name_th?: string | null
+    guardian_relationship_id?: number | null
+    guardian_phone?: string | null
+
     created_at: string
     updated_at: string
     deleted_at: string | null
@@ -166,6 +181,9 @@ export interface Student {
     department?: Department
     faculty?: Faculty
     campus?: Campus
+
+    guardian_title?: Title
+    guardian_relationship?: GuardianRelationship
 }
 
 export interface StudentApiResponse {
@@ -202,6 +220,12 @@ export interface StudentFormValues {
     earned_credits?: number
     required_credits?: number
 
+    guardian_title_id?: number
+    guardian_first_name_th?: string
+    guardian_last_name_th?: string
+    guardian_relationship_id?: number
+    guardian_phone?: string
+
     title_name?: string
     teacher_name?: string
     student_status_name?: string
@@ -218,8 +242,7 @@ export interface StudentFormValues {
     faculty_name?: string
     campus_name?: string
 
-    father_name?: string
-    father_phone?: string
-    mother_name?: string
-    mother_phone?: string
+    guardian_title_name?: string
+    guardian_full_name?: string
+    guardian_relationship_name?: string
 }
