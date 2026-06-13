@@ -4,22 +4,18 @@ export interface Title {
     title_abbr_en?: string | null
     title_name_th: string
     title_name_en: string | null
-    created_at?: string
-    updated_at?: string
 }
 
 export interface Province {
     id: number
     province_name: string
-    province_name_th?: string
-    province_name_en?: string | null
 }
 
 export interface District {
     id: number
     district_name: string
     province_id: number
-    province?: Province
+    province?: Province | null
 }
 
 export interface Subdistrict {
@@ -27,25 +23,14 @@ export interface Subdistrict {
     subdistrict_name: string
     postal_code: string
     district_id: number
-    district?: District
+    district?: District | null
 }
 
-export interface Teacher {
+export interface HighSchool {
     id: number
-    teacher_code: string
-    title_id?: number
-    first_name_th: string
-    last_name_th: string
-    first_name_en: string
-    last_name_en: string
-    phone?: string
-    email?: string
-    department_id?: number
-    created_at?: string
-    updated_at?: string
-    deleted_at?: string | null
-    is_deleted?: number
-    title?: Title
+    school_name: string
+    subdistrict_id?: number | null
+    subdistrict?: Subdistrict | null
 }
 
 export interface StudentStatus {
@@ -56,20 +41,6 @@ export interface StudentStatus {
 export interface AdmissionChannel {
     id: number
     channel_name: string
-    description?: string | null
-}
-
-export interface HighSchool {
-    id: number
-    school_name: string
-    subdistrict_id?: number
-    subdistrict?: Subdistrict
-}
-
-export interface Affiliation {
-    id: number
-    affiliation_name_th: string
-    affiliation_name_en: string | null
 }
 
 export interface Department {
@@ -77,20 +48,14 @@ export interface Department {
     department_code: string
     department_name: string
     department_short_name: string
+    faculty?: Faculty | null
 }
 
 export interface Faculty {
     id: number
-    faculty_code?: string
-    faculty_name_th: string
-    faculty_name_en: string | null
-}
-
-export interface Campus {
-    id: number
-    campus_code: string
-    campus_name_th: string
-    campus_name_en: string | null
+    faculty_code?: string | null
+    faculty_name_th?: string
+    faculty_name_en?: string | null
 }
 
 export interface Curriculum {
@@ -110,6 +75,9 @@ export interface Curriculum {
     status: string
     created_at: string
     updated_at: string
+    total_credits_min?: number
+    department_id?: number
+    department?: Department | null
 }
 
 export interface StudyPlan {
@@ -121,12 +89,43 @@ export interface StudyPlan {
     status: string
     created_at: string
     updated_at: string
-    curriculum?: Curriculum
+    curriculum?: Curriculum | null
+}
+
+export interface Teacher {
+    id: number
+    teacher_code: string
+    title_id?: number | null
+    first_name_th: string
+    last_name_th: string
+    first_name_en: string
+    last_name_en: string
+    phone?: string | null
+    email?: string | null
+    department_id?: number | null
+    created_at?: string
+    updated_at?: string
+    deleted_at?: string | null
+    is_deleted?: number
+    title?: Title | null
 }
 
 export interface GuardianRelationship {
     id: number
     relationship_name: string
+}
+
+export interface Affiliation {
+    id: number
+    affiliation_name_th: string
+    affiliation_name_en: string | null
+}
+
+export interface Campus {
+    id: number
+    campus_code: string
+    campus_name_th: string
+    campus_name_en: string | null
 }
 
 export interface Student {
@@ -140,7 +139,6 @@ export interface Student {
     high_school_id: number
     affiliation_id: number
     study_plan_id: number
-    curriculum_id?: number
     department_id: number
     faculty_id: number
     campus_id: number
@@ -170,20 +168,17 @@ export interface Student {
     deleted_at: string | null
     is_deleted: number
 
-    title?: Title
-    teacher?: Teacher
-    student_status?: StudentStatus
-    admission_channel?: AdmissionChannel
-    high_school?: HighSchool
-    affiliation?: Affiliation
-    study_plan?: StudyPlan
-    curriculum?: Curriculum
-    department?: Department
-    faculty?: Faculty
-    campus?: Campus
+    title?: Title | null
+    teacher?: Teacher | null
+    student_status?: StudentStatus | null
+    admission_channel?: AdmissionChannel | null
+    high_school?: HighSchool | null
+    affiliation?: Affiliation | null
+    study_plan?: StudyPlan | null
+    campus?: Campus | null
 
-    guardian_title?: Title
-    guardian_relationship?: GuardianRelationship
+    guardian_title?: Title | null
+    guardian_relationship?: GuardianRelationship | null
 }
 
 export interface StudentApiResponse {
@@ -202,10 +197,6 @@ export interface StudentFormValues {
     high_school_id?: number
     affiliation_id?: number
     study_plan_id?: number
-    curriculum_id?: number
-    department_id?: number
-    faculty_id?: number
-    campus_id?: number
 
     first_name_th: string
     last_name_th: string
@@ -214,6 +205,7 @@ export interface StudentFormValues {
 
     phone?: string
     email?: string
+
     entry_year?: string
     gpa?: string | number
 
@@ -225,24 +217,4 @@ export interface StudentFormValues {
     guardian_last_name_th?: string
     guardian_relationship_id?: number
     guardian_phone?: string
-
-    title_name?: string
-    teacher_name?: string
-    student_status_name?: string
-    admission_channel_name?: string
-
-    high_school_name?: string
-    district_name?: string
-    province_name?: string
-
-    affiliation_name?: string
-    study_plan_name?: string
-    curriculum_name?: string
-    department_name?: string
-    faculty_name?: string
-    campus_name?: string
-
-    guardian_title_name?: string
-    guardian_full_name?: string
-    guardian_relationship_name?: string
 }

@@ -1,5 +1,4 @@
 import {
-    DashboardOutlined,
     DatabaseOutlined,
     TeamOutlined,
 } from '@ant-design/icons'
@@ -18,7 +17,7 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
         <>
             <div className="sidebar-logo">
                 <DatabaseOutlined />
-                {!collapsed && <span>DSS Education</span>}
+                {!collapsed && <span>ฐานข้อมูลนิสิต</span>}
             </div>
 
             <Menu
@@ -28,14 +27,29 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
                 onClick={({ key }) => navigate(key)}
                 items={[
                     {
-                        key: '/dashboard',
-                        icon: <DashboardOutlined />,
-                        label: 'Dashboard',
+                        key: '/students/advisor',
+                        icon: <TeamOutlined />,
+                        label: 'รายชื่อนิสิตในที่ปรึกษา',
                     },
                     {
-                        key: '/students',
+                        key: '/students/department',
                         icon: <TeamOutlined />,
-                        label: 'ฐานข้อมูลนิสิต',
+                        label: 'รายชื่อนิสิตภาควิชา',
+                    },
+                    {
+                        key: '/students/faculty',
+                        icon: <TeamOutlined />,
+                        label: 'รายชื่อนิสิตในคณะ',
+                    },
+                    {
+                        key: '/students/advisor/graduated',
+                        icon: <TeamOutlined />,
+                        label: 'รายชื่อนิสิตที่ปรึกษาที่จบ',
+                    },
+                    {
+                        key: '/students/department/graduated',
+                        icon: <TeamOutlined />,
+                        label: 'รายชื่อนิสิตภาควิชาที่จบ',
                     },
                 ]}
             />

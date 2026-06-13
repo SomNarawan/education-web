@@ -14,6 +14,8 @@ interface StudentTableProps {
     loading?: boolean
     onEdit: (student: Student) => void
     onDelete: (id: number) => void
+    studentGroup?: string
+    studentStatus?: string
 }
 
 export default function StudentTable({
@@ -21,8 +23,24 @@ export default function StudentTable({
     loading = false,
     onEdit,
     onDelete,
+    studentGroup,
+    studentStatus,
 }: StudentTableProps) {
     const navigate = useNavigate()
+
+    const isDepartmentPage = studentGroup === 'department'
+
+    const advisorColumn: ColumnsType<Student>[number] = {
+        title: 'อาจารย์ที่ปรึกษา',
+        width: 180,
+        render: (_, record) => {
+            if (!record.teacher) {
+                return '-'
+            }
+
+            return `${record.teacher.title?.title_name_th ?? ''} ${record.teacher.first_name_th} ${record.teacher.last_name_th}`.trim()
+        },
+    }
 
     const columns: ColumnsType<Student> = [
         {
@@ -37,6 +55,9 @@ export default function StudentTable({
             render: (_, record) =>
                 `${record.title?.title_name_th ?? ''} ${record.first_name_th} ${record.last_name_th}`,
         },
+
+        ...(isDepartmentPage ? [advisorColumn] : []),
+
         {
             title: 'ประเภทหลักสูตร',
             width: 260,
@@ -91,7 +112,9 @@ export default function StudentTable({
                             borderColor: '#1677ff',
                             color: '#1677ff',
                         }}
-                        onClick={() => navigate(`/students/${record.id}`)}
+                        onClick={() =>
+                            navigate(`/students/detail/${record.id}`)
+                        }
                     />
 
                     <Button
