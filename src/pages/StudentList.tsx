@@ -27,7 +27,7 @@ export default function StudentList() {
     }>()
 
     const [students, setStudents] = useState<StudentListResponse[]>([])
-    const [masterData, setMasterData] = useState<MasterData | null>(null)
+    const [masterData] = useState<MasterData | null>(null)
     const [loading, setLoading] = useState(false)
     const [dropdownLoading, setDropdownLoading] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
