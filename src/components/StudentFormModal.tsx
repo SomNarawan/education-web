@@ -11,11 +11,12 @@ Select,
 import { useEffect } from 'react'
 import type { Student, StudentFormValues } from '../types/student'
 import type { MasterData } from '../services/masterDataCache'
+import type { StudentDetailResponse } from '../types/StudentDetailResponse'
 
 interface StudentFormModalProps {
 open: boolean
 loading: boolean
-editingStudent: Student | null
+editingStudent: StudentDetailResponse | null
 masterData: MasterData | null
 onCancel: () => void
 onSave: (values: StudentFormValues) => void | Promise<void>
@@ -29,7 +30,7 @@ masterData,
 onCancel,
 onSave,
 }: StudentFormModalProps) {
-const [form] = Form.useForm<StudentFormValues>()
+const [form] = Form.useForm<StudentDetailResponse>()
 
 useEffect(() => {
     if (!open) return
@@ -38,23 +39,23 @@ useEffect(() => {
         form.setFieldsValue({
             ...editingStudent,
 
-            title_id: editingStudent.title_id,
-            teacher_id: editingStudent.teacher_id,
-            student_status_id: editingStudent.student_status_id,
-            admission_channel_id: editingStudent.admission_channel_id,
-            high_school_id: editingStudent.high_school_id,
-            affiliation_id: editingStudent.affiliation_id,
-            study_plan_id: editingStudent.study_plan_id,
+            // title_id: editingStudent.title_id,
+            // teacher_id: editingStudent.teacher_id,
+            // student_status_id: editingStudent.student_status_id,
+            // admission_channel_id: editingStudent.admission_channel_id,
+            // high_school_id: editingStudent.high_school_id,
+            // affiliation_id: editingStudent.affiliation_id,
+            // study_plan_id: editingStudent.study_plan_id,
 
-            guardian_title_id:
-                editingStudent.guardian_title_id ?? undefined,
-            guardian_first_name_th:
-                editingStudent.guardian_first_name_th ?? '',
-            guardian_last_name_th:
-                editingStudent.guardian_last_name_th ?? '',
-            guardian_relationship_id:
-                editingStudent.guardian_relationship_id ?? undefined,
-            guardian_phone: editingStudent.guardian_phone ?? '',
+            // guardian_title_id:
+            //     editingStudent.guardian_title_id ?? undefined,
+            // guardian_first_name_th:
+            //     editingStudent.guardian_first_name_th ?? '',
+            // guardian_last_name_th:
+            //     editingStudent.guardian_last_name_th ?? '',
+            // guardian_relationship_id:
+            //     editingStudent.guardian_relationship_id ?? undefined,
+            // guardian_phone: editingStudent.guardian_phone ?? '',
         })
     } else {
         form.resetFields()
@@ -63,7 +64,7 @@ useEffect(() => {
 
 const handleOk = async () => {
     const values = await form.validateFields()
-    await onSave(values)
+    // await onSave(values)
     form.resetFields()
 }
 

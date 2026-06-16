@@ -9,9 +9,19 @@ interface SideMenuProps {
     collapsed: boolean
 }
 
+interface LocationState {
+    from?: string
+}
+
 export default function SideMenu({ collapsed }: SideMenuProps) {
     const navigate = useNavigate()
     const location = useLocation()
+
+    const state = location.state as LocationState | null
+
+    const selectedKey = location.pathname.startsWith('/students/detail')
+        ? state?.from ?? '/students/advisor'
+        : location.pathname
 
     return (
         <>
@@ -23,7 +33,7 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             <Menu
                 theme="dark"
                 mode="inline"
-                selectedKeys={[location.pathname]}
+                selectedKeys={[selectedKey]}
                 onClick={({ key }) => navigate(key)}
                 items={[
                     {

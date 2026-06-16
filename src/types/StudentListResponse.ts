@@ -9,10 +9,10 @@ export interface StudentListResponse {
     curriculum_type: string
     study_plan_name: string
 
-    credits_required: number
-    pass_credits: number
-    not_pass_credits: number
-    over_credits: number
+    required_credits: number
+    passed_credits: number
+    not_passed_credits: number
+    overed_credits: number
 
     gpa: number
 }

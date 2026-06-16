@@ -5,14 +5,14 @@ import {
     EditOutlined,
     EyeOutlined,
 } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
-import type { Student } from '../types/student'
+import { useLocation, useNavigate } from 'react-router-dom'
+import type { StudentListResponse } from '../types/StudentListResponse'
 import CustomTable from './custom/CustomTable'
 
 interface StudentTableProps {
-    students: Student[]
+    students: StudentListResponse[]
     loading?: boolean
-    onEdit: (student: Student) => void
+    onEdit: (id: number) => void
     onDelete: (id: number) => void
     studentGroup?: string
     studentStatus?: string
@@ -24,25 +24,20 @@ export default function StudentTable({
     onEdit,
     onDelete,
     studentGroup,
-    studentStatus,
 }: StudentTableProps) {
     const navigate = useNavigate()
+    const location = useLocation()
 
     const isDepartmentPage = studentGroup === 'department'
 
-    const advisorColumn: ColumnsType<Student>[number] = {
+    const advisorColumn: ColumnsType<StudentListResponse>[number] = {
         title: 'อาจารย์ที่ปรึกษา',
+        dataIndex: 'teacher_full_name_th',
         width: 180,
-        render: (_, record) => {
-            if (!record.teacher) {
-                return '-'
-            }
-
-            return `${record.teacher.title?.title_name_th ?? ''} ${record.teacher.first_name_th} ${record.teacher.last_name_th}`.trim()
-        },
+        render: (value) => value || '-',
     }
 
-    const columns: ColumnsType<Student> = [
+    const columns: ColumnsType<StudentListResponse> = [
         {
             title: 'รหัสนิสิต',
             dataIndex: 'student_code',
@@ -51,9 +46,9 @@ export default function StudentTable({
         },
         {
             title: 'ชื่อ-นามสกุล',
+            dataIndex: 'full_name_th',
             width: 180,
-            render: (_, record) =>
-                `${record.title?.title_name_th ?? ''} ${record.first_name_th} ${record.last_name_th}`,
+            render: (value) => value || '-',
         },
 
         ...(isDepartmentPage ? [advisorColumn] : []),
@@ -62,10 +57,8 @@ export default function StudentTable({
             title: 'ประเภทหลักสูตร',
             width: 260,
             render: (_, record) => {
-                const degree =
-                    record.study_plan?.curriculum?.degree_short_name_th ?? '-'
-
-                const planName = record.study_plan?.name_th ?? '-'
+                const degree = record.curriculum_type || '-'
+                const planName = record.study_plan_name || '-'
 
                 return (
                     <div>
@@ -76,19 +69,21 @@ export default function StudentTable({
             },
         },
         {
-            title: 'หน่วยกิตที่ลงทะเบียน (ทั้งหมด/ผ่าน/ไม่ผ่าน)',
+            title: 'หน่วยกิตที่ลงทะเบียน (ทั้งหมด/ผ่าน/ไม่ผ่าน/เกิน)',
             align: 'center',
             width: 260,
             render: (_, record) => {
-                const requiredCredits = record.required_credits ?? 0
-                const earnedCredits = record.earned_credits ?? 0
-                const notPassedCredits = requiredCredits - earnedCredits
+                const requiredCredits = Number(record.required_credits ?? 0)
+                const passedCredits = Number(record.passed_credits ?? 0)
+                const notPassedCredits = Number(record.not_passed_credits ?? 0)
+                const overedCredits = Number(record.overed_credits ?? 0)
 
                 return (
                     <Space>
-                        <Tag color="green">{requiredCredits}</Tag>
-                        <Tag color="green">{earnedCredits}</Tag>
+                        <Tag color="default">{requiredCredits}</Tag>
+                        <Tag color="green">{passedCredits}</Tag>
                         <Tag color="red">{notPassedCredits}</Tag>
+                        <Tag color="orange">{overedCredits}</Tag>
                     </Space>
                 )
             },
@@ -113,7 +108,11 @@ export default function StudentTable({
                             color: '#1677ff',
                         }}
                         onClick={() =>
-                            navigate(`/students/detail/${record.id}`)
+                            navigate(`/students/detail/${record.id}`, {
+                                state: {
+                                    from: location.pathname,
+                                },
+                            })
                         }
                     />
 
@@ -123,7 +122,7 @@ export default function StudentTable({
                             borderColor: '#faad14',
                             color: '#faad14',
                         }}
-                        onClick={() => onEdit(record)}
+                        onClick={() => onEdit(record.id)}
                     />
 
                     <Popconfirm
@@ -140,7 +139,7 @@ export default function StudentTable({
     ]
 
     return (
-        <CustomTable<Student>
+        <CustomTable<StudentListResponse>
             rowKey="id"
             columns={columns}
             dataSource={students}

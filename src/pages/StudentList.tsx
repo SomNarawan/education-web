@@ -1,31 +1,42 @@
 import { Button, message } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import StudentTable from '../components/StudentTable'
 import StudentFormModal from '../components/StudentFormModal'
-import type { Student, StudentFormValues } from '../types/student'
-import { getStudentsByPage } from '../services/studentService'
+import type { StudentFormValues } from '../types/student'
+import type { StudentListResponse } from '../types/StudentListResponse'
+import type { StudentDetailResponse } from '../types/StudentDetailResponse'
+import { getStudentDetail, getStudentsByPage } from '../services/studentService'
 import {
     getMasterData,
     type MasterData,
 } from '../services/masterDataCache'
 
+const DEFAULT_TEACHER_ID = 1
+const DEFAULT_DEPARTMENT_ID = 1
+const DEFAULT_FACULTY_ID = 1
+
+type StudentGroup = 'advisor' | 'department' | 'faculty'
+type StudentStatus = 'graduated' | undefined
+
 export default function StudentList() {
     const { studentGroup, studentStatus } = useParams<{
-        studentGroup?: string
-        studentStatus?: string
+        studentGroup?: StudentGroup
+        studentStatus?: StudentStatus
     }>()
 
-    const [students, setStudents] = useState<Student[]>([])
+    const [students, setStudents] = useState<StudentListResponse[]>([])
     const [masterData, setMasterData] = useState<MasterData | null>(null)
     const [loading, setLoading] = useState(false)
     const [dropdownLoading, setDropdownLoading] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [editingStudent, setEditingStudent] = useState<Student | null>(null)
+    const [editingStudent, setEditingStudent] =
+        useState<StudentDetailResponse | null>(null)
 
-    const currentStudentGroup = studentGroup ?? 'advisor'
-    const currentStudentStatus = studentStatus
+    const currentStudentGroup: StudentGroup = studentGroup ?? 'advisor'
+    const currentStudentStatus: StudentStatus =
+        studentStatus === 'graduated' ? 'graduated' : undefined
 
     const pageTitle = useMemo(() => {
         if (
@@ -42,6 +53,13 @@ export default function StudentList() {
             return 'รายชื่อนิสิตภาควิชาที่จบ'
         }
 
+        if (
+            currentStudentGroup === 'faculty' &&
+            currentStudentStatus === 'graduated'
+        ) {
+            return 'รายชื่อนิสิตคณะที่จบ'
+        }
+
         if (currentStudentGroup === 'faculty') {
             return 'รายชื่อนิสิตในคณะ'
         }
@@ -53,54 +71,62 @@ export default function StudentList() {
         return 'รายชื่อนิสิตในที่ปรึกษา'
     }, [currentStudentGroup, currentStudentStatus])
 
-    useEffect(() => {
-        loadStudents()
-    }, [currentStudentGroup, currentStudentStatus])
-
-    useEffect(() => {
-        loadDropdowns()
-    }, [])
-
-    const loadStudents = async () => {
+    const loadStudents = useCallback(async (searchText?: string) => {
         try {
             setLoading(true)
+
+            const teacherId =
+                currentStudentGroup === 'advisor' ? DEFAULT_TEACHER_ID : undefined
+
+            const departmentId =
+                currentStudentGroup === 'department'
+                    ? DEFAULT_DEPARTMENT_ID
+                    : undefined
+
+            const facultyId =
+                currentStudentGroup === 'faculty' ? DEFAULT_FACULTY_ID : undefined
 
             const data = await getStudentsByPage(
                 currentStudentGroup,
                 currentStudentStatus,
-                1,
+                teacherId,
+                departmentId,
+                facultyId,
+                searchText,
             )
 
             setStudents(data)
-        } catch {
+        } catch (error) {
+            console.error(error)
             message.error('โหลดข้อมูลนิสิตไม่สำเร็จ')
         } finally {
             setLoading(false)
         }
-    }
+    }, [currentStudentGroup, currentStudentStatus])
 
-    const loadDropdowns = async () => {
-        try {
-            setDropdownLoading(true)
-
-            const data = await getMasterData()
-
-            setMasterData(data)
-        } catch {
-            message.error('โหลดข้อมูล dropdown ไม่สำเร็จ')
-        } finally {
-            setDropdownLoading(false)
-        }
-    }
+    useEffect(() => {
+        loadStudents()
+    }, [loadStudents])
 
     const openAddModal = () => {
         setEditingStudent(null)
         setIsModalOpen(true)
     }
 
-    const openEditModal = (student: Student) => {
-        setEditingStudent(student)
-        setIsModalOpen(true)
+    const openEditModal = async (id: number) => {
+        try {
+            setDropdownLoading(true)
+
+            const detail = await getStudentDetail(id)
+
+            setEditingStudent(detail)
+            setIsModalOpen(true)
+        } catch (error) {
+            console.error(error)
+            message.error('โหลดข้อมูลนิสิตสำหรับแก้ไขไม่สำเร็จ')
+        } finally {
+            setDropdownLoading(false)
+        }
     }
 
     const closeModal = () => {
@@ -108,179 +134,28 @@ export default function StudentList() {
         setEditingStudent(null)
     }
 
-    const handleSave = async (values: StudentFormValues) => {
-        const savedStudent = buildStudent(values)
-
-        if (editingStudent) {
-            setStudents((prev) =>
-                prev.map((item) =>
-                    item.id === editingStudent.id ? savedStudent : item,
-                ),
-            )
-            message.success('แก้ไขข้อมูลนิสิตสำเร็จ')
-        } else {
-            setStudents((prev) => [...prev, savedStudent])
-            message.success('เพิ่มข้อมูลนิสิตสำเร็จ')
-        }
+    const handleSave = async (_values: StudentFormValues) => {
+        message.success(
+            editingStudent
+                ? 'แก้ไขข้อมูลนิสิตสำเร็จ'
+                : 'เพิ่มข้อมูลนิสิตสำเร็จ',
+        )
 
         closeModal()
-    }
-
-    const buildStudent = (values: StudentFormValues): Student => {
-        const selectedStudyPlan =
-            masterData?.studyPlans.find((item) => item.id === values.study_plan_id) ??
-            editingStudent?.study_plan ??
-            null
-
-        return {
-            id: editingStudent?.id ?? Date.now(),
-
-            student_code: values.student_code,
-
-            title_id: values.title_id ?? editingStudent?.title_id ?? 0,
-            teacher_id: values.teacher_id ?? editingStudent?.teacher_id ?? 0,
-            student_status_id:
-                values.student_status_id ?? editingStudent?.student_status_id ?? 0,
-            admission_channel_id:
-                values.admission_channel_id ??
-                editingStudent?.admission_channel_id ??
-                0,
-            high_school_id:
-                values.high_school_id ?? editingStudent?.high_school_id ?? 0,
-            affiliation_id:
-                values.affiliation_id ?? editingStudent?.affiliation_id ?? 0,
-            study_plan_id:
-                values.study_plan_id ?? editingStudent?.study_plan_id ?? 0,
-
-            department_id:
-                selectedStudyPlan?.curriculum?.department_id ??
-                editingStudent?.department_id ??
-                0,
-
-            faculty_id:
-                selectedStudyPlan?.curriculum?.department?.faculty?.id ??
-                editingStudent?.faculty_id ??
-                0,
-
-            campus_id: editingStudent?.campus_id ?? 0,
-
-            first_name_th: values.first_name_th,
-            last_name_th: values.last_name_th,
-            first_name_en: values.first_name_en ?? '',
-            last_name_en: values.last_name_en ?? '',
-
-            phone: values.phone ?? '',
-            email: values.email ?? '',
-            entry_year: values.entry_year ?? '',
-            gpa: String(values.gpa ?? ''),
-
-            earned_credits: values.earned_credits ?? 0,
-            required_credits:
-                values.required_credits ??
-                selectedStudyPlan?.curriculum?.total_credits_min ??
-                editingStudent?.required_credits ??
-                0,
-
-            guardian_title_id:
-                values.guardian_title_id ??
-                editingStudent?.guardian_title_id ??
-                null,
-            guardian_first_name_th:
-                values.guardian_first_name_th ??
-                editingStudent?.guardian_first_name_th ??
-                null,
-            guardian_last_name_th:
-                values.guardian_last_name_th ??
-                editingStudent?.guardian_last_name_th ??
-                null,
-            guardian_relationship_id:
-                values.guardian_relationship_id ??
-                editingStudent?.guardian_relationship_id ??
-                null,
-            guardian_phone:
-                values.guardian_phone ?? editingStudent?.guardian_phone ?? null,
-
-            created_at: editingStudent?.created_at ?? '',
-            updated_at: editingStudent?.updated_at ?? '',
-            deleted_at: null,
-            is_deleted: 0,
-
-            title:
-                masterData?.titles.find((item) => item.id === values.title_id) ??
-                editingStudent?.title ??
-                null,
-
-            teacher:
-                masterData?.teachers.find((item) => item.id === values.teacher_id) ??
-                editingStudent?.teacher ??
-                null,
-
-            student_status:
-                masterData?.studentStatuses.find(
-                    (item) => item.id === values.student_status_id,
-                ) ??
-                editingStudent?.student_status ??
-                null,
-
-            admission_channel:
-                masterData?.admissionChannels.find(
-                    (item) => item.id === values.admission_channel_id,
-                ) ??
-                editingStudent?.admission_channel ??
-                null,
-
-            high_school:
-                masterData?.highSchools.find(
-                    (item) => item.id === values.high_school_id,
-                ) ??
-                editingStudent?.high_school ??
-                null,
-
-            affiliation:
-                masterData?.affiliations.find(
-                    (item) => item.id === values.affiliation_id,
-                ) ??
-                editingStudent?.affiliation ??
-                null,
-
-            study_plan: selectedStudyPlan,
-
-            campus: editingStudent?.campus ?? null,
-
-            guardian_title:
-                masterData?.titles.find(
-                    (item) => item.id === values.guardian_title_id,
-                ) ??
-                editingStudent?.guardian_title ??
-                null,
-
-            guardian_relationship:
-                masterData?.guardianRelationships.find(
-                    (item) => item.id === values.guardian_relationship_id,
-                ) ??
-                editingStudent?.guardian_relationship ??
-                null,
-        }
+        await loadStudents()
     }
 
     const handleDelete = (id: number) => {
-        setStudents((prev) =>
-            prev.map((item) =>
-                item.id === id ? { ...item, is_deleted: 1 } : item,
-            ),
-        )
-
+        setStudents((prev) => prev.filter((item) => item.id !== id))
         message.success('ลบข้อมูลนิสิตสำเร็จ')
     }
-
-    const activeStudents = students.filter((item) => item.is_deleted === 0)
 
     return (
         <div className="student-page">
             <div className="page-title-section">
                 <div>
                     <h1>{pageTitle}</h1>
-                    <p>จัดการข้อมูลนิสิต เพิ่ม ลบ แก้ไข และดูรายละเอียด</p>
+                    <p>จัดการข้อมูลนิสิต และดูรายละเอียด</p>
                 </div>
 
                 <Button
@@ -294,7 +169,7 @@ export default function StudentList() {
 
             <div className="table-card">
                 <StudentTable
-                    students={activeStudents}
+                    students={students}
                     loading={loading}
                     onEdit={openEditModal}
                     onDelete={handleDelete}
