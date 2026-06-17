@@ -2,12 +2,13 @@ import {
     Button,
     Card,
     Col,
-    Input,
+    Select,
     Row,
     Skeleton,
     Typography,
     message,
 } from 'antd'
+import TextArea from 'antd/es/input/TextArea'
 import { FileTextOutlined } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -16,10 +17,14 @@ import type { StudentDetailResponse } from '../types/StudentDetailResponse'
 import type { NoteListResponse } from '../types/NoteListResponse'
 import { getStudentDetail } from '../services/studentService'
 import { createNote, getNotes, deleteNote } from '../services/noteService'
+import { getNoteTypes } from '../services/noteTypeService'
 import NoteHistoryModal from '../components/NoteHistoryModal'
 
 const { Text } = Typography
-const { TextArea } = Input
+interface NoteType {
+    id: number
+    note: string
+}
 
 function DetailItem({
     label,
@@ -48,7 +53,9 @@ export default function StudentDetail() {
     const [student, setStudent] = useState<StudentDetailResponse | null>(null)
     const [loading, setLoading] = useState(false)
 
-    const [note, setNote] = useState('')
+    const [noteTypeId, setNoteTypeId] = useState<number>()
+    const [remark, setRemark] = useState('')
+    const [noteTypes, setNoteTypes] = useState<NoteType[]>([])
     const [savingNote, setSavingNote] = useState(false)
 
     const [noteHistoryOpen, setNoteHistoryOpen] = useState(false)
@@ -57,7 +64,23 @@ export default function StudentDetail() {
 
     useEffect(() => {
         loadStudent()
+        loadNoteTypes()
     }, [id])
+
+    const selectedNoteType = noteTypes.find(
+        (noteType) => noteType.id === noteTypeId
+    )
+
+    const isOtherNoteType = selectedNoteType?.note === 'อื่นๆ'
+
+    const loadNoteTypes = async () => {
+        try {
+            const data = await getNoteTypes()
+            setNoteTypes(data)
+        } catch (error) {
+            message.error('โหลดประเภท Note ไม่สำเร็จ')
+        }
+    }
 
     const loadStudent = async () => {
         try {
@@ -111,8 +134,13 @@ export default function StudentDetail() {
                 return
             }
 
-            if (!note.trim()) {
-                message.warning('กรุณากรอก Note')
+            if (!noteTypeId) {
+                message.warning('กรุณาเลือก Note')
+                return
+            }
+
+            if (isOtherNoteType && !remark.trim()) {
+                message.warning('กรุณากรอก Remark')
                 return
             }
 
@@ -120,11 +148,13 @@ export default function StudentDetail() {
 
             await createNote({
                 student_id: student.id,
-                note: note.trim(),
+                note_type_id: noteTypeId,
+                remark: isOtherNoteType ? remark.trim() : null,
             })
 
             message.success('บันทึก Note สำเร็จ')
-            setNote('')
+            setNoteTypeId(undefined)
+            setRemark('')
 
             if (noteHistoryOpen) {
                 await loadNotes(student.id)
@@ -292,6 +322,7 @@ export default function StudentDetail() {
 
                             <Col xs={24}>
                                 <Card
+                                    style={{paddingBottom: 12}}
                                     title="Note"
                                     size="small"
                                     extra={
@@ -303,31 +334,49 @@ export default function StudentDetail() {
                                         </Button>
                                     }
                                 >
-                                    <TextArea
-                                        rows={4}
-                                        maxLength={255}
-                                        showCount
-                                        placeholder="กรอก Note"
-                                        value={note}
-                                        onChange={(e) =>
-                                            setNote(e.target.value)
-                                        }
-                                    />
+                                    <Row gutter={12} align="middle">
+                                        <Col flex="320px">
+                                            <Select
+                                                placeholder="เลือก Note"
+                                                value={noteTypeId}
+                                                onChange={(value) => {
+                                                    setNoteTypeId(value)
+                                                    setRemark('')
+                                                }}
+                                                style={{ width: '100%' }}
+                                                options={noteTypes.map((item) => ({
+                                                    value: item.id,
+                                                    label: item.note,
+                                                }))}
+                                            />
+                                        </Col>
 
-                                    <div
-                                        style={{
-                                            marginTop: 25,
-                                            textAlign: 'center',
-                                        }}
-                                    >
-                                        <Button
-                                            type="primary"
-                                            onClick={handleAddNote}
-                                            loading={savingNote}
-                                        >
-                                            เพิ่ม Note
-                                        </Button>
-                                    </div>
+                                        <Col flex="120px">
+                                            <Button
+                                                type="primary"
+                                                onClick={handleAddNote}
+                                                loading={savingNote}
+                                                block
+                                            >
+                                                เพิ่ม Note
+                                            </Button>
+                                        </Col>
+                                    </Row>
+
+                                    {isOtherNoteType && (
+                                        <Row style={{ marginTop: 12 }}>
+                                            <Col span={24}>
+                                                <TextArea
+                                                    placeholder="กรอก Remark"
+                                                    value={remark}
+                                                    onChange={(e) => setRemark(e.target.value)}
+                                                    rows={4}
+                                                    maxLength={255}
+                                                    showCount
+                                                />
+                                            </Col>
+                                        </Row>
+                                    )}
                                 </Card>
                             </Col>
                         </Row>
@@ -338,6 +387,7 @@ export default function StudentDetail() {
                             notes={notes}
                             onClose={() => setNoteHistoryOpen(false)}
                             onDelete={handleDeleteNote}
+                            showDelete={true}
                         />
                     </>
                 )}

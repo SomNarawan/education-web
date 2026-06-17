@@ -38,6 +38,13 @@ export default function NoteHistoryModal({
             ),
         },
         {
+            title: 'Remark',
+            dataIndex: 'remark',
+            render: (value, record) => (
+                <Text delete={!!record.deleted_at}>{value || '-'}</Text>
+            ),
+        },
+        {
             title: 'วันที่บันทึก',
             dataIndex: 'created_at',
             width: 180,

@@ -3,7 +3,8 @@ import type { NoteListResponse } from '../types/NoteListResponse'
 
 interface CreateNoteRequest {
     student_id: number
-    note: string
+    note_type_id: number
+    remark?: string | null
 }
 
 export async function createNote(data: CreateNoteRequest): Promise<void> {

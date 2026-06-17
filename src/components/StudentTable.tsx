@@ -67,8 +67,11 @@ export default function StudentTable({
             width: 80,
             render: (_, record) => (
                 <Button
-                    type="text"
                     icon={<FileTextOutlined />}
+                    style={{
+                        borderColor: '#353535',
+                        color: '#353535',
+                    }}
                     onClick={() => handleOpenNotes(record.id)}
                 />
             ),
