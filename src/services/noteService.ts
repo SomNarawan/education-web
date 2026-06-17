@@ -19,3 +19,7 @@ export async function getNotes(studentId: number): Promise<NoteListResponse[]> {
 
     return response.data.data
 }
+
+export async function deleteNote(id: number): Promise<void> {
+    await api.delete(`/notes/${id}`)
+}

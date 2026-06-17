@@ -15,7 +15,7 @@ import { useParams } from 'react-router-dom'
 import type { StudentDetailResponse } from '../types/StudentDetailResponse'
 import type { NoteListResponse } from '../types/NoteListResponse'
 import { getStudentDetail } from '../services/studentService'
-import { createNote, getNotes } from '../services/noteService'
+import { createNote, getNotes, deleteNote } from '../services/noteService'
 import NoteHistoryModal from '../components/NoteHistoryModal'
 
 const { Text } = Typography
@@ -133,6 +133,20 @@ export default function StudentDetail() {
             message.error('บันทึก Note ไม่สำเร็จ')
         } finally {
             setSavingNote(false)
+        }
+    }
+
+    const handleDeleteNote = async (id: number) => {
+        try {
+            await deleteNote(id)
+
+            message.success('ลบ Note สำเร็จ')
+
+            if (student) {
+                await loadNotes(student.id)
+            }
+        } catch (error) {
+            message.error('ลบ Note ไม่สำเร็จ')
         }
     }
 
@@ -323,6 +337,7 @@ export default function StudentDetail() {
                             loading={loadingNotes}
                             notes={notes}
                             onClose={() => setNoteHistoryOpen(false)}
+                            onDelete={handleDeleteNote}
                         />
                     </>
                 )}

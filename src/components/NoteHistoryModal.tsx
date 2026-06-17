@@ -1,4 +1,5 @@
-import { Modal, Table, Typography } from 'antd'
+import { DeleteOutlined } from '@ant-design/icons'
+import { Button, Modal, Popconfirm, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import type { NoteListResponse } from '../types/NoteListResponse'
@@ -10,6 +11,7 @@ interface NoteHistoryModalProps {
     loading?: boolean
     notes: NoteListResponse[]
     onClose: () => void
+    onDelete: (id: number) => void
 }
 
 function formatDate(value?: string | null) {
@@ -23,6 +25,7 @@ export default function NoteHistoryModal({
     loading = false,
     notes,
     onClose,
+    onDelete,
 }: NoteHistoryModalProps) {
     const columns: ColumnsType<NoteListResponse> = [
         {
@@ -51,6 +54,28 @@ export default function NoteHistoryModal({
                     {formatDate(value)}
                 </Text>
             ),
+        },
+        {
+            title: '',
+            key: 'action',
+            width: 100,
+            align: 'center',
+            render: (_, record) => {
+                if (record.deleted_at) {
+                    return null
+                }
+
+                return (
+                    <Popconfirm
+                        title="ยืนยันการลบ Note ?"
+                        okText="ลบ"
+                        cancelText="ยกเลิก"
+                        onConfirm={() => onDelete(record.id)}
+                    >
+                        <Button danger icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                )
+            },
         },
     ]
 
