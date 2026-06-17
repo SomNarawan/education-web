@@ -14,8 +14,8 @@ import {
 } from '../services/masterDataCache'
 
 const DEFAULT_TEACHER_ID = 1
-const DEFAULT_DEPARTMENT_ID = 1
-const DEFAULT_FACULTY_ID = 1
+const DEFAULT_DEPARTMENT_ID = 16
+const DEFAULT_FACULTY_ID = 24
 
 type StudentGroup = 'advisor' | 'department' | 'faculty'
 type StudentStatus = 'graduated' | undefined

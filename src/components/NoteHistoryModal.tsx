@@ -1,0 +1,74 @@
+import { Modal, Table, Typography } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
+import dayjs from 'dayjs'
+import type { NoteListResponse } from '../types/NoteListResponse'
+
+const { Text } = Typography
+
+interface NoteHistoryModalProps {
+    open: boolean
+    loading?: boolean
+    notes: NoteListResponse[]
+    onClose: () => void
+}
+
+function formatDate(value?: string | null) {
+    if (!value) return '-'
+
+    return dayjs(value).format('DD/MM/YYYY HH:mm')
+}
+
+export default function NoteHistoryModal({
+    open,
+    loading = false,
+    notes,
+    onClose,
+}: NoteHistoryModalProps) {
+    const columns: ColumnsType<NoteListResponse> = [
+        {
+            title: 'Note',
+            dataIndex: 'note',
+            render: (value, record) => (
+                <Text delete={!!record.deleted_at}>{value || '-'}</Text>
+            ),
+        },
+        {
+            title: 'วันที่บันทึก',
+            dataIndex: 'created_at',
+            width: 180,
+            render: (value, record) => (
+                <Text delete={!!record.deleted_at}>
+                    {formatDate(value)}
+                </Text>
+            ),
+        },
+        {
+            title: 'วันที่ลบ',
+            dataIndex: 'deleted_at',
+            width: 180,
+            render: (value, record) => (
+                <Text delete={!!record.deleted_at}>
+                    {formatDate(value)}
+                </Text>
+            ),
+        },
+    ]
+
+    return (
+        <Modal
+            title="ประวัติ Note"
+            open={open}
+            onCancel={onClose}
+            footer={null}
+            width={800}
+        >
+            <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={notes}
+                loading={loading}
+                pagination={false}
+            />
+        </Modal>
+    )
+}

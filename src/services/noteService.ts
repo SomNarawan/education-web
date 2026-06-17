@@ -1,4 +1,5 @@
 import api from '../config/axios'
+import type { NoteListResponse } from '../types/NoteListResponse'
 
 interface CreateNoteRequest {
     student_id: number
@@ -7,4 +8,14 @@ interface CreateNoteRequest {
 
 export async function createNote(data: CreateNoteRequest): Promise<void> {
     await api.post('/notes', data)
+}
+
+export async function getNotes(studentId: number): Promise<NoteListResponse[]> {
+    const response = await api.get('/notes', {
+        params: {
+            student_id: studentId,
+        },
+    })
+
+    return response.data.data
 }
