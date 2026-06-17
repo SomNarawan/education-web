@@ -9,7 +9,7 @@ export async function getStudentsByPage(
     teacherId?: number,
     departmentId?: number,
     facultyId?: number,
-    searchText?: string,
+    searchNote?: string,
 ): Promise<StudentListResponse[]> {
     const params: Record<string, string | number> = {}
 
@@ -29,8 +29,8 @@ export async function getStudentsByPage(
         params.student_status_id = 2
     }
 
-    if (searchText?.trim()) {
-        params.search_text = searchText.trim()
+    if (searchNote?.trim()) {
+        params.search_note = searchNote.trim()
     }
 
     const response = await api.get<ApiResponse<StudentListResponse[]>>('/students', {

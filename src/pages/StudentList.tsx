@@ -1,5 +1,5 @@
-import { Button, message } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Button, Input, Select, Space, message } from 'antd'
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import StudentTable from '../components/StudentTable'
@@ -12,6 +12,7 @@ import {
     getMasterData,
     type MasterData,
 } from '../services/masterDataCache'
+import { getNoteTypes } from '../services/noteTypeService'
 
 const DEFAULT_TEACHER_ID = 1
 const DEFAULT_DEPARTMENT_ID = 16
@@ -19,6 +20,9 @@ const DEFAULT_FACULTY_ID = 24
 
 type StudentGroup = 'advisor' | 'department' | 'faculty'
 type StudentStatus = 'graduated' | undefined
+type NoteSearchType = string | undefined
+
+const OTHER_NOTE_VALUE = 'อื่นๆ'
 
 export default function StudentList() {
     const { studentGroup, studentStatus } = useParams<{
@@ -33,6 +37,13 @@ export default function StudentList() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingStudent, setEditingStudent] =
         useState<StudentDetailResponse | null>(null)
+
+    const [noteSearchType, setNoteSearchType] =
+        useState<NoteSearchType>(undefined)
+    const [noteSearchText, setNoteSearchText] = useState('')
+    const [noteTypeOptions, setNoteTypeOptions] = useState<
+        { label: string; value: string }[]
+    >([])
 
     const currentStudentGroup: StudentGroup = studentGroup ?? 'advisor'
     const currentStudentStatus: StudentStatus =
@@ -71,42 +82,93 @@ export default function StudentList() {
         return 'รายชื่อนิสิตในที่ปรึกษา'
     }, [currentStudentGroup, currentStudentStatus])
 
-    const loadStudents = useCallback(async (searchText?: string) => {
-        try {
-            setLoading(true)
+    const loadStudents = useCallback(
+        async (noteText?: string) => {
+            try {
+                setLoading(true)
 
-            const teacherId =
-                currentStudentGroup === 'advisor' ? DEFAULT_TEACHER_ID : undefined
+                const teacherId =
+                    currentStudentGroup === 'advisor'
+                        ? DEFAULT_TEACHER_ID
+                        : undefined
 
-            const departmentId =
-                currentStudentGroup === 'department'
-                    ? DEFAULT_DEPARTMENT_ID
-                    : undefined
+                const departmentId =
+                    currentStudentGroup === 'department'
+                        ? DEFAULT_DEPARTMENT_ID
+                        : undefined
 
-            const facultyId =
-                currentStudentGroup === 'faculty' ? DEFAULT_FACULTY_ID : undefined
+                const facultyId =
+                    currentStudentGroup === 'faculty'
+                        ? DEFAULT_FACULTY_ID
+                        : undefined
 
-            const data = await getStudentsByPage(
-                currentStudentGroup,
-                currentStudentStatus,
-                teacherId,
-                departmentId,
-                facultyId,
-                searchText,
-            )
+                const data = await getStudentsByPage(
+                    currentStudentGroup,
+                    currentStudentStatus,
+                    teacherId,
+                    departmentId,
+                    facultyId,
+                    noteText,
+                )
 
-            setStudents(data)
-        } catch (error) {
-            console.error(error)
-            message.error('โหลดข้อมูลนิสิตไม่สำเร็จ')
-        } finally {
-            setLoading(false)
-        }
-    }, [currentStudentGroup, currentStudentStatus])
+                setStudents(data)
+            } catch (error) {
+                console.error(error)
+                message.error('โหลดข้อมูลนิสิตไม่สำเร็จ')
+            } finally {
+                setLoading(false)
+            }
+        },
+        [currentStudentGroup, currentStudentStatus],
+    )
 
     useEffect(() => {
+        setNoteSearchType(undefined)
+        setNoteSearchText('')
         loadStudents()
     }, [loadStudents])
+
+    useEffect(() => {
+        const loadNoteTypes = async () => {
+            try {
+                const data = await getNoteTypes()
+
+                setNoteTypeOptions([
+                    ...data.map((item) => ({
+                        label: item.note,
+                        value: item.note,
+                    }))
+                ])
+            } catch (error) {
+                console.error(error)
+                message.error('โหลดประเภท Note ไม่สำเร็จ')
+            }
+        }
+
+        loadNoteTypes()
+    }, [])
+
+    const getNoteSearchValue = () => {
+        if (!noteSearchType) {
+            return undefined
+        }
+        console.log('noteSearchType', noteSearchType)
+        if (noteSearchType === OTHER_NOTE_VALUE) {
+            return noteSearchText.trim() || undefined
+        }
+
+        return noteSearchType
+    }
+
+    const handleSearchNote = () => {
+        loadStudents(getNoteSearchValue())
+    }
+
+    const handleClearNoteSearch = () => {
+        setNoteSearchType(undefined)
+        setNoteSearchText('')
+        loadStudents()
+    }
 
     const openAddModal = () => {
         setEditingStudent(null)
@@ -142,7 +204,7 @@ export default function StudentList() {
         )
 
         closeModal()
-        await loadStudents()
+        await loadStudents(getNoteSearchValue())
     }
 
     const handleDelete = (id: number) => {
@@ -165,6 +227,51 @@ export default function StudentList() {
                 >
                     เพิ่มนิสิต
                 </Button>
+            </div>
+
+            <div
+                style={{
+                    marginBottom: 16,
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                }}
+            >
+                <Space>
+                    <Select
+                        allowClear
+                        placeholder="เลือก Note"
+                        value={noteSearchType}
+                        options={noteTypeOptions}
+                        style={{ width: 220 }}
+                        onChange={(value) => {
+                            setNoteSearchType(value)
+                            console.log('noteSearchType', value)
+                            if (value !== OTHER_NOTE_VALUE) {
+                                setNoteSearchText('')
+                            }
+                        }}
+                    />
+
+                    {noteSearchType === OTHER_NOTE_VALUE && (
+                        <Input
+                            allowClear
+                            placeholder="กรอก Note ที่ต้องการค้นหา"
+                            value={noteSearchText}
+                            style={{ width: 300 }}
+                            onChange={(e) =>
+                                setNoteSearchText(e.target.value)
+                            }
+                            onPressEnter={handleSearchNote}
+                        />
+                    )}
+
+                    <Button
+                        icon={<SearchOutlined />}
+                        onClick={handleSearchNote}
+                    />
+
+                    <Button onClick={handleClearNoteSearch}>Clear</Button>
+                </Space>
             </div>
 
             <div className="table-card">
