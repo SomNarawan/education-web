@@ -1,4 +1,5 @@
-import { Button, Input, Select, Space, message } from 'antd'
+import { Button, Input, Select, Space, message, Typography } from 'antd'
+const { Text } = Typography
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
@@ -152,7 +153,6 @@ export default function StudentList() {
         if (!noteSearchType) {
             return undefined
         }
-        console.log('noteSearchType', noteSearchType)
         if (noteSearchType === OTHER_NOTE_VALUE) {
             return noteSearchText.trim() || undefined
         }
@@ -232,20 +232,31 @@ export default function StudentList() {
             <div
                 style={{
                     marginBottom: 16,
+                    padding: 16,
+                    background: '#ffffff',
+                    borderRadius: 12,
+                    border: '1px solid #f0f0f0',
                     display: 'flex',
-                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 16,
+                    flexWrap: 'wrap',
                 }}
             >
-                <Space>
+                <Text strong>ค้นหาด้วย Note</Text>
+
+                <Space wrap>
                     <Select
                         allowClear
-                        placeholder="เลือก Note"
+                        showSearch
+                        placeholder="เลือกประเภท Note"
                         value={noteSearchType}
                         options={noteTypeOptions}
-                        style={{ width: 220 }}
+                        style={{ width: 240 }}
+                        optionFilterProp="label"
                         onChange={(value) => {
                             setNoteSearchType(value)
-                            console.log('noteSearchType', value)
+
                             if (value !== OTHER_NOTE_VALUE) {
                                 setNoteSearchText('')
                             }
@@ -255,22 +266,23 @@ export default function StudentList() {
                     {noteSearchType === OTHER_NOTE_VALUE && (
                         <Input
                             allowClear
-                            placeholder="กรอก Note ที่ต้องการค้นหา"
+                            placeholder="กรอกรายละเอียด Note"
                             value={noteSearchText}
                             style={{ width: 300 }}
-                            onChange={(e) =>
-                                setNoteSearchText(e.target.value)
-                            }
+                            onChange={(e) => setNoteSearchText(e.target.value)}
                             onPressEnter={handleSearchNote}
                         />
                     )}
 
                     <Button
+                        type="primary"
                         icon={<SearchOutlined />}
                         onClick={handleSearchNote}
-                    />
+                    >
+                        ค้นหา
+                    </Button>
 
-                    <Button onClick={handleClearNoteSearch}>Clear</Button>
+                    <Button onClick={handleClearNoteSearch}>ล้างค่า</Button>
                 </Space>
             </div>
 
