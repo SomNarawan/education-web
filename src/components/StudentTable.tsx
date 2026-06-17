@@ -1,12 +1,17 @@
-import { Button, Popconfirm, Space, Tag } from 'antd'
+import { Button, Popconfirm, Space, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
     DeleteOutlined,
     EditOutlined,
     EyeOutlined,
+    FileTextOutlined,
 } from '@ant-design/icons'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { StudentListResponse } from '../types/StudentListResponse'
+import type { NoteListResponse } from '../types/NoteListResponse'
+import { getNotes } from '../services/noteService'
+import NoteHistoryModal from './NoteHistoryModal'
 import CustomTable from './custom/CustomTable'
 
 interface StudentTableProps {
@@ -28,7 +33,25 @@ export default function StudentTable({
     const navigate = useNavigate()
     const location = useLocation()
 
+    const [noteModalOpen, setNoteModalOpen] = useState(false)
+    const [notes, setNotes] = useState<NoteListResponse[]>([])
+    const [loadingNotes, setLoadingNotes] = useState(false)
+
     const isDepartmentPage = studentGroup === 'department'
+
+    const handleOpenNotes = async (studentId: number) => {
+        try {
+            setNoteModalOpen(true)
+            setLoadingNotes(true)
+
+            const data = await getNotes(studentId)
+            setNotes(data)
+        } catch (error) {
+            message.error('โหลดประวัติ Note ไม่สำเร็จ')
+        } finally {
+            setLoadingNotes(false)
+        }
+    }
 
     const advisorColumn: ColumnsType<StudentListResponse>[number] = {
         title: 'อาจารย์ที่ปรึกษา',
@@ -38,6 +61,18 @@ export default function StudentTable({
     }
 
     const columns: ColumnsType<StudentListResponse> = [
+        {
+            title: 'Note',
+            align: 'center',
+            width: 80,
+            render: (_, record) => (
+                <Button
+                    type="text"
+                    icon={<FileTextOutlined />}
+                    onClick={() => handleOpenNotes(record.id)}
+                />
+            ),
+        },
         {
             title: 'รหัสนิสิต',
             dataIndex: 'student_code',
@@ -139,11 +174,21 @@ export default function StudentTable({
     ]
 
     return (
-        <CustomTable<StudentListResponse>
-            rowKey="id"
-            columns={columns}
-            dataSource={students}
-            loading={loading}
-        />
+        <>
+            <CustomTable<StudentListResponse>
+                rowKey="id"
+                columns={columns}
+                dataSource={students}
+                loading={loading}
+                showNo={false}
+            />
+
+            <NoteHistoryModal
+                open={noteModalOpen}
+                loading={loadingNotes}
+                notes={notes}
+                onClose={() => setNoteModalOpen(false)}
+            />
+        </>
     )
 }

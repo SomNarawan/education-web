@@ -7,6 +7,7 @@ const { Search } = Input
 
 interface CustomTableProps<T> extends TableProps<T> {
     searchPlaceholder?: string
+    showNo?: boolean
 }
 
 function getSearchText(value: unknown): string {
@@ -23,9 +24,7 @@ function getSearchText(value: unknown): string {
     }
 
     if (typeof value === 'object') {
-        return Object.values(value)
-            .map(getSearchText)
-            .join(' ')
+        return Object.values(value).map(getSearchText).join(' ')
     }
 
     return ''
@@ -33,6 +32,7 @@ function getSearchText(value: unknown): string {
 
 export default function CustomTable<T extends object>({
     searchPlaceholder = 'ค้นหา...',
+    showNo = true,
     dataSource = [],
     pagination,
     columns = [],
@@ -48,21 +48,20 @@ export default function CustomTable<T extends object>({
         }
 
         return dataSource.filter((record) =>
-            getSearchText(record)
-                .toLowerCase()
-                .includes(searchText),
+            getSearchText(record).toLowerCase().includes(searchText),
         )
     }, [dataSource, keyword])
 
-    const customColumns: ColumnsType<T> = [
-        {
-            title: 'No.',
-            width: 70,
-            align: 'center',
-            render: (_, __, index) => index + 1,
-        },
-        ...(columns as ColumnsType<T>),
-    ]
+    const noColumn: ColumnsType<T>[number] = {
+        title: 'No.',
+        width: 70,
+        align: 'center',
+        render: (_, __, index) => index + 1,
+    }
+
+    const customColumns: ColumnsType<T> = showNo
+        ? [noColumn, ...(columns as ColumnsType<T>)]
+        : (columns as ColumnsType<T>)
 
     return (
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>

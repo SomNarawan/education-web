@@ -11,7 +11,8 @@ interface NoteHistoryModalProps {
     loading?: boolean
     notes: NoteListResponse[]
     onClose: () => void
-    onDelete: (id: number) => void
+    onDelete?: (id: number) => void
+    showDelete?: boolean
 }
 
 function formatDate(value?: string | null) {
@@ -26,6 +27,7 @@ export default function NoteHistoryModal({
     notes,
     onClose,
     onDelete,
+    showDelete = false,
 }: NoteHistoryModalProps) {
     const columns: ColumnsType<NoteListResponse> = [
         {
@@ -55,13 +57,16 @@ export default function NoteHistoryModal({
                 </Text>
             ),
         },
-        {
+    ]
+
+    if (showDelete) {
+        columns.push({
             title: '',
             key: 'action',
             width: 100,
             align: 'center',
             render: (_, record) => {
-                if (record.deleted_at) {
+                if (record.deleted_at || !onDelete) {
                     return null
                 }
 
@@ -76,8 +81,8 @@ export default function NoteHistoryModal({
                     </Popconfirm>
                 )
             },
-        },
-    ]
+        })
+    }
 
     return (
         <Modal
