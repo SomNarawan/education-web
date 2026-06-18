@@ -10,6 +10,7 @@ export async function getStudentsByPage(
     departmentId?: number,
     facultyId?: number,
     searchNote?: string,
+    searchText?: string,
 ): Promise<StudentListResponse[]> {
     const params: Record<string, string | number> = {}
 
@@ -33,15 +34,26 @@ export async function getStudentsByPage(
         params.search_note = searchNote.trim()
     }
 
-    const response = await api.get<ApiResponse<StudentListResponse[]>>('/students', {
-        params,
-    })
+    if (searchText?.trim()) {
+        params.search_text = searchText.trim()
+    }
+
+    const response = await api.get<ApiResponse<StudentListResponse[]>>(
+        '/students',
+        {
+            params,
+        },
+    )
 
     return response.data.data
 }
 
-export async function getStudentDetail(id: number): Promise<StudentDetailResponse> {
-    const response = await api.get<ApiResponse<StudentDetailResponse>>(`/students/${id}`)
+export async function getStudentDetail(
+    id: number,
+): Promise<StudentDetailResponse> {
+    const response = await api.get<ApiResponse<StudentDetailResponse>>(
+        `/students/${id}`,
+    )
 
     return response.data.data
 }

@@ -46,9 +46,15 @@ export default function StudentList() {
         { label: string; value: string }[]
     >([])
 
+    const [studentSearchText, setStudentSearchText] = useState('')
+    const [hasFacultySearched, setHasFacultySearched] = useState(false)
+
     const currentStudentGroup: StudentGroup = studentGroup ?? 'advisor'
     const currentStudentStatus: StudentStatus =
         studentStatus === 'graduated' ? 'graduated' : undefined
+
+    const isFacultyListPage =
+        currentStudentGroup === 'faculty' && !currentStudentStatus
 
     const pageTitle = useMemo(() => {
         if (
@@ -84,7 +90,13 @@ export default function StudentList() {
     }, [currentStudentGroup, currentStudentStatus])
 
     const loadStudents = useCallback(
-        async (noteText?: string) => {
+        async ({
+            noteText,
+            searchText,
+        }: {
+            noteText?: string
+            searchText?: string
+        } = {}) => {
             try {
                 setLoading(true)
 
@@ -110,6 +122,7 @@ export default function StudentList() {
                     departmentId,
                     facultyId,
                     noteText,
+                    searchText,
                 )
 
                 setStudents(data)
@@ -126,10 +139,20 @@ export default function StudentList() {
     useEffect(() => {
         setNoteSearchType(undefined)
         setNoteSearchText('')
-        loadStudents()
-    }, [loadStudents])
+        setStudentSearchText('')
+        setHasFacultySearched(false)
+        setStudents([])
+
+        if (!isFacultyListPage) {
+            loadStudents()
+        }
+    }, [loadStudents, isFacultyListPage])
 
     useEffect(() => {
+        if (isFacultyListPage) {
+            return
+        }
+
         const loadNoteTypes = async () => {
             try {
                 const data = await getNoteTypes()
@@ -138,7 +161,7 @@ export default function StudentList() {
                     ...data.map((item) => ({
                         label: item.note,
                         value: item.note,
-                    }))
+                    })),
                 ])
             } catch (error) {
                 console.error(error)
@@ -147,12 +170,13 @@ export default function StudentList() {
         }
 
         loadNoteTypes()
-    }, [])
+    }, [isFacultyListPage])
 
     const getNoteSearchValue = () => {
         if (!noteSearchType) {
             return undefined
         }
+
         if (noteSearchType === OTHER_NOTE_VALUE) {
             return noteSearchText.trim() || undefined
         }
@@ -161,13 +185,36 @@ export default function StudentList() {
     }
 
     const handleSearchNote = () => {
-        loadStudents(getNoteSearchValue())
+        loadStudents({
+            noteText: getNoteSearchValue(),
+        })
     }
 
     const handleClearNoteSearch = () => {
         setNoteSearchType(undefined)
         setNoteSearchText('')
         loadStudents()
+    }
+
+    const handleSearchStudent = () => {
+        const value = studentSearchText.trim()
+
+        if (!value) {
+            message.warning('กรุณากรอกคำค้นหา')
+            return
+        }
+
+        setHasFacultySearched(true)
+
+        loadStudents({
+            searchText: value,
+        })
+    }
+
+    const handleClearStudentSearch = () => {
+        setStudentSearchText('')
+        setHasFacultySearched(false)
+        setStudents([])
     }
 
     const openAddModal = () => {
@@ -204,7 +251,17 @@ export default function StudentList() {
         )
 
         closeModal()
-        await loadStudents(getNoteSearchValue())
+
+        if (isFacultyListPage && hasFacultySearched) {
+            await loadStudents({
+                searchText: studentSearchText.trim() || undefined,
+            })
+            return
+        }
+
+        await loadStudents({
+            noteText: getNoteSearchValue(),
+        })
     }
 
     const handleDelete = (id: number) => {
@@ -229,73 +286,142 @@ export default function StudentList() {
                 </Button>
             </div>
 
-            <div
-                style={{
-                    marginBottom: 16,
-                    padding: 16,
-                    background: '#ffffff',
-                    borderRadius: 12,
-                    border: '1px solid #f0f0f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 16,
-                    flexWrap: 'wrap',
-                }}
-            >
-                <Text strong>ค้นหาด้วย Note</Text>
-
-                <Space wrap>
-                    <Select
-                        allowClear
-                        showSearch
-                        placeholder="เลือกประเภท Note"
-                        value={noteSearchType}
-                        options={noteTypeOptions}
-                        style={{ width: 240 }}
-                        optionFilterProp="label"
-                        onChange={(value) => {
-                            setNoteSearchType(value)
-
-                            if (value !== OTHER_NOTE_VALUE) {
-                                setNoteSearchText('')
-                            }
+            {isFacultyListPage ? (
+                <div
+                    style={{
+                        marginBottom: 16,
+                        padding: 24,
+                        background: '#ffffff',
+                        borderRadius: 12,
+                        border: '1px solid #f0f0f0',
+                    }}
+                >
+                    <div
+                        style={{
+                            textAlign: 'center',
+                            marginBottom: 20,
                         }}
-                    />
+                    >
+                        <Text strong style={{ fontSize: 18 }}>
+                            ค้นหานิสิตในคณะจากรหัสนิสิต / ชื่อ-นามสกุล / เลขบัตรประชาชน
+                        </Text>
+                    </div>
 
-                    {noteSearchType === OTHER_NOTE_VALUE && (
+                    <div style={{ marginBottom: 20 }}>
                         <Input
                             allowClear
-                            placeholder="กรอกรายละเอียด Note"
-                            value={noteSearchText}
-                            style={{ width: 300 }}
-                            onChange={(e) => setNoteSearchText(e.target.value)}
-                            onPressEnter={handleSearchNote}
+                            size="large"
+                            placeholder="ค้นหาจากรหัสนิสิต / ชื่อ-นามสกุล / เลขบัตรประชาชน"
+                            value={studentSearchText}
+                            onChange={(e) =>
+                                setStudentSearchText(e.target.value)
+                            }
+                            onPressEnter={handleSearchStudent}
+                            style={{
+                                width: '100%',
+                            }}
                         />
-                    )}
+                    </div>
 
-                    <Button
-                        type="primary"
-                        icon={<SearchOutlined />}
-                        onClick={handleSearchNote}
+                    <div
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            gap: 12,
+                        }}
                     >
-                        ค้นหา
-                    </Button>
+                        <Button
+                            type="primary"
+                            icon={<SearchOutlined />}
+                            size="large"
+                            onClick={handleSearchStudent}
+                        >
+                            ค้นหา
+                        </Button>
 
-                    <Button onClick={handleClearNoteSearch}>ล้างค่า</Button>
-                </Space>
-            </div>
+                        <Button
+                            size="large"
+                            onClick={handleClearStudentSearch}
+                        >
+                            ล้างค่า
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <div
+                    style={{
+                        marginBottom: 16,
+                        padding: 16,
+                        background: '#ffffff',
+                        borderRadius: 12,
+                        border: '1px solid #f0f0f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 16,
+                        flexWrap: 'wrap',
+                    }}
+                >
+                    <Text strong>ค้นหาด้วย Note</Text>
 
-            <div className="table-card">
-                <StudentTable
-                    students={students}
-                    loading={loading}
-                    onEdit={openEditModal}
-                    onDelete={handleDelete}
-                    studentGroup={currentStudentGroup}
-                    studentStatus={currentStudentStatus}
-                />
-            </div>
+                    <Space wrap>
+                        <Select
+                            allowClear
+                            showSearch
+                            placeholder="เลือกประเภท Note"
+                            value={noteSearchType}
+                            options={noteTypeOptions}
+                            style={{ width: 240 }}
+                            optionFilterProp="label"
+                            onChange={(value) => {
+                                setNoteSearchType(value)
+
+                                if (value !== OTHER_NOTE_VALUE) {
+                                    setNoteSearchText('')
+                                }
+                            }}
+                        />
+
+                        {noteSearchType === OTHER_NOTE_VALUE && (
+                            <Input
+                                allowClear
+                                placeholder="กรอกรายละเอียด Note"
+                                value={noteSearchText}
+                                style={{ width: 300 }}
+                                onChange={(e) =>
+                                    setNoteSearchText(e.target.value)
+                                }
+                                onPressEnter={handleSearchNote}
+                            />
+                        )}
+
+                        <Button
+                            type="primary"
+                            icon={<SearchOutlined />}
+                            onClick={handleSearchNote}
+                        >
+                            ค้นหา
+                        </Button>
+
+                        <Button onClick={handleClearNoteSearch}>
+                            ล้างค่า
+                        </Button>
+                    </Space>
+                </div>
+            )}
+
+            {(!isFacultyListPage || hasFacultySearched) && (
+                <div className="table-card">
+                    <StudentTable
+                        students={students}
+                        loading={loading}
+                        onEdit={openEditModal}
+                        onDelete={handleDelete}
+                        studentGroup={currentStudentGroup}
+                        studentStatus={currentStudentStatus}
+                    />
+                </div>
+            )}
 
             <StudentFormModal
                 open={isModalOpen}
