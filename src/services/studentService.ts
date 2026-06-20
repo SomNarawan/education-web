@@ -81,3 +81,7 @@ export async function updateStudent(
 
     return response.data.data
 }
+
+export async function deleteStudent(id: number): Promise<void> {
+    await api.delete(`/students/${id}`)
+}

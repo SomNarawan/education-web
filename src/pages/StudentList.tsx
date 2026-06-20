@@ -8,7 +8,7 @@ import StudentFormModal from '../components/StudentFormModal'
 import type { StudentFormValues } from '../types/StudentFormValues'
 import type { StudentListResponse } from '../types/StudentListResponse'
 import type { StudentDetailResponse } from '../types/StudentDetailResponse'
-import { getStudentDetail, getStudentsByPage, createStudent, updateStudent } from '../services/studentService'
+import { getStudentDetail, getStudentsByPage, createStudent, updateStudent, deleteStudent } from '../services/studentService'
 import { getNoteTypes } from '../services/noteTypeService'
 
 const DEFAULT_TEACHER_ID = 2
@@ -278,9 +278,18 @@ export default function StudentList() {
         }
     }
 
-    const handleDelete = (id: number) => {
-        setStudents((prev) => prev.filter((item) => item.id !== id))
-        message.success('ลบข้อมูลนิสิตสำเร็จ')
+    const handleDelete = async (id: number) => {
+        try {
+            setDropdownLoading(true)
+            await deleteStudent(id)
+            setStudents((prev) => prev.filter((item) => item.id !== id))
+            message.success('ลบข้อมูลนิสิตสำเร็จ')
+        } catch (error) {
+            console.error(error)
+            message.error('ลบข้อมูลนิสิตไม่สำเร็จ')
+        } finally {
+            setDropdownLoading(false)
+        }
     }
 
     return (
