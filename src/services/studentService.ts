@@ -2,6 +2,7 @@ import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
 import type { StudentListResponse } from '../types/StudentListResponse'
 import type { StudentDetailResponse } from '../types/StudentDetailResponse'
+import type { StudentFormValues } from '../types/StudentFormValues'
 
 export async function getStudentsByPage(
     studentGroup?: string,
@@ -53,6 +54,29 @@ export async function getStudentDetail(
 ): Promise<StudentDetailResponse> {
     const response = await api.get<ApiResponse<StudentDetailResponse>>(
         `/students/${id}`,
+    )
+
+    return response.data.data
+}
+
+export async function createStudent(
+    data: StudentFormValues,
+): Promise<StudentDetailResponse> {
+    const response = await api.post<ApiResponse<StudentDetailResponse>>(
+        '/students',
+        data,
+    )
+
+    return response.data.data
+}
+
+export async function updateStudent(
+    id: number,
+    data: StudentFormValues,
+): Promise<StudentDetailResponse> {
+    const response = await api.put<ApiResponse<StudentDetailResponse>>(
+        `/students/${id}`,
+        data,
     )
 
     return response.data.data

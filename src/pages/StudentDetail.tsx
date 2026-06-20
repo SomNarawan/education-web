@@ -210,7 +210,7 @@ export default function StudentDetail() {
                                             />
                                             <DetailItem
                                                 label="ปีเข้าเรียน"
-                                                value={`${student.entry_year_ad}/${student.entry_year_be}`}
+                                                value={`${student.entry_year}/${student.entry_year_be}`}
                                             />
                                             <DetailItem
                                                 label="อาจารย์ที่ปรึกษา"

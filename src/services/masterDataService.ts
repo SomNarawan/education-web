@@ -25,37 +25,12 @@ export async function getHighSchools() {
     return response.data.data
 }
 
-export async function getAffiliations() {
-    const response = await api.get('/affiliations')
-    return response.data.data
-}
-
 export async function getStudyPlans() {
-    const response = await api.get('/study-plans')
-    return response.data.data
-}
-
-export async function getCurriculums() {
-    const response = await api.get('/curriculums')
-    return response.data.data
-}
-
-export async function getDepartments() {
-    const response = await api.get('/departments')
-    return response.data.data
-}
-
-export async function getFaculties() {
-    const response = await api.get('/faculties')
-    return response.data.data
-}
-
-export async function getCampuses() {
-    const response = await api.get('/campuses')
+    const response = await api.get('/study-plan-tracks')
     return response.data.data
 }
 
 export async function getGuardianRelationships() {
-    const response = await api.get('/guardian-relationships')
+    const response = await api.get('/relationships')
     return response.data.data
 }

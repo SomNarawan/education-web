@@ -1,6 +1,7 @@
 export interface StudentDetailResponse {
     id: number
     student_code: string
+    student_id_card: string
 
     title_id: number
     full_name_th: string
@@ -14,7 +15,7 @@ export interface StudentDetailResponse {
     phone: string
     email: string
 
-    entry_year_ad: number
+    entry_year: number
     entry_year_be: number
 
     teacher_id: number
@@ -26,6 +27,9 @@ export interface StudentDetailResponse {
     admission_channel_id: number
     admission_channel_name: string
 
+    guardian_title_id: number
+    guardian_first_name_th: string
+    guardian_last_name_th: string
     guardian_full_name: string
     guardian_relationship_id: number
     guardian_relationship_name: string

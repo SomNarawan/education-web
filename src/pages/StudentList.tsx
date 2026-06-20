@@ -5,17 +5,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import StudentTable from '../components/StudentTable'
 import StudentFormModal from '../components/StudentFormModal'
-import type { StudentFormValues } from '../types/student'
+import type { StudentFormValues } from '../types/StudentFormValues'
 import type { StudentListResponse } from '../types/StudentListResponse'
 import type { StudentDetailResponse } from '../types/StudentDetailResponse'
-import { getStudentDetail, getStudentsByPage } from '../services/studentService'
-import {
-    getMasterData,
-    type MasterData,
-} from '../services/masterDataCache'
+import { getStudentDetail, getStudentsByPage, createStudent, updateStudent } from '../services/studentService'
 import { getNoteTypes } from '../services/noteTypeService'
 
-const DEFAULT_TEACHER_ID = 1
+const DEFAULT_TEACHER_ID = 2
 const DEFAULT_DEPARTMENT_ID = 16
 const DEFAULT_FACULTY_ID = 24
 
@@ -32,7 +28,6 @@ export default function StudentList() {
     }>()
 
     const [students, setStudents] = useState<StudentListResponse[]>([])
-    const [masterData] = useState<MasterData | null>(null)
     const [loading, setLoading] = useState(false)
     const [dropdownLoading, setDropdownLoading] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -243,25 +238,44 @@ export default function StudentList() {
         setEditingStudent(null)
     }
 
-    const handleSave = async (_values: StudentFormValues) => {
-        message.success(
-            editingStudent
-                ? 'แก้ไขข้อมูลนิสิตสำเร็จ'
-                : 'เพิ่มข้อมูลนิสิตสำเร็จ',
-        )
+    const handleSave = async (values: StudentFormValues) => {
+        try {
+            setDropdownLoading(true)
 
-        closeModal()
+            if (editingStudent) {
+                await updateStudent(editingStudent.id, values)
+            } else {
+                await createStudent(values)
+            }
 
-        if (isFacultyListPage && hasFacultySearched) {
+            message.success(
+                editingStudent
+                    ? 'แก้ไขข้อมูลนิสิตสำเร็จ'
+                    : 'เพิ่มข้อมูลนิสิตสำเร็จ',
+            )
+
+            closeModal()
+
+            if (isFacultyListPage && hasFacultySearched) {
+                await loadStudents({
+                    searchText: studentSearchText.trim() || undefined,
+                })
+                return
+            }
+
             await loadStudents({
-                searchText: studentSearchText.trim() || undefined,
+                noteText: getNoteSearchValue(),
             })
-            return
+        } catch (error) {
+            console.error(error)
+            message.error(
+                editingStudent
+                    ? 'แก้ไขข้อมูลนิสิตไม่สำเร็จ'
+                    : 'เพิ่มข้อมูลนิสิตไม่สำเร็จ',
+            )
+        } finally {
+            setDropdownLoading(false)
         }
-
-        await loadStudents({
-            noteText: getNoteSearchValue(),
-        })
     }
 
     const handleDelete = (id: number) => {
@@ -372,7 +386,6 @@ export default function StudentList() {
                             value={noteSearchType}
                             options={noteTypeOptions}
                             style={{ width: 240 }}
-                            optionFilterProp="label"
                             onChange={(value) => {
                                 setNoteSearchType(value)
 
@@ -427,7 +440,6 @@ export default function StudentList() {
                 open={isModalOpen}
                 loading={dropdownLoading}
                 editingStudent={editingStudent}
-                masterData={masterData}
                 onCancel={closeModal}
                 onSave={handleSave}
             />

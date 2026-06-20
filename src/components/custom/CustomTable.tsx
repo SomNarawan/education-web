@@ -64,7 +64,7 @@ export default function CustomTable<T extends object>({
         : (columns as ColumnsType<T>)
 
     return (
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
             <Search
                 placeholder={searchPlaceholder}
                 allowClear
