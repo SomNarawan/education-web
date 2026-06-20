@@ -17,18 +17,24 @@ export async function getStudentsByPage(
 
     if (studentGroup === 'advisor' && teacherId) {
         params.teacher_id = teacherId
+        if (studentStatus === 'graduated') {
+            params.student_status = 'graduated'
+        } else {
+            params.student_status = 'non-graduated'
+        }
     }
 
     if (studentGroup === 'department' && departmentId) {
         params.department_id = departmentId
+        if (studentStatus === 'graduated') {
+            params.student_status = 'graduated'
+        } else {
+            params.student_status = 'non-graduated'
+        }
     }
 
     if (studentGroup === 'faculty' && facultyId) {
         params.faculty_id = facultyId
-    }
-
-    if (studentStatus === 'graduated') {
-        params.student_status_id = 2
     }
 
     if (searchNote?.trim()) {
