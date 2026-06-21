@@ -146,7 +146,7 @@ export default function StudentTable({
                             color: '#1677ff',
                         }}
                         onClick={() =>
-                            navigate(`/students/detail/${record.id}`, {
+                            navigate(`/students/${studentGroup}/detail/${record.id}`, {
                                 state: {
                                     from: location.pathname,
                                 },
