@@ -50,18 +50,6 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             label: 'รายชื่อนิสิตในคณะ',
             allowedRoles: ['teacher', 'admin'],
         },
-        {
-            key: '/students/advisor/graduated',
-            icon: <TeamOutlined />,
-            label: 'รายชื่อนิสิตที่ปรึกษาที่จบ',
-            allowedRoles: ['teacher'],
-        },
-        {
-            key: '/students/department/graduated',
-            icon: <TeamOutlined />,
-            label: 'รายชื่อนิสิตภาควิชาที่จบ',
-            allowedRoles: ['teacher', 'admin'],
-        },
     ]
 
     const items: MenuProps['items'] = menuItems

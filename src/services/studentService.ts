@@ -6,35 +6,29 @@ import type { StudentFormValues } from '../types/StudentFormValues'
 
 export async function getStudentsByPage(
     studentGroup?: string,
-    studentStatus?: string,
     teacherId?: number,
     departmentId?: number,
     facultyId?: number,
     searchNote?: string,
     searchText?: string,
+    studentStatusId?: number,
 ): Promise<StudentListResponse[]> {
     const params: Record<string, string | number> = {}
 
     if (studentGroup === 'advisor' && teacherId) {
         params.teacher_id = teacherId
-        if (studentStatus === 'graduated') {
-            params.student_status = 'graduated'
-        } else {
-            params.student_status = 'non-graduated'
-        }
     }
 
     if (studentGroup === 'department' && departmentId) {
         params.department_id = departmentId
-        if (studentStatus === 'graduated') {
-            params.student_status = 'graduated'
-        } else {
-            params.student_status = 'non-graduated'
-        }
     }
 
     if (studentGroup === 'faculty' && facultyId) {
         params.faculty_id = facultyId
+    }
+
+    if (studentStatusId) {
+        params.student_status_id = studentStatusId
     }
 
     if (searchNote?.trim()) {

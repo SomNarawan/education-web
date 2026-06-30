@@ -20,7 +20,6 @@ interface StudentTableProps {
     onEdit: (id: number) => void
     onDelete: (id: number) => void
     studentGroup?: string
-    studentStatus?: string
 }
 
 export default function StudentTable({

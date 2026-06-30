@@ -1,4 +1,4 @@
-import { Button, Input, Select, Space, message, Typography } from 'antd'
+import { Button, Input, Select, message, Typography } from 'antd'
 const { Text } = Typography
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -10,22 +10,33 @@ import type { StudentListResponse } from '../types/StudentListResponse'
 import type { StudentDetailResponse } from '../types/StudentDetailResponse'
 import { getStudentDetail, getStudentsByPage, createStudent, updateStudent, deleteStudent } from '../services/studentService'
 import { getNoteTypes } from '../services/noteTypeService'
-
-const DEFAULT_TEACHER_ID = 2
-const DEFAULT_DEPARTMENT_ID = 16
-const DEFAULT_FACULTY_ID = 24
+import { getStudentStatuses, getSystemDepartments } from '../services/masterDataService'
+import { useAuth } from '../context/AuthContext'
 
 type StudentGroup = 'advisor' | 'department' | 'faculty'
-type StudentStatus = 'graduated' | undefined
 type NoteSearchType = string | undefined
 
+type OptionItem = {
+    label: string
+    value: number
+}
+
 const OTHER_NOTE_VALUE = 'อื่นๆ'
+const DEFAULT_STUDENT_STATUS = 2
 
 export default function StudentList() {
-    const { studentGroup, studentStatus } = useParams<{
+    const { studentGroup } = useParams<{
         studentGroup?: StudentGroup
-        studentStatus?: StudentStatus
     }>()
+
+    const { currentRole, user } = useAuth()
+
+    const authTeacherId = user?.teacherId ?? undefined
+    const authDepartmentId = user?.departmentId ?? undefined
+    const authFacultyId = user?.facultyId ?? undefined
+
+    const isAdmin = currentRole === 'admin'
+    const isTeacher = currentRole === 'teacher'
 
     const [students, setStudents] = useState<StudentListResponse[]>([])
     const [loading, setLoading] = useState(false)
@@ -41,38 +52,27 @@ export default function StudentList() {
         { label: string; value: string }[]
     >([])
 
+    const [departmentOptions, setDepartmentOptions] = useState<OptionItem[]>([])
+    const [studentStatusOptions, setStudentStatusOptions] = useState<
+        OptionItem[]
+    >([])
+    const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+        number | undefined
+    >(undefined)
+    const [selectedStudentStatusId, setSelectedStudentStatusId] = useState<
+        number | undefined
+    >(undefined)
+
     const [studentSearchText, setStudentSearchText] = useState('')
     const [hasFacultySearched, setHasFacultySearched] = useState(false)
 
-    const currentStudentGroup: StudentGroup = studentGroup ?? 'advisor'
-    const currentStudentStatus: StudentStatus =
-        studentStatus === 'graduated' ? 'graduated' : undefined
+    const currentStudentGroup: StudentGroup = studentGroup ?? 'department'
 
-    const isFacultyListPage =
-        currentStudentGroup === 'faculty' && !currentStudentStatus
+    const isDepartmentListPage = currentStudentGroup === 'department'
+
+    const isFacultyListPage = currentStudentGroup === 'faculty'
 
     const pageTitle = useMemo(() => {
-        if (
-            currentStudentGroup === 'advisor' &&
-            currentStudentStatus === 'graduated'
-        ) {
-            return 'รายชื่อนิสิตที่ปรึกษาที่จบ'
-        }
-
-        if (
-            currentStudentGroup === 'department' &&
-            currentStudentStatus === 'graduated'
-        ) {
-            return 'รายชื่อนิสิตภาควิชาที่จบ'
-        }
-
-        if (
-            currentStudentGroup === 'faculty' &&
-            currentStudentStatus === 'graduated'
-        ) {
-            return 'รายชื่อนิสิตคณะที่จบ'
-        }
-
         if (currentStudentGroup === 'faculty') {
             return 'รายชื่อนิสิตในคณะ'
         }
@@ -82,42 +82,79 @@ export default function StudentList() {
         }
 
         return 'รายชื่อนิสิตในที่ปรึกษา'
-    }, [currentStudentGroup, currentStudentStatus])
+    }, [currentStudentGroup])
+
+    const getDepartmentIdForSearch = useCallback(() => {
+        if (!isDepartmentListPage) {
+            return undefined
+        }
+
+        if (isTeacher) {
+            return authDepartmentId ?? undefined
+        }
+
+        if (isAdmin) {
+            return selectedDepartmentId
+        }
+
+        return undefined
+    }, [
+        authDepartmentId,
+        isAdmin,
+        isDepartmentListPage,
+        isTeacher,
+        selectedDepartmentId,
+    ])
 
     const loadStudents = useCallback(
         async ({
             noteText,
             searchText,
+            studentStatusId,
         }: {
             noteText?: string
             searchText?: string
+            studentStatusId?: number | null
         } = {}) => {
             try {
                 setLoading(true)
 
-                const teacherId =
+                const teacherIdForSearch =
                     currentStudentGroup === 'advisor'
-                        ? DEFAULT_TEACHER_ID
+                        ? authTeacherId
                         : undefined
 
-                const departmentId =
-                    currentStudentGroup === 'department'
-                        ? DEFAULT_DEPARTMENT_ID
-                        : undefined
+                const departmentId = getDepartmentIdForSearch()
 
                 const facultyId =
                     currentStudentGroup === 'faculty'
-                        ? DEFAULT_FACULTY_ID
+                        ? authFacultyId
                         : undefined
+
+                if (
+                    (currentStudentGroup === 'advisor' && !teacherIdForSearch) ||
+                    (currentStudentGroup === 'department' &&
+                        isTeacher &&
+                        !departmentId) ||
+                    (currentStudentGroup === 'faculty' && !facultyId)
+                ) {
+                    setStudents([])
+                    return
+                }
+
+                const statusIdForSearch =
+                    studentStatusId === null
+                        ? undefined
+                        : studentStatusId ?? selectedStudentStatusId
 
                 const data = await getStudentsByPage(
                     currentStudentGroup,
-                    currentStudentStatus,
-                    teacherId,
+                    teacherIdForSearch,
                     departmentId,
                     facultyId,
                     noteText,
                     searchText,
+                    statusIdForSearch,
                 )
 
                 setStudents(data)
@@ -128,7 +165,14 @@ export default function StudentList() {
                 setLoading(false)
             }
         },
-        [currentStudentGroup, currentStudentStatus],
+        [
+            currentStudentGroup,
+            authFacultyId,
+            authTeacherId,
+            getDepartmentIdForSearch,
+            isTeacher,
+            selectedStudentStatusId,
+        ],
     )
 
     useEffect(() => {
@@ -137,11 +181,31 @@ export default function StudentList() {
         setStudentSearchText('')
         setHasFacultySearched(false)
         setStudents([])
+        setSelectedStudentStatusId(undefined)
 
-        if (!isFacultyListPage) {
-            loadStudents()
+        if (!isDepartmentListPage || isTeacher) {
+            setSelectedDepartmentId(undefined)
         }
-    }, [loadStudents, isFacultyListPage])
+    }, [currentStudentGroup, isDepartmentListPage, isTeacher])
+
+    useEffect(() => {
+        if (isFacultyListPage) {
+            return
+        }
+
+        if (isAdmin && isDepartmentListPage && !selectedDepartmentId) {
+            setStudents([])
+            return
+        }
+
+        loadStudents()
+    }, [
+        isAdmin,
+        isDepartmentListPage,
+        isFacultyListPage,
+        loadStudents,
+        selectedDepartmentId,
+    ])
 
     useEffect(() => {
         if (isFacultyListPage) {
@@ -167,6 +231,47 @@ export default function StudentList() {
         loadNoteTypes()
     }, [isFacultyListPage])
 
+    useEffect(() => {
+        if (isFacultyListPage) {
+            return
+        }
+
+        const loadSearchDropdowns = async () => {
+            try {
+                const [studentStatuses, systemDepartments] =
+                    await Promise.all([
+                        getStudentStatuses(),
+                        isAdmin && isDepartmentListPage
+                            ? getSystemDepartments()
+                            : Promise.resolve([]),
+                    ])
+
+                setStudentStatusOptions(
+                    studentStatuses.map((item: any) => ({
+                        label: item.status_name ?? '-',
+                        value: item.id,
+                    })),
+                )
+
+                setSelectedStudentStatusId(DEFAULT_STUDENT_STATUS)
+
+                if (isAdmin && isDepartmentListPage) {
+                    setDepartmentOptions(
+                        systemDepartments.map((item: any) => ({
+                            label: item.th_name ?? '-',
+                            value: item.id,
+                        })),
+                    )
+                }
+            } catch (error) {
+                console.error(error)
+                message.error('โหลดข้อมูลตัวเลือกค้นหาไม่สำเร็จ')
+            }
+        }
+
+        loadSearchDropdowns()
+    }, [isAdmin, isDepartmentListPage, isFacultyListPage])
+
     const getNoteSearchValue = () => {
         if (!noteSearchType) {
             return undefined
@@ -180,6 +285,11 @@ export default function StudentList() {
     }
 
     const handleSearchNote = () => {
+        if (isAdmin && isDepartmentListPage && !selectedDepartmentId) {
+            message.warning('กรุณาเลือกภาควิชา')
+            return
+        }
+
         loadStudents({
             noteText: getNoteSearchValue(),
         })
@@ -188,7 +298,17 @@ export default function StudentList() {
     const handleClearNoteSearch = () => {
         setNoteSearchType(undefined)
         setNoteSearchText('')
-        loadStudents()
+        setSelectedStudentStatusId(undefined)
+
+        if (isAdmin && isDepartmentListPage) {
+            setSelectedDepartmentId(undefined)
+            setStudents([])
+            return
+        }
+
+        loadStudents({
+            studentStatusId: null,
+        })
     }
 
     const handleSearchStudent = () => {
@@ -210,6 +330,12 @@ export default function StudentList() {
         setStudentSearchText('')
         setHasFacultySearched(false)
         setStudents([])
+
+        if (!isDepartmentListPage || isTeacher) {
+            setSelectedDepartmentId(undefined)
+        }
+
+        setSelectedStudentStatusId(undefined)
     }
 
     const openAddModal = () => {
@@ -374,61 +500,120 @@ export default function StudentList() {
                 <div
                     style={{
                         marginBottom: 16,
-                        padding: 16,
+                        padding: 24,
                         background: '#ffffff',
                         borderRadius: 12,
                         border: '1px solid #f0f0f0',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 16,
-                        flexWrap: 'wrap',
+                        justifyContent: 'center',
                     }}
                 >
-                    <Text strong>ค้นหาด้วย Note</Text>
-
-                    <Space wrap>
-                        <Select
-                            allowClear
-                            showSearch
-                            placeholder="เลือกประเภท Note"
-                            value={noteSearchType}
-                            options={noteTypeOptions}
-                            style={{ width: 240 }}
-                            onChange={(value) => {
-                                setNoteSearchType(value)
-
-                                if (value !== OTHER_NOTE_VALUE) {
-                                    setNoteSearchText('')
-                                }
+                    <div
+                        style={{
+                            width: '100%',
+                            maxWidth: 650,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 16,
+                        }}
+                    >
+                        <div
+                            style={{
+                                textAlign: 'center',
+                                marginBottom: 4,
                             }}
-                        />
+                        >
+                            <Text strong style={{ fontSize: 18 }}>
+                                ค้นหาข้อมูลนิสิต
+                            </Text>
+                        </div>
 
-                        {noteSearchType === OTHER_NOTE_VALUE && (
-                            <Input
-                                allowClear
-                                placeholder="กรอกรายละเอียด Note"
-                                value={noteSearchText}
-                                style={{ width: 300 }}
-                                onChange={(e) =>
-                                    setNoteSearchText(e.target.value)
-                                }
-                                onPressEnter={handleSearchNote}
-                            />
+                        {isAdmin && isDepartmentListPage && (
+                            <div>
+                                <Text strong>ภาควิชา</Text>
+                                <Select
+                                    allowClear
+                                    showSearch
+                                    placeholder="เลือกภาควิชา"
+                                    value={selectedDepartmentId}
+                                    options={departmentOptions}
+                                    style={{ width: '100%', marginTop: 6 }}
+                                    optionFilterProp="label"
+                                    onChange={setSelectedDepartmentId}
+                                />
+                            </div>
                         )}
 
-                        <Button
-                            type="primary"
-                            icon={<SearchOutlined />}
-                            onClick={handleSearchNote}
-                        >
-                            ค้นหา
-                        </Button>
+                        <div>
+                            <Text strong>สถานะนิสิต</Text>
+                            <Select
+                                allowClear
+                                showSearch
+                                placeholder="เลือกสถานะนิสิต"
+                                value={selectedStudentStatusId}
+                                options={studentStatusOptions}
+                                style={{ width: '100%', marginTop: 6 }}
+                                optionFilterProp="label"
+                                onChange={setSelectedStudentStatusId}
+                            />
+                        </div>
 
-                        <Button onClick={handleClearNoteSearch}>
-                            ล้างค่า
-                        </Button>
-                    </Space>
+                        <div>
+                            <Text strong>ประเภท Note</Text>
+                            <Select
+                                allowClear
+                                showSearch
+                                placeholder="เลือกประเภท Note"
+                                value={noteSearchType}
+                                options={noteTypeOptions}
+                                style={{ width: '100%', marginTop: 6 }}
+                                onChange={(value) => {
+                                    setNoteSearchType(value)
+
+                                    if (value !== OTHER_NOTE_VALUE) {
+                                        setNoteSearchText('')
+                                    }
+                                }}
+                            />
+                        </div>
+
+                        {noteSearchType === OTHER_NOTE_VALUE && (
+                            <div>
+                                <Text strong>รายละเอียด Note</Text>
+                                <Input
+                                    allowClear
+                                    placeholder="กรอกรายละเอียด Note"
+                                    value={noteSearchText}
+                                    style={{ width: '100%', marginTop: 6 }}
+                                    onChange={(e) =>
+                                        setNoteSearchText(e.target.value)
+                                    }
+                                    onPressEnter={handleSearchNote}
+                                />
+                            </div>
+                        )}
+
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: 12,
+                                marginTop: 8,
+                            }}
+                        >
+                            <Button
+                                type="primary"
+                                icon={<SearchOutlined />}
+                                onClick={handleSearchNote}
+                            >
+                                ค้นหา
+                            </Button>
+
+                            <Button onClick={handleClearNoteSearch}>
+                                ล้างค่า
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -440,7 +625,6 @@ export default function StudentList() {
                         onEdit={openEditModal}
                         onDelete={handleDelete}
                         studentGroup={currentStudentGroup}
-                        studentStatus={currentStudentStatus}
                     />
                 </div>
             )}

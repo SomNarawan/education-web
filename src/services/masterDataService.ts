@@ -34,3 +34,8 @@ export async function getGuardianRelationships() {
     const response = await api.get('/relationships')
     return response.data.data
 }
+
+export async function getSystemDepartments() {
+    const response = await api.get('/system-departments')
+    return response.data.data
+}

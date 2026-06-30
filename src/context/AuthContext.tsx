@@ -10,6 +10,8 @@ import { message } from 'antd'
 
 type User = {
     id?: number
+    nontriId?: number | string | null
+    teacherId?: number | null
     name?: string
     roles: string[]
     departmentId?: number | null
@@ -20,8 +22,6 @@ type AuthContextType = {
     token: string | null
     user: User | null
     currentRole: string | null
-    departmentId: number | null
-    facultyId: number | null
     loginWithToken: (token: string) => Promise<void>
     logout: () => void
     setCurrentRole: (role: string) => void
@@ -36,20 +36,13 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         return localStorage.getItem('auth_token')
     })
 
-    const [user, setUser] = useState<User | null>(null)
+    const [user, setUser] = useState<User | null>(() => {
+        const storedUser = localStorage.getItem('auth_user')
+        return storedUser ? JSON.parse(storedUser) : null
+    })
 
     const [currentRole, setCurrentRoleState] = useState<string | null>(() => {
         return localStorage.getItem('current_role')
-    })
-
-    const [departmentId, setDepartmentId] = useState<number | null>(() => {
-        const value = localStorage.getItem('department_id')
-        return value ? Number(value) : null
-    })
-
-    const [facultyId, setFacultyId] = useState<number | null>(() => {
-        const value = localStorage.getItem('faculty_id')
-        return value ? Number(value) : null
     })
 
     const fetchingRef = useRef(false)
@@ -61,61 +54,34 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         fetchingRef.current = true
         setAuthToken(token)
 
-        api
-            .get('/me')
+        api.get('/me')
             .then((res) => {
                 if (cancelled) return
 
                 const payload = res.data?.data ?? res.data
 
-                const roles = payload.role ?? payload.roles ?? []
-                const id = payload.nontri_id ?? payload.id
+                const roles = payload.role ?? []
+                const id = payload.id ?? payload.nontri_id
+                const nontriId = payload.nontri_id ?? null
+                const teacherId = payload.teacher_id ?? null
                 const name = payload.name
 
-                const departmentIdFromPayload =
-                    payload.department_id ??
-                    payload.departmentId ??
-                    payload.department?.id ??
-                    null
+                const departmentId = payload.department_id ?? null
 
-                const facultyIdFromPayload =
-                    payload.faculty_id ??
-                    payload.facultyId ??
-                    payload.faculty?.id ??
-                    payload.department?.faculty_id ??
-                    payload.department?.facultyId ??
-                    payload.department?.faculty?.id ??
-                    null
+                const facultyId = payload.faculty_id ?? null
 
-                setUser({
-                    roles,
+                const authUser: User = {
                     id,
+                    nontriId,
+                    teacherId: teacherId ? Number(teacherId) : null,
                     name,
-                    departmentId: departmentIdFromPayload,
-                    facultyId: facultyIdFromPayload,
-                })
-
-                if (departmentIdFromPayload) {
-                    setDepartmentId(Number(departmentIdFromPayload))
-                    localStorage.setItem(
-                        'department_id',
-                        String(departmentIdFromPayload),
-                    )
-                } else {
-                    setDepartmentId(null)
-                    localStorage.removeItem('department_id')
+                    roles,
+                    departmentId: departmentId ? Number(departmentId) : null,
+                    facultyId: facultyId ? Number(facultyId) : null,
                 }
 
-                if (facultyIdFromPayload) {
-                    setFacultyId(Number(facultyIdFromPayload))
-                    localStorage.setItem(
-                        'faculty_id',
-                        String(facultyIdFromPayload),
-                    )
-                } else {
-                    setFacultyId(null)
-                    localStorage.removeItem('faculty_id')
-                }
+                setUser(authUser)
+                localStorage.setItem('auth_user', JSON.stringify(authUser))
 
                 const roleToSet =
                     payload.current_role ??
@@ -138,13 +104,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
                 setToken(null)
                 setUser(null)
                 setCurrentRoleState(null)
-                setDepartmentId(null)
-                setFacultyId(null)
 
                 localStorage.removeItem('auth_token')
+                localStorage.removeItem('auth_user')
                 localStorage.removeItem('current_role')
-                localStorage.removeItem('department_id')
-                localStorage.removeItem('faculty_id')
 
                 setAuthToken(null)
             })
@@ -168,13 +131,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         setToken(null)
         setUser(null)
         setCurrentRoleState(null)
-        setDepartmentId(null)
-        setFacultyId(null)
 
         localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
         localStorage.removeItem('current_role')
-        localStorage.removeItem('department_id')
-        localStorage.removeItem('faculty_id')
 
         setAuthToken(null)
     }
@@ -190,8 +150,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
                 token,
                 user,
                 currentRole,
-                departmentId,
-                facultyId,
                 loginWithToken,
                 logout,
                 setCurrentRole,
