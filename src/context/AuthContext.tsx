@@ -1,4 +1,5 @@
 import React, {
+    useCallback,
     createContext,
     useContext,
     useEffect,
@@ -83,11 +84,17 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
                 setUser(authUser)
                 localStorage.setItem('auth_user', JSON.stringify(authUser))
 
+                const storedRole = localStorage.getItem('current_role')
+                const responseRole = payload.current_role
+
                 const roleToSet =
-                    payload.current_role ??
-                    payload.currentRole ??
-                    payload.currenct_role ??
-                    payload.currenctRole ??
+                    (storedRole && roles.includes(storedRole)
+                        ? storedRole
+                        : null) ??
+                    (roles.includes('admin') ? 'admin' : null) ??
+                    (responseRole && roles.includes(responseRole)
+                        ? responseRole
+                        : null) ??
                     roles[0]
 
                 if (roleToSet) {
@@ -121,13 +128,18 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         }
     }, [token])
 
-    const loginWithToken = async (t: string) => {
+    const loginWithToken = useCallback(async (t: string) => {
+        setUser(null)
+        setCurrentRoleState(null)
+        localStorage.removeItem('auth_user')
+        localStorage.removeItem('current_role')
+
         setToken(t)
         localStorage.setItem('auth_token', t)
         setAuthToken(t)
-    }
+    }, [])
 
-    const logout = () => {
+    const logout = useCallback(() => {
         setToken(null)
         setUser(null)
         setCurrentRoleState(null)
@@ -137,12 +149,12 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         localStorage.removeItem('current_role')
 
         setAuthToken(null)
-    }
+    }, [])
 
-    const setCurrentRole = (role: string) => {
+    const setCurrentRole = useCallback((role: string) => {
         setCurrentRoleState(role)
         localStorage.setItem('current_role', role)
-    }
+    }, [])
 
     return (
         <AuthContext.Provider

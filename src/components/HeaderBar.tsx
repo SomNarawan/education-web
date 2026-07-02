@@ -1,12 +1,24 @@
 import { Avatar, Dropdown, Space } from 'antd'
 import { UserOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import kuLogo from '../assets/newLogoUniversity1.png'
 import { useAuth } from '../context/AuthContext'
 
 export default function HeaderBar() {
+    const navigate = useNavigate()
     const { user, currentRole, setCurrentRole, logout } = useAuth()
 
     const roleOptions = user?.roles ?? []
+
+    const handleRoleChange = (role: string) => {
+        setCurrentRole(role)
+        navigate(
+            role === 'admin'
+                ? '/students/department'
+                : '/students/advisor',
+            { replace: true },
+        )
+    }
 
     const roleItems = roleOptions.map((r) => ({
         key: `role-${r}`,
@@ -16,7 +28,7 @@ export default function HeaderBar() {
                 {currentRole === r ? <span style={{ color: '#1890ff' }}>✓</span> : null}
             </div>
         ),
-        onClick: () => setCurrentRole(r),
+        onClick: () => handleRoleChange(r),
     }))
 
     const items: any[] = [

@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom'
+import { Spin } from 'antd'
 import { useAuth } from '../context/AuthContext'
 
 export default function RoleRedirect() {
@@ -7,6 +8,21 @@ export default function RoleRedirect() {
     // ยังไม่ login
     if (!token) {
         return <Navigate to="/auth/callback" replace />
+    }
+
+    // รอให้ /me โหลดข้อมูลและกำหนด role ก่อน redirect
+    if (!currentRole) {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: 60,
+                }}
+            >
+                <Spin size="large" />
+            </div>
+        )
     }
 
     // teacher
@@ -19,6 +35,6 @@ export default function RoleRedirect() {
         return <Navigate to="/students/department" replace />
     }
 
-    // fallback
-    return <Navigate to="/students/advisor" replace />
+    // role ที่ระบบไม่รองรับ
+    return null
 }
