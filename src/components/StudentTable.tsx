@@ -20,6 +20,7 @@ interface StudentTableProps {
     onEdit: (id: number) => void
     onDelete: (id: number) => void
     studentGroup?: string
+    canManage?: boolean
 }
 
 export default function StudentTable({
@@ -28,6 +29,7 @@ export default function StudentTable({
     onEdit,
     onDelete,
     studentGroup,
+    canManage = false,
 }: StudentTableProps) {
     const navigate = useNavigate()
     const location = useLocation()
@@ -36,7 +38,7 @@ export default function StudentTable({
     const [notes, setNotes] = useState<NoteListResponse[]>([])
     const [loadingNotes, setLoadingNotes] = useState(false)
 
-    const isDepartmentPage = studentGroup === 'department'
+    const isAdvisorPage = studentGroup === 'advisor'
 
     const handleOpenNotes = async (studentId: number) => {
         try {
@@ -88,7 +90,7 @@ export default function StudentTable({
             render: (value) => value || '-',
         },
 
-        ...(isDepartmentPage ? [advisorColumn] : []),
+        ...(!isAdvisorPage ? [advisorColumn] : []),
 
         {
             title: 'ประเภทหลักสูตร',
@@ -153,23 +155,27 @@ export default function StudentTable({
                         }
                     />
 
-                    <Button
-                        icon={<EditOutlined />}
-                        style={{
-                            borderColor: '#faad14',
-                            color: '#faad14',
-                        }}
-                        onClick={() => onEdit(record.id)}
-                    />
+                    {canManage && (
+                        <>
+                            <Button
+                                icon={<EditOutlined />}
+                                style={{
+                                    borderColor: '#faad14',
+                                    color: '#faad14',
+                                }}
+                                onClick={() => onEdit(record.id)}
+                            />
 
-                    <Popconfirm
-                        title="ยืนยันการลบข้อมูลนิสิต?"
-                        okText="ลบ"
-                        cancelText="ยกเลิก"
-                        onConfirm={() => onDelete(record.id)}
-                    >
-                        <Button danger icon={<DeleteOutlined />} />
-                    </Popconfirm>
+                            <Popconfirm
+                                title="ยืนยันการลบข้อมูลนิสิต?"
+                                okText="ลบ"
+                                cancelText="ยกเลิก"
+                                onConfirm={() => onDelete(record.id)}
+                            >
+                                <Button danger icon={<DeleteOutlined />} />
+                            </Popconfirm>
+                        </>
+                    )}
                 </Space>
             ),
         },

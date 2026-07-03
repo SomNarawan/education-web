@@ -6,7 +6,7 @@ import React, {
     useState,
     useRef,
 } from 'react'
-import api, { setAuthToken } from '../config/axios'
+import api from '../config/axios'
 import { message } from 'antd'
 
 type User = {
@@ -53,7 +53,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
 
         let cancelled = false
         fetchingRef.current = true
-        setAuthToken(token)
 
         api.get('/me')
             .then((res) => {
@@ -115,8 +114,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
                 localStorage.removeItem('auth_token')
                 localStorage.removeItem('auth_user')
                 localStorage.removeItem('current_role')
-
-                setAuthToken(null)
             })
             .finally(() => {
                 fetchingRef.current = false
@@ -136,7 +133,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
 
         setToken(t)
         localStorage.setItem('auth_token', t)
-        setAuthToken(t)
     }, [])
 
     const logout = useCallback(() => {
@@ -147,8 +143,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         localStorage.removeItem('auth_token')
         localStorage.removeItem('auth_user')
         localStorage.removeItem('current_role')
-
-        setAuthToken(null)
     }, [])
 
     const setCurrentRole = useCallback((role: string) => {

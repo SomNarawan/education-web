@@ -61,7 +61,7 @@ export default function StudentList() {
     >(undefined)
     const [selectedStudentStatusId, setSelectedStudentStatusId] = useState<
         number | undefined
-    >(undefined)
+    >(DEFAULT_STUDENT_STATUS)
 
     const [studentSearchText, setStudentSearchText] = useState('')
     const [hasFacultySearched, setHasFacultySearched] = useState(false)
@@ -84,37 +84,17 @@ export default function StudentList() {
         return 'รายชื่อนิสิตในที่ปรึกษา'
     }, [currentStudentGroup])
 
-    const getDepartmentIdForSearch = useCallback(() => {
-        if (!isDepartmentListPage) {
-            return undefined
-        }
-
-        if (isTeacher) {
-            return authDepartmentId ?? undefined
-        }
-
-        if (isAdmin) {
-            return selectedDepartmentId
-        }
-
-        return undefined
-    }, [
-        authDepartmentId,
-        isAdmin,
-        isDepartmentListPage,
-        isTeacher,
-        selectedDepartmentId,
-    ])
-
     const loadStudents = useCallback(
         async ({
             noteText,
             searchText,
             studentStatusId,
+            departmentId: selectedDepartmentIdForSearch,
         }: {
             noteText?: string
             searchText?: string
             studentStatusId?: number | null
+            departmentId?: number
         } = {}) => {
             try {
                 setLoading(true)
@@ -124,7 +104,11 @@ export default function StudentList() {
                         ? authTeacherId
                         : undefined
 
-                const departmentId = getDepartmentIdForSearch()
+                const departmentId = isDepartmentListPage
+                    ? isTeacher
+                        ? authDepartmentId
+                        : selectedDepartmentIdForSearch
+                    : undefined
 
                 const facultyId =
                     currentStudentGroup === 'faculty'
@@ -145,7 +129,7 @@ export default function StudentList() {
                 const statusIdForSearch =
                     studentStatusId === null
                         ? undefined
-                        : studentStatusId ?? selectedStudentStatusId
+                        : studentStatusId
 
                 const data = await getStudentsByPage(
                     currentStudentGroup,
@@ -169,9 +153,9 @@ export default function StudentList() {
             currentStudentGroup,
             authFacultyId,
             authTeacherId,
-            getDepartmentIdForSearch,
+            authDepartmentId,
+            isDepartmentListPage,
             isTeacher,
-            selectedStudentStatusId,
         ],
     )
 
@@ -181,7 +165,7 @@ export default function StudentList() {
         setStudentSearchText('')
         setHasFacultySearched(false)
         setStudents([])
-        setSelectedStudentStatusId(undefined)
+        setSelectedStudentStatusId(DEFAULT_STUDENT_STATUS)
 
         if (!isDepartmentListPage || isTeacher) {
             setSelectedDepartmentId(undefined)
@@ -193,18 +177,19 @@ export default function StudentList() {
             return
         }
 
-        if (isAdmin && isDepartmentListPage && !selectedDepartmentId) {
+        if (isAdmin && isDepartmentListPage) {
             setStudents([])
             return
         }
 
-        loadStudents()
+        loadStudents({
+            studentStatusId: DEFAULT_STUDENT_STATUS,
+        })
     }, [
         isAdmin,
         isDepartmentListPage,
         isFacultyListPage,
         loadStudents,
-        selectedDepartmentId,
     ])
 
     useEffect(() => {
@@ -253,8 +238,6 @@ export default function StudentList() {
                     })),
                 )
 
-                setSelectedStudentStatusId(DEFAULT_STUDENT_STATUS)
-
                 if (isAdmin && isDepartmentListPage) {
                     setDepartmentOptions(
                         systemDepartments.map((item: any) => ({
@@ -292,6 +275,8 @@ export default function StudentList() {
 
         loadStudents({
             noteText: getNoteSearchValue(),
+            studentStatusId: selectedStudentStatusId,
+            departmentId: selectedDepartmentId,
         })
     }
 
@@ -339,11 +324,21 @@ export default function StudentList() {
     }
 
     const openAddModal = () => {
+        if (!isAdmin) {
+            message.warning('เฉพาะผู้ดูแลระบบเท่านั้นที่เพิ่มข้อมูลนิสิตได้')
+            return
+        }
+
         setEditingStudent(null)
         setIsModalOpen(true)
     }
 
     const openEditModal = async (id: number) => {
+        if (!isAdmin) {
+            message.warning('เฉพาะผู้ดูแลระบบเท่านั้นที่แก้ไขข้อมูลนิสิตได้')
+            return
+        }
+
         try {
             setDropdownLoading(true)
 
@@ -365,6 +360,11 @@ export default function StudentList() {
     }
 
     const handleSave = async (values: StudentFormValues) => {
+        if (!isAdmin) {
+            message.warning('เฉพาะผู้ดูแลระบบเท่านั้นที่บันทึกข้อมูลนิสิตได้')
+            return
+        }
+
         try {
             setDropdownLoading(true)
 
@@ -391,6 +391,8 @@ export default function StudentList() {
 
             await loadStudents({
                 noteText: getNoteSearchValue(),
+                studentStatusId: selectedStudentStatusId,
+                departmentId: selectedDepartmentId,
             })
         } catch (error) {
             console.error(error)
@@ -405,6 +407,11 @@ export default function StudentList() {
     }
 
     const handleDelete = async (id: number) => {
+        if (!isAdmin) {
+            message.warning('เฉพาะผู้ดูแลระบบเท่านั้นที่ลบข้อมูลนิสิตได้')
+            return
+        }
+
         try {
             setDropdownLoading(true)
             await deleteStudent(id)
@@ -426,13 +433,15 @@ export default function StudentList() {
                     <p>จัดการข้อมูลนิสิต และดูรายละเอียด</p>
                 </div>
 
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={openAddModal}
-                >
-                    เพิ่มนิสิต
-                </Button>
+                {isAdmin && (
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={openAddModal}
+                    >
+                        เพิ่มนิสิต
+                    </Button>
+                )}
             </div>
 
             {isFacultyListPage ? (
@@ -625,17 +634,20 @@ export default function StudentList() {
                         onEdit={openEditModal}
                         onDelete={handleDelete}
                         studentGroup={currentStudentGroup}
+                        canManage={isAdmin}
                     />
                 </div>
             )}
 
-            <StudentFormModal
-                open={isModalOpen}
-                loading={dropdownLoading}
-                editingStudent={editingStudent}
-                onCancel={closeModal}
-                onSave={handleSave}
-            />
+            {isAdmin && (
+                <StudentFormModal
+                    open={isModalOpen}
+                    loading={dropdownLoading}
+                    editingStudent={editingStudent}
+                    onCancel={closeModal}
+                    onSave={handleSave}
+                />
+            )}
         </div>
     )
 }
