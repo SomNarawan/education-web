@@ -4,5 +4,7 @@ export interface NoteListResponse {
     note: string
     remark: string | null
     created_at: string
+    created_by: string
     deleted_at: string | null
+    deleted_by: string | null
 }

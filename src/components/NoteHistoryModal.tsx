@@ -55,6 +55,14 @@ export default function NoteHistoryModal({
             ),
         },
         {
+            title: 'สร้างโดย',
+            dataIndex: 'created_by',
+            width: 140,
+            render: (value, record) => (
+                <Text delete={!!record.deleted_at}>{value || '-'}</Text>
+            ),
+        },
+        {
             title: 'วันที่ลบ',
             dataIndex: 'deleted_at',
             width: 180,
@@ -62,6 +70,14 @@ export default function NoteHistoryModal({
                 <Text delete={!!record.deleted_at}>
                     {formatDate(value)}
                 </Text>
+            ),
+        },
+        {
+            title: 'ลบโดย',
+            dataIndex: 'deleted_by',
+            width: 140,
+            render: (value, record) => (
+                <Text delete={!!record.deleted_by}>{value || '-'}</Text>
             ),
         },
     ]
@@ -97,7 +113,7 @@ export default function NoteHistoryModal({
             open={open}
             onCancel={onClose}
             footer={null}
-            width={800}
+            width={1080}
         >
             <Table
                 rowKey="id"
