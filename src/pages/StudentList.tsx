@@ -61,7 +61,7 @@ export default function StudentList() {
     >(undefined)
     const [selectedStudentStatusId, setSelectedStudentStatusId] = useState<
         number | undefined
-    >(DEFAULT_STUDENT_STATUS)
+    >(undefined)
 
     const [studentSearchText, setStudentSearchText] = useState('')
     const [hasFacultySearched, setHasFacultySearched] = useState(false)
@@ -165,7 +165,7 @@ export default function StudentList() {
         setStudentSearchText('')
         setHasFacultySearched(false)
         setStudents([])
-        setSelectedStudentStatusId(DEFAULT_STUDENT_STATUS)
+        setSelectedStudentStatusId(undefined)
 
         if (!isDepartmentListPage || isTeacher) {
             setSelectedDepartmentId(undefined)
@@ -237,6 +237,7 @@ export default function StudentList() {
                         value: item.id,
                     })),
                 )
+                setSelectedStudentStatusId(DEFAULT_STUDENT_STATUS)
 
                 if (isAdmin && isDepartmentListPage) {
                     setDepartmentOptions(
