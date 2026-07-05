@@ -1,5 +1,9 @@
 import React from 'react'
-import { DatabaseOutlined, TeamOutlined } from '@ant-design/icons'
+import {
+    DatabaseOutlined,
+    SyncOutlined,
+    TeamOutlined,
+} from '@ant-design/icons'
 import { Menu } from 'antd'
 import type { MenuProps } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -50,6 +54,12 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             label: 'รายชื่อนิสิตในคณะ',
             allowedRoles: ['teacher', 'admin'],
         },
+        {
+            key: '/sync',
+            icon: <SyncOutlined />,
+            label: 'ซิงค์ข้อมูล',
+            allowedRoles: ['admin'],
+        },
     ]
 
     const items: MenuProps['items'] = menuItems
@@ -57,7 +67,7 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             if (!currentRole) return false
             return item.allowedRoles.includes(currentRole)
         })
-        .map(({ allowedRoles, ...item }) => item)
+        .map(({ key, icon, label }) => ({ key, icon, label }))
 
     return (
         <>

@@ -5,6 +5,8 @@ import StudentDetail from './pages/StudentDetail'
 import AuthCallback from './pages/AuthCallback'
 import RoleRedirect from './components/RoleRedirect'
 import StudentRouteGuard from './components/StudentRouteGuard'
+import ProtectedRoute from './components/ProtectedRoute'
+import SyncData from './pages/SyncData'
 
 export default function App() {
     return (
@@ -39,6 +41,15 @@ export default function App() {
                             <StudentRouteGuard>
                                 <StudentDetail />
                             </StudentRouteGuard>
+                        }
+                    />
+
+                    <Route
+                        path="sync"
+                        element={
+                            <ProtectedRoute allowedRoles={['admin']}>
+                                <SyncData />
+                            </ProtectedRoute>
                         }
                     />
                 </Route>
