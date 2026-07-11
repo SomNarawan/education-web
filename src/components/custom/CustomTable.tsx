@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Input, Space, Table } from 'antd'
 import type { TableProps } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnsType, ColumnType } from 'antd/es/table'
 
 const { Search } = Input
 
@@ -28,6 +29,42 @@ function getSearchText(value: unknown): string {
     }
 
     return ''
+}
+
+function formatEmptyCell(value: unknown): ReactNode {
+    if (value === null || value === undefined) {
+        return '-'
+    }
+
+    if (typeof value === 'string' && value.trim() === '') {
+        return '-'
+    }
+
+    return value as ReactNode
+}
+
+function addEmptyCellFallback<T>(columns: ColumnsType<T>): ColumnsType<T> {
+    return columns.map((column) => {
+        if ('children' in column && column.children) {
+            return {
+                ...column,
+                children: addEmptyCellFallback(column.children),
+            }
+        }
+
+        if ('render' in column && column.render) {
+            return column
+        }
+
+        if (!('dataIndex' in column) || column.dataIndex === undefined) {
+            return column
+        }
+
+        return {
+            ...column,
+            render: formatEmptyCell,
+        } as ColumnType<T>
+    })
 }
 
 export default function CustomTable<T extends object>({
@@ -59,9 +96,11 @@ export default function CustomTable<T extends object>({
         render: (_, __, index) => index + 1,
     }
 
+    const columnsWithFallback = addEmptyCellFallback(columns as ColumnsType<T>)
+
     const customColumns: ColumnsType<T> = showNo
-        ? [noColumn, ...(columns as ColumnsType<T>)]
-        : (columns as ColumnsType<T>)
+        ? [noColumn, ...columnsWithFallback]
+        : columnsWithFallback
 
     return (
         <Space orientation="vertical" size="middle" style={{ width: '100%' }}>

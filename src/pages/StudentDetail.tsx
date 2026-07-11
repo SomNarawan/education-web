@@ -10,7 +10,7 @@ import {
 } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
 import { FileTextOutlined } from '@ant-design/icons'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import type { StudentDetailResponse } from '../types/StudentDetailResponse'
@@ -19,6 +19,8 @@ import { getStudentDetail } from '../services/studentService'
 import { createNote, getNotes, deleteNote } from '../services/noteService'
 import { getNoteTypes } from '../services/noteTypeService'
 import NoteHistoryModal from '../components/NoteHistoryModal'
+import StudentFailedPlannedCoursesSection from '../components/StudentFailedPlannedCoursesSection'
+import StudentCurriculumDetailSection from '../components/StudentCurriculumDetailSection'
 
 const { Text } = Typography
 interface NoteType {
@@ -62,27 +64,23 @@ export default function StudentDetail() {
     const [notes, setNotes] = useState<NoteListResponse[]>([])
     const [loadingNotes, setLoadingNotes] = useState(false)
 
-    useEffect(() => {
-        loadStudent()
-        loadNoteTypes()
-    }, [id])
-
     const selectedNoteType = noteTypes.find(
         (noteType) => noteType.id === noteTypeId
     )
 
     const isOtherNoteType = selectedNoteType?.note === 'อื่นๆ'
 
-    const loadNoteTypes = async () => {
+    const loadNoteTypes = useCallback(async () => {
         try {
             const data = await getNoteTypes()
             setNoteTypes(data)
         } catch (error) {
+            console.error(error)
             message.error('โหลดประเภท Note ไม่สำเร็จ')
         }
-    }
+    }, [])
 
-    const loadStudent = async () => {
+    const loadStudent = useCallback(async () => {
         try {
             setLoading(true)
 
@@ -97,12 +95,19 @@ export default function StudentDetail() {
             const student = await getStudentDetail(studentId)
             setStudent(student)
         } catch (error) {
+            console.error(error)
             message.error('โหลดข้อมูลนิสิตไม่สำเร็จ')
             setStudent(null)
         } finally {
             setLoading(false)
         }
-    }
+    }, [id])
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        loadStudent()
+        loadNoteTypes()
+    }, [loadNoteTypes, loadStudent])
 
     const loadNotes = async (studentId: number) => {
         const data = await getNotes(studentId)
@@ -121,6 +126,7 @@ export default function StudentDetail() {
 
             await loadNotes(student.id)
         } catch (error) {
+            console.error(error)
             message.error('โหลดประวัติ Note ไม่สำเร็จ')
         } finally {
             setLoadingNotes(false)
@@ -160,6 +166,7 @@ export default function StudentDetail() {
                 await loadNotes(student.id)
             }
         } catch (error) {
+            console.error(error)
             message.error('บันทึก Note ไม่สำเร็จ')
         } finally {
             setSavingNote(false)
@@ -176,6 +183,7 @@ export default function StudentDetail() {
                 await loadNotes(student.id)
             }
         } catch (error) {
+            console.error(error)
             message.error('ลบ Note ไม่สำเร็จ')
         }
     }
@@ -378,6 +386,18 @@ export default function StudentDetail() {
                                         </Row>
                                     )}
                                 </Card>
+                            </Col>
+
+                            <Col xs={24}>
+                                <StudentFailedPlannedCoursesSection
+                                    studentCode={student.student_code}
+                                />
+                            </Col>
+
+                            <Col xs={24}>
+                                <StudentCurriculumDetailSection
+                                    studentCode={student.student_code}
+                                />
                             </Col>
                         </Row>
 

@@ -127,6 +127,33 @@ body {
     background: #f8fbff !important;
 }
 
+.failed-planned-courses-table .ant-table-thead>tr>th {
+    background: #7cc9e8 !important;
+    color: #000000;
+    text-align: center;
+}
+
+.failed-planned-courses-table .ant-table-tbody>tr:nth-child(odd)>td {
+    background: #eeeeee;
+}
+
+.failed-planned-courses-table .ant-table-summary>tr>td {
+    background: #ffffff;
+    text-align: center;
+}
+
+.failed-planned-courses-table .ant-table-summary>tr>td:first-child {
+    background: #7cc9e8;
+}
+
+.course-result-name-cell {
+    display: block;
+    max-width: 260px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+}
+
 .form-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

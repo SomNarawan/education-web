@@ -1,4 +1,6 @@
 import api from '../config/axios'
+import type { ApiResponse } from '../types/ApiResponse'
+import type { CurriculumDivisionCategory } from '../types/CurriculumDetail'
 
 export async function getTitles() {
     const response = await api.get('/titles')
@@ -37,5 +39,15 @@ export async function getGuardianRelationships() {
 
 export async function getSystemDepartments() {
     const response = await api.get('/system-departments')
+    return response.data.data
+}
+
+export async function getCurriculumDivisionCategories(): Promise<
+    CurriculumDivisionCategory[]
+> {
+    const response = await api.get<
+        ApiResponse<CurriculumDivisionCategory[]>
+    >('/curriculum-division-categories')
+
     return response.data.data
 }
