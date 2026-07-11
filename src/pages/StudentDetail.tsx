@@ -299,7 +299,7 @@ export default function StudentDetail() {
                                             <DetailItem
                                                 label="แผนการเรียน"
                                                 value={
-                                                    student.study_plan_name
+                                                    student.curriculum_plan_name
                                                 }
                                             />
                                         </Col>

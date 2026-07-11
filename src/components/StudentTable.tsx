@@ -97,7 +97,7 @@ export default function StudentTable({
             width: 260,
             render: (_, record) => {
                 const degree = record.curriculum_type || '-'
-                const planName = record.study_plan_name || '-'
+                const planName = record.curriculum_plan_name || '-'
 
                 return (
                     <div>

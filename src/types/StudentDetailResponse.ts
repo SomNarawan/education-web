@@ -41,7 +41,7 @@ export interface StudentDetailResponse {
 
     study_plan_id: number
     curriculum_type: string
-    study_plan_name: string
+    curriculum_plan_name: string
     department_name: string
     faculty_name: string
 

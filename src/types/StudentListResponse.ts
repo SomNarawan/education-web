@@ -7,7 +7,7 @@ export interface StudentListResponse {
     teacher_full_name_th: string
 
     curriculum_type: string
-    study_plan_name: string
+    curriculum_plan_name: string
 
     required_credits: number
     passed_credits: number
