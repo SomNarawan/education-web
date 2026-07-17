@@ -71,36 +71,48 @@ const columns: ColumnsType<CurriculumCourseRow> = [
 ]
 
 function buildRows(courses: CurriculumCourse[]): CurriculumCourseRow[] {
-    return courses.flatMap((course, courseIndex) => {
+    return courses.map((course, courseIndex) => {
         if (course.enrollments.length === 0) {
-            return [
-                {
-                    key: `${courseIndex}-planned`,
-                    study_year: course.plan_study_year,
-                    semester: course.plan_semester,
-                    semester_order: course.plan_semester_order,
-                    course_code: course.course_code,
-                    course_name: course.course_name,
-                    course_group: course.course_group,
-                    curriculum_division: course.curriculum_division,
-                    grade_letter: null,
-                    credit: course.credit,
-                },
-            ]
+            return {
+                key: `${courseIndex}-planned`,
+                study_year: course.plan_study_year,
+                semester: course.plan_semester,
+                semester_order: course.plan_semester_order,
+                course_code: course.course_code,
+                course_name: course.course_name,
+                course_group: course.course_group,
+                curriculum_division: course.curriculum_division,
+                grade_letter: null,
+                credit: course.credit,
+            }
         }
 
-        return course.enrollments.map((enrollment, enrollmentIndex) => ({
-            key: `${courseIndex}-${enrollmentIndex}`,
-            study_year: enrollment.study_year,
-            semester: enrollment.semester,
-            semester_order: enrollment.semester_order,
-            course_code: enrollment.actual_course_code || course.course_code,
+        const enrollments = [...course.enrollments].sort((a, b) => {
+            if (a.study_year !== b.study_year) {
+                return a.study_year - b.study_year
+            }
+
+            return a.semester_order - b.semester_order
+        })
+        const latestEnrollment = enrollments[enrollments.length - 1]
+        const gradeLetters = enrollments
+            .map((enrollment) => enrollment.grade_letter)
+            .filter((grade): grade is string => Boolean(grade))
+
+        return {
+            key: `${courseIndex}-enrolled`,
+            study_year: latestEnrollment.study_year,
+            semester: latestEnrollment.semester,
+            semester_order: latestEnrollment.semester_order,
+            course_code:
+                latestEnrollment.actual_course_code || course.course_code,
             course_name: course.course_name,
             course_group: course.course_group,
             curriculum_division: course.curriculum_division,
-            grade_letter: enrollment.grade_letter,
+            grade_letter:
+                gradeLetters.length > 0 ? gradeLetters.join(',') : null,
             credit: course.credit,
-        }))
+        }
     })
 }
 
@@ -189,8 +201,7 @@ export default function StudentCurriculumDetailSection({
                         columns={columns}
                         dataSource={allRows.filter(
                             (row) =>
-                                row.curriculum_division === category.name_th ||
-                                row.course_group === category.name_th,
+                                row.curriculum_division === category.name_th,
                         )}
                         loading={loadingCourses}
                         searchPlaceholder="ค้นหารายวิชา..."
