@@ -222,6 +222,10 @@ export default function StudentDetail() {
                                                 value={`${student.entry_year}/${student.entry_year_be}`}
                                             />
                                             <DetailItem
+                                                label="ชั้นปี"
+                                                value={student.study_period}
+                                            />
+                                            <DetailItem
                                                 label="อาจารย์ที่ปรึกษา"
                                                 value={
                                                     student.teacher_full_name_th

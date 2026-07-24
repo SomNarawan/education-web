@@ -362,7 +362,6 @@ export default function StudentSemesterPerformanceSection({
                 title: 'ชั้นปี',
                 dataIndex: 'study_year',
                 key: 'study_year',
-                width: 130,
                 sorter: (a, b) => a.study_year - b.study_year,
                 render: (value: number) => `ชั้นปี ${value}`,
             },
@@ -370,21 +369,18 @@ export default function StudentSemesterPerformanceSection({
                 title: 'ภาคการศึกษา',
                 dataIndex: 'semester',
                 key: 'semester',
-                width: 150,
                 align: 'center',
             },
             {
                 title: 'หน่วยกิต',
                 dataIndex: 'credits',
                 key: 'credits',
-                width: 110,
                 align: 'center',
             },
             {
                 title: 'GPA',
                 dataIndex: 'gpa',
                 key: 'gpa',
-                width: 100,
                 align: 'center',
                 render: (value: number) => formatDecimal(value),
             },
@@ -392,7 +388,6 @@ export default function StudentSemesterPerformanceSection({
                 title: 'GPAX',
                 dataIndex: 'gpax',
                 key: 'gpax',
-                width: 100,
                 align: 'center',
                 render: (value: number) => formatDecimal(value),
             },
@@ -400,7 +395,6 @@ export default function StudentSemesterPerformanceSection({
                 title: '+-GPAX',
                 dataIndex: 'diff_gpax',
                 key: 'diff_gpax',
-                width: 110,
                 align: 'center',
                 render: (value: string | number) => {
                     const numericValue = Number(value)
@@ -419,7 +413,6 @@ export default function StudentSemesterPerformanceSection({
             {
                 title: 'รายละเอียด',
                 key: 'detail',
-                width: 110,
                 align: 'center',
                 render: (_, record) => (
                     <Button
@@ -465,20 +458,17 @@ export default function StudentSemesterPerformanceSection({
             loading={loading}
         >
             <Row gutter={[24, 16]} align="top">
-                <Col xs={24}>
+                <Col xs={24} xl={12}>
                     <StudentSemesterChart rows={rows} />
                 </Col>
-            </Row>
-
-            <Row style={{ marginTop: 16 }}>
-                <Col xs={24}>
+                <Col xs={24} xl={12}>
                     <Table<StudentSemesterPerformanceRow>
                         className="semester-performance-table"
                         rowKey="key"
                         columns={columns}
                         dataSource={rows}
                         pagination={false}
-                        scroll={{ x: 780 }}
+                        tableLayout="fixed"
                     />
                 </Col>
             </Row>

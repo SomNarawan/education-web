@@ -17,6 +17,9 @@ export interface StudentDetailResponse {
 
     entry_year: number
     entry_year_be: number
+    study_year: number
+    study_semester: number
+    study_period: string
 
     current_year: number
     current_semester: number
