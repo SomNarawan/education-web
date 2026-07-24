@@ -115,14 +115,18 @@ export default function CustomTable<T extends object>({
                 {...props}
                 columns={customColumns}
                 dataSource={filteredData}
-                pagination={{
-                    defaultPageSize: 10,
-                    showSizeChanger: true,
-                    pageSizeOptions: ['10', '20', '50', '100'],
-                    showTotal: (total) =>
-                        `จำนวนรายการทั้งหมด ${total} รายการ`,
-                    ...pagination,
-                }}
+                pagination={
+                    pagination === false
+                        ? false
+                        : {
+                              defaultPageSize: 10,
+                              showSizeChanger: true,
+                              pageSizeOptions: ['10', '20', '50', '100'],
+                              showTotal: (total) =>
+                                  `จำนวนรายการทั้งหมด ${total} รายการ`,
+                              ...pagination,
+                          }
+                }
             />
         </Space>
     )

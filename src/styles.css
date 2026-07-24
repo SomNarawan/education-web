@@ -127,6 +127,38 @@ body {
     background: #f8fbff !important;
 }
 
+.failed-planned-courses-table .ant-table,
+.curriculum-detail-table .ant-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.failed-planned-courses-table .ant-table-cell,
+.curriculum-detail-table .ant-table-cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.curriculum-detail-table .ant-table-thead>tr>th {
+    white-space: normal;
+}
+.failed-planned-courses-table .ant-table-thead>tr>th,
+.curriculum-detail-table .ant-table-thead>tr>th {
+    padding: 10px 8px !important;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 1.35;
+}
+
+.curriculum-detail-table .ant-table-column-sorters {
+    justify-content: center;
+    gap: 4px;
+}
+
+.curriculum-detail-table .ant-table-column-title {
+    flex: initial;
+}
 .failed-planned-courses-table .ant-table-thead>tr>th {
     background: #7cc9e8 !important;
     color: #000000;
@@ -148,7 +180,7 @@ body {
 
 .course-result-name-cell {
     display: block;
-    max-width: 260px;
+    max-width: 100%;
     white-space: normal;
     overflow-wrap: anywhere;
     line-height: 1.5;
@@ -177,5 +209,162 @@ body {
 
     .university-logo {
         height: 44px;
+    }
+}
+
+.semester-chart-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.grade-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    align-items: center;
+    margin: 8px 0 12px;
+    color: #005fe6;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.grade-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.grade-legend-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex: 0 0 16px;
+}
+
+.semester-performance-chart {
+    display: block;
+    width: 100%;
+    min-width: 720px;
+    height: auto;
+}
+
+.semester-performance-table .ant-table-thead>tr>th {
+    background: #ffffff !important;
+    border-top: 1px solid #d9e1ec;
+    border-bottom: 2px solid #d9e1ec;
+    color: #000000;
+    text-align: center;
+}
+
+.semester-performance-table .ant-table-tbody>tr:nth-child(odd)>td {
+    background: #eeeeee;
+}
+
+.semester-performance-table .ant-table-tbody>tr>td {
+    border-bottom-color: #dfe5ef;
+}
+
+.semester-detail-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 28px 34px 20px;
+    font-size: 22px;
+}
+
+.semester-detail-table .ant-table-thead>tr>th {
+    background: #ffffff !important;
+    color: #8a90a3;
+    font-size: 16px;
+}
+
+.semester-detail-table .ant-table-tbody>tr>td {
+    color: #8a90a3;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .semester-detail-summary {
+        padding: 18px 8px 12px;
+        font-size: 18px;
+    }
+}
+.semester-chart-panel {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.semester-chart-panel .semester-chart-scroll {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+}
+
+.semester-credit-status-list {
+    flex: 0 0 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 54px;
+    padding-left: 20px;
+    border-left: 1px solid #d9e1ec;
+}
+
+.semester-credit-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.semester-credit-status-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    color: #111827;
+    font-weight: 700;
+}
+
+.semester-credit-status-header strong {
+    font-size: 22px;
+}
+
+.semester-credit-status-track {
+    width: 100%;
+    height: 14px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #eef2f7;
+}
+
+.semester-credit-status-fill {
+    height: 100%;
+    border-radius: inherit;
+}
+
+.semester-credit-status-caption {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+    .semester-chart-panel {
+        flex-direction: column;
+    }
+
+    .semester-chart-panel .semester-chart-scroll {
+        width: 100%;
+    }
+
+    .semester-credit-status-list {
+        flex: none;
+        width: 100%;
+        margin-top: 0;
+        padding-left: 0;
+        border-left: 0;
     }
 }

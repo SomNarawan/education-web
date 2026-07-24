@@ -19,6 +19,7 @@ import { getStudentDetail } from '../services/studentService'
 import { createNote, getNotes, deleteNote } from '../services/noteService'
 import { getNoteTypes } from '../services/noteTypeService'
 import NoteHistoryModal from '../components/NoteHistoryModal'
+import StudentSemesterPerformanceSection from '../components/StudentSemesterPerformanceSection'
 import StudentFailedPlannedCoursesSection from '../components/StudentFailedPlannedCoursesSection'
 import StudentCurriculumDetailSection from '../components/StudentCurriculumDetailSection'
 
@@ -386,6 +387,12 @@ export default function StudentDetail() {
                                         </Row>
                                     )}
                                 </Card>
+                            </Col>
+
+                            <Col xs={24}>
+                                <StudentSemesterPerformanceSection
+                                    studentCode={student.student_code}
+                                />
                             </Col>
 
                             <Col xs={24}>

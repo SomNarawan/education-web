@@ -1,0 +1,21 @@
+[
+  {
+    "study_year": 2,
+    "semester": "ภาคปลาย",
+    "semester_year": 2023,
+    "semester_year_be": 2567,
+    "semester_order": 2,
+    "study_period": "ปีที่ 2 ภาคปลาย",
+    "course_code": "01371111",
+    "course_name": "เทเบิลเทนนิสเพื่อสุขภาพ",
+    "course_category": "หมวดวิชาศึกษาทั่วไป",
+    "course_sub_category": "กลุ่มสาระการเรียนรู้",
+    "course_group": "กลุ่มสาระอยู่ดีมีสุข",
+    "course_requirement": "เลือกเรียนตามกลุ่มสาระ",
+    "curriculum_division": "หมวดวิชาศึกษาทั่วไป",
+    "grade_letter": "W",
+    "grade_point": "null",
+    "enrollment_type": "audit",
+    "credit": 1
+  }
+]

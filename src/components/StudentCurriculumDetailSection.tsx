@@ -4,130 +4,172 @@ import { useEffect, useMemo, useState } from 'react'
 import CustomTable from './custom/CustomTable'
 import { getCurriculumDivisionCategories } from '../services/masterDataService'
 import type {
-    CurriculumCourse,
     CurriculumCourseRow,
     CurriculumDivisionCategory,
-    CurriculumEnrollmentPlan,
+    CurriculumEnrollmentRecord,
 } from '../types/CurriculumDetail'
 
 interface StudentCurriculumDetailSectionProps {
     studentCode: string
 }
 
-const enrollmentPlans = import.meta.glob<{
-    default: CurriculumEnrollmentPlan
-}>('../data/enrollments/*.json')
+type EnrollmentRowsModule = {
+    default: CurriculumEnrollmentRecord[]
+}
+
+type CourseCategoryTab = {
+    key: string
+    label: string
+}
+
+const enrollmentRows = import.meta.glob<EnrollmentRowsModule>(
+    '../data/enrollments/*.json',
+)
+
+const emptySubCategoryLabel = 'ไม่ระบุหมวดย่อย'
+
+function getCourseCategory(row: CurriculumEnrollmentRecord) {
+    return row.course_category || row.curriculum_division || 'ไม่ระบุหมวดวิชา'
+}
 
 const columns: ColumnsType<CurriculumCourseRow> = [
     {
         title: 'ปีที่',
         dataIndex: 'study_year',
         key: 'study_year',
-        width: 90,
+        width: '7%',
         sorter: (a, b) => a.study_year - b.study_year,
     },
     {
         title: 'ภาคการศึกษา',
         dataIndex: 'semester',
         key: 'semester',
-        width: 150,
+        width: '13%',
         sorter: (a, b) => a.semester_order - b.semester_order,
     },
     {
         title: 'รหัสวิชา',
         dataIndex: 'course_code',
         key: 'course_code',
-        width: 130,
+        width: '12%',
         render: (value: string | null) => value || '-',
     },
     {
         title: 'ชื่อวิชา',
         dataIndex: 'course_name',
         key: 'course_name',
-        minWidth: 260,
+        width: '29%',
     },
     {
         title: 'หมวดรายวิชา',
         dataIndex: 'course_group',
         key: 'course_group',
-        minWidth: 240,
-        render: (value: string | null, record) =>
-            value || record.curriculum_division || '-',
+        width: '22%',
+        render: (value: string | null) => value || '-',
     },
     {
         title: 'ผลการเรียน',
         dataIndex: 'grade_letter',
         key: 'grade_letter',
-        width: 110,
+        width: '9%',
         render: (value: string | null) => value || '-',
     },
     {
         title: 'หน่วยกิต',
         dataIndex: 'credit',
         key: 'credit',
-        width: 100,
+        width: '8%',
         sorter: (a, b) => a.credit - b.credit,
     },
 ]
 
-function buildRows(courses: CurriculumCourse[]): CurriculumCourseRow[] {
-    return courses.map((course, courseIndex) => {
-        if (course.enrollments.length === 0) {
-            return {
-                key: `${courseIndex}-planned`,
-                study_year: course.plan_study_year,
-                semester: course.plan_semester,
-                semester_order: course.plan_semester_order,
-                course_code: course.course_code,
-                course_name: course.course_name,
-                course_group: course.course_group,
-                curriculum_division: course.curriculum_division,
-                grade_letter: null,
-                credit: course.credit,
-            }
-        }
-
-        const enrollments = [...course.enrollments].sort((a, b) => {
-            if (a.study_year !== b.study_year) {
-                return a.study_year - b.study_year
-            }
-
-            return a.semester_order - b.semester_order
-        })
-        const latestEnrollment = enrollments[enrollments.length - 1]
-        const gradeLetters = enrollments
-            .map((enrollment) => enrollment.grade_letter)
-            .filter((grade): grade is string => Boolean(grade))
-
-        return {
-            key: `${courseIndex}-enrolled`,
-            study_year: latestEnrollment.study_year,
-            semester: latestEnrollment.semester,
-            semester_order: latestEnrollment.semester_order,
-            course_code:
-                latestEnrollment.actual_course_code || course.course_code,
-            course_name: course.course_name,
-            course_group: course.course_group,
-            curriculum_division: course.curriculum_division,
-            grade_letter:
-                gradeLetters.length > 0 ? gradeLetters.join(',') : null,
-            credit: course.credit,
-        }
-    })
+function buildRows(rows: CurriculumEnrollmentRecord[]): CurriculumCourseRow[] {
+    return rows.map((row, index) => ({
+        ...row,
+        key: `${row.course_code || 'course'}-${index}`,
+    }))
 }
 
-function sortRows(rows: CurriculumCourseRow[]) {
-    return [...rows].sort((a, b) => {
-        if (a.study_year !== b.study_year) {
-            return a.study_year - b.study_year
-        }
+function buildCategoryTabs(
+    categories: CurriculumDivisionCategory[],
+    rows: CurriculumCourseRow[],
+): CourseCategoryTab[] {
+    const tabs: CourseCategoryTab[] = categories.map((category) => ({
+        key: String(category.id),
+        label: category.name_th,
+    }))
+    const existingLabels = new Set(tabs.map((tab) => tab.label))
 
-        if (a.semester_order !== b.semester_order) {
-            return a.semester_order - b.semester_order
-        }
+    rows.forEach((row) => {
+        const category = getCourseCategory(row)
 
-        return (a.course_code || '').localeCompare(b.course_code || '')
+        if (!existingLabels.has(category)) {
+            existingLabels.add(category)
+            tabs.push({
+                key: `course-category-${tabs.length}`,
+                label: category,
+            })
+        }
     })
+
+    return tabs
+}
+
+function CourseTable({
+    rows,
+    loading,
+}: {
+    rows: CurriculumCourseRow[]
+    loading: boolean
+}) {
+    return (
+        <CustomTable<CurriculumCourseRow>
+            className="curriculum-detail-table"
+            rowKey="key"
+            columns={columns}
+            dataSource={rows}
+            loading={loading}
+            searchPlaceholder="ค้นหารายวิชา..."
+            showNo={false}
+        />
+    )
+}
+
+function buildSubCategoryItems(
+    rows: CurriculumCourseRow[],
+    loading: boolean,
+) {
+    const subCategoryRows = new Map<string, CurriculumCourseRow[]>()
+
+    rows.forEach((row) => {
+        const subCategory = row.course_sub_category || emptySubCategoryLabel
+        const currentRows = subCategoryRows.get(subCategory) ?? []
+
+        currentRows.push(row)
+        subCategoryRows.set(subCategory, currentRows)
+    })
+
+    return Array.from(subCategoryRows, ([subCategory, groupedRows], index) => ({
+        key: `course-sub-category-${index}`,
+        label: subCategory,
+        children: <CourseTable rows={groupedRows} loading={loading} />,
+    }))
+}
+
+function CategoryCourses({
+    rows,
+    loading,
+}: {
+    rows: CurriculumCourseRow[]
+    loading: boolean
+}) {
+    const hasSubCategories = rows.some((row) => row.course_sub_category)
+
+    if (!hasSubCategories) {
+        return <CourseTable rows={rows} loading={loading} />
+    }
+
+    return <Tabs items={buildSubCategoryItems(rows, loading)} destroyOnHidden />
 }
 
 export default function StudentCurriculumDetailSection({
@@ -136,7 +178,7 @@ export default function StudentCurriculumDetailSection({
     const [categories, setCategories] = useState<
         CurriculumDivisionCategory[]
     >([])
-    const [courses, setCourses] = useState<CurriculumCourse[]>([])
+    const [rows, setRows] = useState<CurriculumCourseRow[]>([])
     const [loadingCategories, setLoadingCategories] = useState(false)
     const [loadingCourses, setLoadingCourses] = useState(false)
 
@@ -162,24 +204,22 @@ export default function StudentCurriculumDetailSection({
             try {
                 setLoadingCourses(true)
                 const importer =
-                    enrollmentPlans[
-                        `../data/enrollments/${studentCode}.json`
-                    ]
+                    enrollmentRows[`../data/enrollments/${studentCode}.json`]
 
                 if (!importer) {
-                    setCourses([])
+                    setRows([])
                     return
                 }
 
                 const module = await importer()
-                setCourses([
-                    ...module.default.planned_courses,
-                    ...module.default.unplanned_courses,
-                ])
+                const records = Array.isArray(module.default)
+                    ? module.default
+                    : []
+                setRows(buildRows(records))
             } catch (error) {
                 console.error(error)
                 message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
-                setCourses([])
+                setRows([])
             } finally {
                 setLoadingCourses(false)
             }
@@ -188,29 +228,21 @@ export default function StudentCurriculumDetailSection({
         loadCourses()
     }, [studentCode])
 
-    const allRows = useMemo(() => sortRows(buildRows(courses)), [courses])
-
     const tabs = useMemo(
         () =>
-            categories.map((category) => ({
-                key: String(category.id),
-                label: category.name_th,
+            buildCategoryTabs(categories, rows).map((category) => ({
+                key: category.key,
+                label: category.label,
                 children: (
-                    <CustomTable<CurriculumCourseRow>
-                        rowKey="key"
-                        columns={columns}
-                        dataSource={allRows.filter(
-                            (row) =>
-                                row.curriculum_division === category.name_th,
+                    <CategoryCourses
+                        rows={rows.filter(
+                            (row) => getCourseCategory(row) === category.label,
                         )}
                         loading={loadingCourses}
-                        searchPlaceholder="ค้นหารายวิชา..."
-                        showNo={false}
-                        scroll={{ x: 1100 }}
                     />
                 ),
             })),
-        [allRows, categories, loadingCourses],
+        [rows, categories, loadingCourses],
     )
 
     return (

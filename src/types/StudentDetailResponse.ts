@@ -18,6 +18,9 @@ export interface StudentDetailResponse {
     entry_year: number
     entry_year_be: number
 
+    current_year: number
+    current_semester: number
+
     teacher_id: number
     teacher_full_name_th: string
 

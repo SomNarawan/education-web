@@ -21,8 +21,11 @@ export interface CurriculumCourse {
     plan_study_period: string
     course_code: string | null
     course_name: string
-    curriculum_division: string
+    course_category: string
+    course_sub_category?: string | null
+    curriculum_division?: string
     course_group: string | null
+    course_requirement?: string | null
     credit: number
     enrollment_type: string
     enrollments: CurriculumEnrollment[]
@@ -33,28 +36,30 @@ export interface CurriculumEnrollmentPlan {
     unplanned_courses: CurriculumCourse[]
 }
 
-export interface CurriculumCourseRow {
-    key: string
+export interface CurriculumEnrollmentRecord {
     study_year: number
     semester: string
+    semester_year: number
+    semester_year_be: number
     semester_order: number
+    study_period: string
     course_code: string | null
     course_name: string
+    course_category: string
+    course_sub_category?: string | null
+    curriculum_division?: string
     course_group: string | null
-    curriculum_division: string
+    course_requirement?: string | null
     grade_letter: string | null
+    grade_point: string | number | null
+    enrollment_type: string
     credit: number
 }
 
-export interface FailedPlannedCourseRow {
+export interface CurriculumCourseRow extends CurriculumEnrollmentRecord {
     key: string
-    study_year: number | null
-    semester: string | null
-    semester_order: number
-    course_group: string | null
-    curriculum_division: string
-    course_code: string | null
-    course_name: string
-    credit: number
-    grade_letter: string | null
+}
+
+export interface FailedPlannedCourseRow extends CurriculumEnrollmentRecord {
+    key: string
 }

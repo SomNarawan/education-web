@@ -2,8 +2,7 @@ import { Card, Space, Table, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import type {
-    CurriculumCourse,
-    CurriculumEnrollmentPlan,
+    CurriculumEnrollmentRecord,
     FailedPlannedCourseRow,
 } from '../types/CurriculumDetail'
 
@@ -11,40 +10,51 @@ interface StudentFailedPlannedCoursesSectionProps {
     studentCode: string
 }
 
-const enrollmentPlans = import.meta.glob<{
-    default: CurriculumEnrollmentPlan
-}>('../data/enrollments/*.json')
+type EnrollmentRowsModule = {
+    default: CurriculumEnrollmentRecord[]
+}
+
+type EnrollmentRowsImporters = Record<string, () => Promise<EnrollmentRowsModule>>
+
+const notPassEnrollments = import.meta.glob<EnrollmentRowsModule>(
+    '../data/enrollments_not_pass/*.json',
+)
+const passEnrollments = import.meta.glob<EnrollmentRowsModule>(
+    '../data/enrollments_pass/*.json',
+)
+const overEnrollments = import.meta.glob<EnrollmentRowsModule>(
+    '../data/enrollments_over/*.json',
+)
 
 const columns: ColumnsType<FailedPlannedCourseRow> = [
     {
         title: 'ชั้นปี',
         dataIndex: 'study_year',
         key: 'study_year',
-        width: 110,
+        width: '8%',
         align: 'center',
-        render: (value: number | null) => value ?? '-',
+        render: (value: number) => value ?? '-',
     },
     {
         title: 'ภาคการเรียน',
         dataIndex: 'semester',
         key: 'semester',
-        width: 150,
+        width: '12%',
         align: 'center',
-        render: (value: string | null) => value || '-',
+        render: (value: string) => value || '-',
     },
     {
-        title: 'หมวดวิชา',
+        title: 'หมวดรายวิชา',
         dataIndex: 'course_group',
         key: 'course_group',
-        width: 220,
-        render: (value: string | null, record) =>
-            value || record.curriculum_division || '-',
+        width: '21%',
+        render: (value: string | null) => value || '-',
     },
     {
         title: 'รหัสวิชา',
         dataIndex: 'course_code',
         key: 'course_code',
-        width: 150,
+        width: '12%',
         align: 'center',
         render: (value: string | null) => value || '-',
     },
@@ -52,7 +62,7 @@ const columns: ColumnsType<FailedPlannedCourseRow> = [
         title: 'ชื่อรายวิชายังไม่ผ่าน',
         dataIndex: 'course_name',
         key: 'course_name',
-        width: 260,
+        width: '30%',
         render: (value: string) => (
             <span className="course-result-name-cell">{value || '-'}</span>
         ),
@@ -61,150 +71,45 @@ const columns: ColumnsType<FailedPlannedCourseRow> = [
         title: 'หน่วยกิต',
         dataIndex: 'credit',
         key: 'credit',
-        width: 120,
+        width: '9%',
         align: 'center',
-        render: (value: number | null) => value ?? '-',
+        render: (value: number) => value ?? '-',
     },
     {
         title: 'สถานะ',
         dataIndex: 'grade_letter',
         key: 'grade_letter',
-        width: 120,
+        width: '8%',
         align: 'center',
         render: (value: string | null) => value || '-',
     },
 ]
 
-const failedGradeLetters = new Set(['F', 'W'])
-
-function buildFailedRows(
-    courses: CurriculumCourse[],
+function buildRows(
+    rows: CurriculumEnrollmentRecord[],
+    keyPrefix: string,
 ): FailedPlannedCourseRow[] {
-    return courses.flatMap((course, courseIndex): FailedPlannedCourseRow[] => {
-        const latestEnrollment =
-            course.enrollments[course.enrollments.length - 1]
-
-        if (
-            !latestEnrollment ||
-            latestEnrollment.grade_letter === null ||
-            !failedGradeLetters.has(latestEnrollment.grade_letter)
-        ) {
-            return []
-        }
-
-        if (latestEnrollment.is_passed) {
-            return []
-        }
-
-        return [
-            {
-                key: `${courseIndex}-failed`,
-                study_year: latestEnrollment.study_year,
-                semester: latestEnrollment.semester,
-                semester_order: latestEnrollment.semester_order,
-                course_group: course.course_group,
-                curriculum_division: course.curriculum_division,
-                course_code:
-                    latestEnrollment.actual_course_code || course.course_code,
-                course_name: course.course_name,
-                credit: course.credit,
-                grade_letter: latestEnrollment.grade_letter,
-            },
-        ]
-    })
+    return rows.map((row, index) => ({
+        ...row,
+        key: `${keyPrefix}-${row.course_code || 'course'}-${index}`,
+    }))
 }
 
-function buildClearedBacklogRows(
-    courses: CurriculumCourse[],
-): FailedPlannedCourseRow[] {
-    return courses.flatMap((course, courseIndex): FailedPlannedCourseRow[] => {
-        const failedEnrollments = course.enrollments.filter(
-            (enrollment) => !enrollment.is_passed,
-        )
-        const passedEnrollments = course.enrollments.filter(
-            (enrollment) => enrollment.is_passed,
-        )
-        const latestPassedEnrollment =
-            passedEnrollments[passedEnrollments.length - 1]
+async function loadRows(
+    importers: EnrollmentRowsImporters,
+    directory: string,
+    studentCode: string,
+    keyPrefix: string,
+) {
+    const importer = importers[`../data/${directory}/${studentCode}.json`]
 
-        if (!latestPassedEnrollment || failedEnrollments.length === 0) {
-            return []
-        }
+    if (!importer) {
+        return []
+    }
 
-        const gradeLetters = [
-            ...failedEnrollments,
-            latestPassedEnrollment,
-        ].flatMap((enrollment) =>
-            enrollment.grade_letter ? [enrollment.grade_letter] : [],
-        )
-
-        return [
-            {
-                key: `${courseIndex}-cleared`,
-                study_year: latestPassedEnrollment.study_year,
-                semester: latestPassedEnrollment.semester,
-                semester_order: latestPassedEnrollment.semester_order,
-                course_group: course.course_group,
-                curriculum_division: course.curriculum_division,
-                course_code:
-                    latestPassedEnrollment.actual_course_code ||
-                    course.course_code,
-                course_name: course.course_name,
-                credit: course.credit,
-                grade_letter: gradeLetters.join(','),
-            },
-        ]
-    })
-}
-
-function buildOverCurriculumRows(
-    courses: CurriculumCourse[],
-): FailedPlannedCourseRow[] {
-    return courses.flatMap((course, courseIndex): FailedPlannedCourseRow[] => {
-        if (course.enrollments.length === 0) {
-            return [
-                {
-                    key: `${courseIndex}-over-planned`,
-                    study_year: null,
-                    semester: null,
-                    semester_order: 0,
-                    course_group: course.course_group,
-                    curriculum_division: course.curriculum_division,
-                    course_code: course.course_code,
-                    course_name: course.course_name,
-                    credit: course.credit,
-                    grade_letter: null,
-                },
-            ]
-        }
-
-        return course.enrollments.map((enrollment, enrollmentIndex) => ({
-            key: `${courseIndex}-${enrollmentIndex}-over`,
-            study_year: enrollment.study_year,
-            semester: enrollment.semester,
-            semester_order: enrollment.semester_order,
-            course_group: course.course_group,
-            curriculum_division: course.curriculum_division,
-            course_code: enrollment.actual_course_code || course.course_code,
-            course_name: course.course_name,
-            credit: course.credit,
-            grade_letter: enrollment.grade_letter,
-        }))
-    })
-}
-
-function sortRows(rows: FailedPlannedCourseRow[]) {
-    return [...rows].sort((a, b) => {
-        if ((a.study_year || 0) !== (b.study_year || 0)) {
-            return (a.study_year || 0) - (b.study_year || 0)
-        }
-
-        if (a.semester_order !== b.semester_order) {
-            return a.semester_order - b.semester_order
-        }
-
-        return (a.course_code || '').localeCompare(b.course_code || '')
-    })
+    const module = await importer()
+    const records = Array.isArray(module.default) ? module.default : []
+    return buildRows(records, keyPrefix)
 }
 
 function buildColumns(courseNameTitle: string): ColumnsType<FailedPlannedCourseRow> {
@@ -250,14 +155,7 @@ function CourseResultTable({
                 columns={tableColumns}
                 dataSource={rows}
                 loading={loading}
-                pagination={{
-                    defaultPageSize: 10,
-                    showSizeChanger: true,
-                    pageSizeOptions: ['10', '20', '50', '100'],
-                    showTotal: (total) =>
-                        `จำนวนรายการทั้งหมด ${total} รายการ`,
-                }}
-                scroll={{ x: 1200 }}
+                pagination={false}
                 summary={() => (
                     <Table.Summary.Row>
                         <Table.Summary.Cell index={0} colSpan={4}>
@@ -280,9 +178,12 @@ function CourseResultTable({
 export default function StudentFailedPlannedCoursesSection({
     studentCode,
 }: StudentFailedPlannedCoursesSectionProps) {
-    const [plannedCourses, setPlannedCourses] = useState<CurriculumCourse[]>([])
-    const [unplannedCourses, setUnplannedCourses] = useState<
-        CurriculumCourse[]
+    const [failedRows, setFailedRows] = useState<FailedPlannedCourseRow[]>([])
+    const [clearedBacklogRows, setClearedBacklogRows] = useState<
+        FailedPlannedCourseRow[]
+    >([])
+    const [overCurriculumRows, setOverCurriculumRows] = useState<
+        FailedPlannedCourseRow[]
     >([])
     const [loading, setLoading] = useState(false)
 
@@ -290,25 +191,36 @@ export default function StudentFailedPlannedCoursesSection({
         const loadCourses = async () => {
             try {
                 setLoading(true)
-                const importer =
-                    enrollmentPlans[
-                        `../data/enrollments/${studentCode}.json`
-                    ]
+                const [notPassRows, passRows, overRows] = await Promise.all([
+                    loadRows(
+                        notPassEnrollments,
+                        'enrollments_not_pass',
+                        studentCode,
+                        'not-pass',
+                    ),
+                    loadRows(
+                        passEnrollments,
+                        'enrollments_pass',
+                        studentCode,
+                        'pass',
+                    ),
+                    loadRows(
+                        overEnrollments,
+                        'enrollments_over',
+                        studentCode,
+                        'over',
+                    ),
+                ])
 
-                if (!importer) {
-                    setPlannedCourses([])
-                    setUnplannedCourses([])
-                    return
-                }
-
-                const module = await importer()
-                setPlannedCourses(module.default.planned_courses)
-                setUnplannedCourses(module.default.unplanned_courses)
+                setFailedRows(notPassRows)
+                setClearedBacklogRows(passRows)
+                setOverCurriculumRows(overRows)
             } catch (error) {
                 console.error(error)
-                message.error('โหลดข้อมูลผลการเรียนวิชาที่ไม่ผ่านไม่สำเร็จ')
-                setPlannedCourses([])
-                setUnplannedCourses([])
+                message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
+                setFailedRows([])
+                setClearedBacklogRows([])
+                setOverCurriculumRows([])
             } finally {
                 setLoading(false)
             }
@@ -316,19 +228,6 @@ export default function StudentFailedPlannedCoursesSection({
 
         loadCourses()
     }, [studentCode])
-
-    const failedRows = useMemo(
-        () => sortRows(buildFailedRows(plannedCourses)),
-        [plannedCourses],
-    )
-    const clearedBacklogRows = useMemo(
-        () => sortRows(buildClearedBacklogRows(plannedCourses)),
-        [plannedCourses],
-    )
-    const overCurriculumRows = useMemo(
-        () => sortRows(buildOverCurriculumRows(unplannedCourses)),
-        [unplannedCourses],
-    )
 
     return (
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
