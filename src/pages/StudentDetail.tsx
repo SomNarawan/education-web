@@ -20,6 +20,7 @@ import { createNote, getNotes, deleteNote } from '../services/noteService'
 import { getNoteTypes } from '../services/noteTypeService'
 import NoteHistoryModal from '../components/NoteHistoryModal'
 import StudentSemesterPerformanceSection from '../components/StudentSemesterPerformanceSection'
+import StudentCourseGroupPerformanceSection from '../components/StudentCourseGroupPerformanceSection'
 import StudentFailedPlannedCoursesSection from '../components/StudentFailedPlannedCoursesSection'
 import StudentCurriculumDetailSection from '../components/StudentCurriculumDetailSection'
 
@@ -395,6 +396,12 @@ export default function StudentDetail() {
 
                             <Col xs={24}>
                                 <StudentSemesterPerformanceSection
+                                    studentCode={student.student_code}
+                                />
+                            </Col>
+
+                            <Col xs={24}>
+                                <StudentCourseGroupPerformanceSection
                                     studentCode={student.student_code}
                                 />
                             </Col>

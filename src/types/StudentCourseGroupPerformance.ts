@@ -1,0 +1,12 @@
+export interface StudentCourseGroupPerformance {
+    course_group: string
+    gpa: number
+    credits: number
+    completed_credits: number
+    remaining_credits: number
+}
+
+export interface StudentCourseGroupPerformanceRow
+    extends StudentCourseGroupPerformance {
+    key: string
+}

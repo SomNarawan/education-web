@@ -159,6 +159,125 @@ body {
 .curriculum-detail-table .ant-table-column-title {
     flex: initial;
 }
+
+.curriculum-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.28fr) minmax(0, 0.72fr);
+    gap: 20px;
+    align-items: stretch;
+    transition: grid-template-columns 0.2s ease;
+}
+
+.curriculum-detail-layout-collapsed {
+    grid-template-columns: 52px minmax(0, 1fr);
+}
+
+.curriculum-structure-collapsed {
+    display: flex;
+    justify-content: center;
+    padding-top: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.curriculum-structure-collapsed .ant-btn {
+    color: #1677ff;
+}
+
+.curriculum-structure-card,
+.curriculum-courses-card {
+    height: 100%;
+    border-color: #e2e8f0;
+}
+
+.curriculum-structure-card .ant-card-head,
+.curriculum-courses-card .ant-card-head {
+    min-height: 64px;
+    border-bottom: 0;
+}
+
+.curriculum-structure-card .ant-card-head-title,
+.curriculum-courses-card .ant-card-head-title {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.curriculum-structure-card .ant-card-body {
+    max-height: 720px;
+    overflow: auto;
+    padding: 8px 18px 24px;
+}
+
+.curriculum-structure-tree {
+    min-width: 260px;
+    background: transparent;
+}
+
+.curriculum-structure-tree .ant-tree-treenode {
+    width: 100%;
+    padding-block: 3px;
+}
+
+.curriculum-structure-tree .ant-tree-node-content-wrapper {
+    min-height: 42px;
+    padding: 9px 10px !important;
+    border-radius: 8px;
+    line-height: 24px;
+}
+
+.curriculum-structure-tree .ant-tree-node-content-wrapper:hover {
+    background: #f0f7ff;
+}
+
+.curriculum-structure-tree .ant-tree-node-selected {
+    color: #1677ff;
+    background: #eaf4ff !important;
+    font-weight: 600;
+}
+
+.curriculum-structure-tree .ant-tree-iconEle {
+    color: #1677ff;
+}
+
+.curriculum-courses-card .ant-card-body {
+    padding-top: 14px;
+}
+
+.curriculum-courses-heading {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.curriculum-courses-path {
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.curriculum-courses-path ol {
+    flex-wrap: wrap;
+}
+
+.curriculum-courses-path .ant-breadcrumb-link {
+    color: #64748b;
+}
+
+@media (max-width: 1100px) {
+    .curriculum-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .curriculum-detail-layout-collapsed {
+        grid-template-columns: 52px minmax(0, 1fr);
+    }
+
+    .curriculum-structure-card .ant-card-body {
+        max-height: 420px;
+    }
+}
+
 .failed-planned-courses-table .ant-table-thead>tr>th {
     background: #7cc9e8 !important;
     color: #000000;
@@ -214,7 +333,7 @@ body {
 
 .semester-chart-scroll {
     width: 100%;
-    overflow-x: auto;
+    overflow: hidden;
 }
 
 .grade-chart-legend {
@@ -245,7 +364,6 @@ body {
 .semester-performance-chart {
     display: block;
     width: 100%;
-    min-width: 720px;
     height: auto;
 }
 
@@ -263,6 +381,11 @@ body {
 
 .semester-performance-table .ant-table-tbody>tr>td {
     border-bottom-color: #dfe5ef;
+}
+
+.semester-performance-table .ant-table-cell {
+    padding-inline: 8px !important;
+    overflow-wrap: anywhere;
 }
 
 .semester-detail-summary {
@@ -293,25 +416,20 @@ body {
 }
 .semester-chart-panel {
     display: flex;
-    gap: 24px;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
     width: 100%;
 }
 
 .semester-chart-panel .semester-chart-scroll {
-    flex: 1 1 auto;
-    min-width: 0;
-    width: auto;
+    width: 100%;
 }
 
 .semester-credit-status-list {
-    flex: 0 0 260px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin-top: 54px;
-    padding-left: 20px;
-    border-left: 1px solid #d9e1ec;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
 }
 
 .semester-credit-status {
@@ -351,20 +469,174 @@ body {
     font-size: 13px;
 }
 
-@media (max-width: 1024px) {
-    .semester-chart-panel {
-        flex-direction: column;
-    }
+.course-group-performance-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
 
-    .semester-chart-panel .semester-chart-scroll {
-        width: 100%;
-    }
+.course-group-chart-scroll {
+    width: 100%;
+    overflow-x: hidden;
+}
 
-    .semester-credit-status-list {
-        flex: none;
-        width: 100%;
-        margin-top: 0;
-        padding-left: 0;
-        border-left: 0;
+.course-group-performance-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.course-group-credit-chart-section {
+    margin-top: 12px;
+    padding-top: 20px;
+    border-top: 1px solid #e3e8f0;
+}
+
+.course-group-credit-chart-title {
+    margin-bottom: 14px;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.course-group-credit-chart-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.course-group-credit-chart-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 6px;
+    border: 1px solid #dce3ed;
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.course-group-credit-chart-label {
+    align-self: stretch;
+    min-height: 42px;
+    color: #005fe6;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.course-group-credit-chart-label span,
+.course-group-credit-chart-label strong {
+    display: block;
+}
+
+.course-group-credit-chart-label strong {
+    color: #334155;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.course-group-credit-donut {
+    display: grid;
+    width: min(100%, 150px);
+    margin-top: 8px;
+    padding: 0;
+    aspect-ratio: 1;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    font: inherit;
+}
+
+.course-group-credit-donut:hover {
+    filter: brightness(0.97);
+}
+
+.course-group-credit-donut:focus-visible {
+    outline: 3px solid rgba(22, 119, 255, 0.35);
+    outline-offset: 3px;
+}
+
+.course-group-credit-donut-center {
+    display: flex;
+    width: 50%;
+    aspect-ratio: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #3f3f46;
+}
+
+.course-group-credit-donut-center strong,
+.course-group-credit-donut-center span {
+    font-size: clamp(11px, 1.2vw, 17px);
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.course-group-credit-chart-caption {
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.course-group-credit-popover {
+    display: grid;
+    gap: 6px;
+    min-width: 150px;
+}
+
+.course-group-credit-popover span {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.grade-legend-danger,
+.course-group-remaining-heading,
+.course-group-remaining-value {
+    color: #ff0000;
+}
+
+.grade-legend-warning {
+    color: #ff8a00;
+}
+
+.grade-legend-success,
+.course-group-completed-heading,
+.course-group-completed-value {
+    color: #008000;
+}
+
+.course-group-completed-heading,
+.course-group-remaining-heading {
+    display: inline;
+}
+
+.course-group-performance-table .ant-table-thead>tr>th {
+    background: #ffffff !important;
+    border-top: 1px solid #d9e1ec;
+    border-bottom: 2px solid #d9e1ec;
+    color: #000000;
+    text-align: center;
+}
+
+.course-group-performance-table .ant-table-tbody>tr:nth-child(odd)>td {
+    background: #eeeeee;
+}
+
+.course-group-performance-table .ant-table-tbody>tr>td {
+    border-bottom-color: #dfe5ef;
+}
+
+.course-group-performance-table .ant-table-cell {
+    padding-inline: 12px !important;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+    .course-group-credit-chart-card {
+        padding-inline: 8px;
     }
 }

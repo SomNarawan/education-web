@@ -1,11 +1,18 @@
-import { Card, Tabs, message } from 'antd'
+import {
+    BookOutlined,
+    DoubleLeftOutlined,
+    DoubleRightOutlined,
+    FolderOutlined,
+} from '@ant-design/icons'
+import { Breadcrumb, Button, Card, Tooltip, Tree, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import type { DataNode } from 'antd/es/tree'
 import { useEffect, useMemo, useState } from 'react'
 import CustomTable from './custom/CustomTable'
-import { getCurriculumDivisionCategories } from '../services/masterDataService'
+import { getCurriculumDivisions } from '../services/masterDataService'
 import type {
     CurriculumCourseRow,
-    CurriculumDivisionCategory,
+    CurriculumDivision,
     CurriculumEnrollmentRecord,
 } from '../types/CurriculumDetail'
 
@@ -17,16 +24,9 @@ type EnrollmentRowsModule = {
     default: CurriculumEnrollmentRecord[]
 }
 
-type CourseCategoryTab = {
-    key: string
-    label: string
-}
-
 const enrollmentRows = import.meta.glob<EnrollmentRowsModule>(
     '../data/enrollments/*.json',
 )
-
-const emptySubCategoryLabel = 'ไม่ระบุหมวดย่อย'
 
 function getCourseCategory(row: CurriculumEnrollmentRecord) {
     return row.course_category || row.curriculum_division || 'ไม่ระบุหมวดวิชา'
@@ -38,14 +38,12 @@ const columns: ColumnsType<CurriculumCourseRow> = [
         dataIndex: 'study_year',
         key: 'study_year',
         width: '7%',
-        sorter: (a, b) => a.study_year - b.study_year,
     },
     {
         title: 'ภาคการศึกษา',
         dataIndex: 'semester',
         key: 'semester',
         width: '13%',
-        sorter: (a, b) => a.semester_order - b.semester_order,
     },
     {
         title: 'รหัสวิชา',
@@ -79,7 +77,6 @@ const columns: ColumnsType<CurriculumCourseRow> = [
         dataIndex: 'credit',
         key: 'credit',
         width: '8%',
-        sorter: (a, b) => a.credit - b.credit,
     },
 ]
 
@@ -88,31 +85,6 @@ function buildRows(rows: CurriculumEnrollmentRecord[]): CurriculumCourseRow[] {
         ...row,
         key: `${row.course_code || 'course'}-${index}`,
     }))
-}
-
-function buildCategoryTabs(
-    categories: CurriculumDivisionCategory[],
-    rows: CurriculumCourseRow[],
-): CourseCategoryTab[] {
-    const tabs: CourseCategoryTab[] = categories.map((category) => ({
-        key: String(category.id),
-        label: category.name_th,
-    }))
-    const existingLabels = new Set(tabs.map((tab) => tab.label))
-
-    rows.forEach((row) => {
-        const category = getCourseCategory(row)
-
-        if (!existingLabels.has(category)) {
-            existingLabels.add(category)
-            tabs.push({
-                key: `course-category-${tabs.length}`,
-                label: category,
-            })
-        }
-    })
-
-    return tabs
 }
 
 function CourseTable({
@@ -135,62 +107,103 @@ function CourseTable({
     )
 }
 
-function buildSubCategoryItems(
-    rows: CurriculumCourseRow[],
-    loading: boolean,
-) {
-    const subCategoryRows = new Map<string, CurriculumCourseRow[]>()
-
-    rows.forEach((row) => {
-        const subCategory = row.course_sub_category || emptySubCategoryLabel
-        const currentRows = subCategoryRows.get(subCategory) ?? []
-
-        currentRows.push(row)
-        subCategoryRows.set(subCategory, currentRows)
-    })
-
-    return Array.from(subCategoryRows, ([subCategory, groupedRows], index) => ({
-        key: `course-sub-category-${index}`,
-        label: subCategory,
-        children: <CourseTable rows={groupedRows} loading={loading} />,
-    }))
+interface CurriculumTreeData {
+    nodes: DataNode[]
+    rowKeysByNode: Map<string, Set<string>>
+    pathByNode: Map<string, string[]>
+    generalEducationKey?: string
 }
 
-function CategoryCourses({
-    rows,
-    loading,
-}: {
-    rows: CurriculumCourseRow[]
-    loading: boolean
-}) {
-    const hasSubCategories = rows.some((row) => row.course_sub_category)
+interface TreeSelection {
+    studentCode: string
+    key: string
+}
 
-    if (!hasSubCategories) {
-        return <CourseTable rows={rows} loading={loading} />
+function buildCurriculumTree(
+    divisions: CurriculumDivision[],
+    rows: CurriculumCourseRow[],
+): CurriculumTreeData {
+    const rowKeysByNode = new Map<string, Set<string>>()
+    const pathByNode = new Map<string, string[]>()
+    let generalEducationKey: string | undefined
+    const getDivisionRows = (
+        division: CurriculumDivision,
+        candidateRows: CurriculumCourseRow[],
+    ) =>
+        candidateRows.filter((row) => {
+            if (division.division_type === 'group') {
+                return row.course_group === division.name_th
+            }
+
+            if (division.division_type === 'requirement') {
+                return row.course_requirement === division.name_th
+            }
+
+            return (
+                getCourseCategory(row) === division.name_th ||
+                row.course_sub_category === division.name_th
+            )
+        })
+    const buildDivisionNode = (
+        division: CurriculumDivision,
+        candidateRows: CurriculumCourseRow[],
+        parentKey = 'root',
+        parentPath: string[] = [],
+    ): DataNode => {
+        const nodeKey = `${parentKey}-division-${division.id}`
+        const nodePath = [...parentPath, division.name_th]
+        if (division.name_th === 'หมวดวิชาศึกษาทั่วไป') {
+            generalEducationKey = nodeKey
+        }
+        const divisionRows = getDivisionRows(division, candidateRows)
+        const childNodes = division.children.map((child) =>
+            buildDivisionNode(child, divisionRows, nodeKey, nodePath),
+        )
+
+        rowKeysByNode.set(
+            nodeKey,
+            new Set(divisionRows.map((row) => row.key)),
+        )
+        pathByNode.set(nodeKey, nodePath)
+
+        return {
+            key: nodeKey,
+            title: division.name_th,
+            icon:
+                division.division_type === 'category' ? (
+                    <BookOutlined />
+                ) : (
+                    <FolderOutlined />
+                ),
+            children: childNodes,
+        }
     }
+    const nodes = divisions.map((division) =>
+        buildDivisionNode(division, rows),
+    )
 
-    return <Tabs items={buildSubCategoryItems(rows, loading)} destroyOnHidden />
+    return { nodes, rowKeysByNode, pathByNode, generalEducationKey }
 }
 
 export default function StudentCurriculumDetailSection({
     studentCode,
 }: StudentCurriculumDetailSectionProps) {
-    const [categories, setCategories] = useState<
-        CurriculumDivisionCategory[]
-    >([])
+    const [divisions, setDivisions] = useState<CurriculumDivision[]>([])
     const [rows, setRows] = useState<CurriculumCourseRow[]>([])
     const [loadingCategories, setLoadingCategories] = useState(false)
     const [loadingCourses, setLoadingCourses] = useState(false)
+    const [treeSelection, setTreeSelection] = useState<TreeSelection>()
+    const [isStructureCollapsed, setIsStructureCollapsed] = useState(false)
 
     useEffect(() => {
         const loadCategories = async () => {
             try {
                 setLoadingCategories(true)
-                const data = await getCurriculumDivisionCategories()
-                setCategories(data)
+                const data = await getCurriculumDivisions()
+                setDivisions(data)
             } catch (error) {
                 console.error(error)
-                message.error('โหลดหมวดรายวิชาไม่สำเร็จ')
+                message.error('โหลดโครงสร้างหลักสูตรไม่สำเร็จ')
             } finally {
                 setLoadingCategories(false)
             }
@@ -228,30 +241,108 @@ export default function StudentCurriculumDetailSection({
         loadCourses()
     }, [studentCode])
 
-    const tabs = useMemo(
-        () =>
-            buildCategoryTabs(categories, rows).map((category) => ({
-                key: category.key,
-                label: category.label,
-                children: (
-                    <CategoryCourses
-                        rows={rows.filter(
-                            (row) => getCourseCategory(row) === category.label,
-                        )}
-                        loading={loadingCourses}
-                    />
-                ),
-            })),
-        [rows, categories, loadingCourses],
+    const curriculumTree = useMemo(
+        () => buildCurriculumTree(divisions, rows),
+        [divisions, rows],
     )
+    const selectedTreeKey =
+        treeSelection?.studentCode === studentCode
+            ? treeSelection.key
+            : curriculumTree.generalEducationKey
+
+    const displayedRows = useMemo(() => {
+        if (!selectedTreeKey) {
+            return []
+        }
+
+        const selectedRowKeys =
+            curriculumTree.rowKeysByNode.get(selectedTreeKey)
+
+        if (!selectedRowKeys) {
+            return []
+        }
+
+        return rows.filter(
+            (row) =>
+                selectedRowKeys.has(row.key) &&
+                Boolean(row.grade_letter?.trim()),
+        )
+    }, [curriculumTree, rows, selectedTreeKey])
+    const selectedTreePath = selectedTreeKey
+        ? (curriculumTree.pathByNode.get(selectedTreeKey) ?? [])
+        : []
 
     return (
-        <Card
-            title="รายละเอียดผลการเรียน"
-            size="small"
-            loading={loadingCategories}
+        <div
+            className={`curriculum-detail-layout${isStructureCollapsed ? ' curriculum-detail-layout-collapsed' : ''}`}
         >
-            <Tabs items={tabs} destroyOnHidden />
-        </Card>
+            {isStructureCollapsed ? (
+                <div className="curriculum-structure-collapsed">
+                    <Tooltip title="ขยายโครงสร้างหลักสูตร" placement="right">
+                        <Button
+                            type="text"
+                            icon={<DoubleRightOutlined />}
+                            aria-label="ขยายโครงสร้างหลักสูตร"
+                            onClick={() => setIsStructureCollapsed(false)}
+                        />
+                    </Tooltip>
+                </div>
+            ) : (
+                <Card
+                    className="curriculum-structure-card"
+                    title="โครงสร้างหลักสูตร"
+                    extra={
+                        <Tooltip title="ย่อโครงสร้างหลักสูตร">
+                            <Button
+                                type="text"
+                                icon={<DoubleLeftOutlined />}
+                                aria-label="ย่อโครงสร้างหลักสูตร"
+                                onClick={() => setIsStructureCollapsed(true)}
+                            />
+                        </Tooltip>
+                    }
+                    loading={loadingCategories || loadingCourses}
+                >
+                    <Tree
+                        key={`${studentCode}-${curriculumTree.nodes.length}`}
+                        className="curriculum-structure-tree"
+                        blockNode
+                        defaultExpandAll
+                        showIcon
+                        treeData={curriculumTree.nodes}
+                        selectedKeys={selectedTreeKey ? [selectedTreeKey] : []}
+                        onSelect={(selectedKeys) =>
+                            setTreeSelection(
+                                selectedKeys.length
+                                    ? {
+                                          studentCode,
+                                          key: String(selectedKeys[0]),
+                                      }
+                                    : undefined,
+                            )
+                        }
+                    />
+                </Card>
+            )}
+
+            <Card
+                className="curriculum-courses-card"
+                title={
+                    <div className="curriculum-courses-heading">
+                        <span>รายวิชา</span>
+                        {selectedTreePath.length > 0 && (
+                            <Breadcrumb
+                                className="curriculum-courses-path"
+                                items={selectedTreePath.map((title) => ({
+                                    title,
+                                }))}
+                            />
+                        )}
+                    </div>
+                }
+            >
+                <CourseTable rows={displayedRows} loading={loadingCourses} />
+            </Card>
+        </div>
     )
 }

@@ -1,5 +1,5 @@
-import { SearchOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Modal, Row, Table, Typography, message } from 'antd'
+import { SearchOutlined, TableOutlined } from '@ant-design/icons'
+import { Button, Card, Modal, Table, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import type {
@@ -59,6 +59,10 @@ const chartColors = {
     text: '#666666',
 }
 
+const semesterChartCapacity = 16
+const semesterChartStepWidth = 72
+const semesterChartHorizontalSpace = 92
+
 function getGradeColor(gpa: number) {
     if (gpa >= 3.25) {
         return chartColors.excellent
@@ -91,6 +95,14 @@ function formatDiff(value: string | number) {
     }
 
     return formatDecimal(numericValue)
+}
+
+function getDiffColor(value: string | number) {
+    const numericValue = Number(value)
+
+    return !Number.isNaN(numericValue) && numericValue < 0
+        ? '#ff0000'
+        : '#008000'
 }
 
 function getStatusPercent(value: number, total: number) {
@@ -126,7 +138,10 @@ function StudentSemesterChart({
 }: {
     rows: StudentSemesterPerformanceRow[]
 }) {
-    const chartWidth = Math.max(760, rows.length * 72 + 92)
+    const chartCapacity = Math.max(semesterChartCapacity, rows.length)
+    const chartWidth =
+        chartCapacity * semesterChartStepWidth +
+        semesterChartHorizontalSpace
     const chartHeight = 440
     const margin = {
         top: 22,
@@ -322,6 +337,7 @@ export default function StudentSemesterPerformanceSection({
 }: StudentSemesterPerformanceSectionProps) {
     const [rows, setRows] = useState<StudentSemesterPerformanceRow[]>([])
     const [loading, setLoading] = useState(false)
+    const [tableOpen, setTableOpen] = useState(false)
     const [detailRecord, setDetailRecord] =
         useState<StudentSemesterPerformanceRow | null>(null)
 
@@ -362,7 +378,6 @@ export default function StudentSemesterPerformanceSection({
                 title: 'ชั้นปี',
                 dataIndex: 'study_year',
                 key: 'study_year',
-                sorter: (a, b) => a.study_year - b.study_year,
                 render: (value: number) => `ชั้นปี ${value}`,
             },
             {
@@ -396,19 +411,11 @@ export default function StudentSemesterPerformanceSection({
                 dataIndex: 'diff_gpax',
                 key: 'diff_gpax',
                 align: 'center',
-                render: (value: string | number) => {
-                    const numericValue = Number(value)
-                    const color =
-                        !Number.isNaN(numericValue) && numericValue < 0
-                            ? '#ff0000'
-                            : '#008000'
-
-                    return (
-                        <span style={{ color }}>
-                            {formatDiff(value)}
-                        </span>
-                    )
-                },
+                render: (value: string | number) => (
+                    <span style={{ color: getDiffColor(value) }}>
+                        {formatDiff(value)}
+                    </span>
+                ),
             },
             {
                 title: 'รายละเอียด',
@@ -456,31 +463,40 @@ export default function StudentSemesterPerformanceSection({
             title="รายงานผลการเรียนแต่ละภาคการศึกษา"
             size="small"
             loading={loading}
+            extra={
+                <Button
+                    type="primary"
+                    icon={<TableOutlined />}
+                    onClick={() => setTableOpen(true)}
+                >
+                    ดูตาราง
+                </Button>
+            }
         >
-            <Row gutter={[24, 16]} align="top">
-                <Col xs={24} xl={12}>
-                    <StudentSemesterChart rows={rows} />
-                </Col>
-                <Col xs={24} xl={12}>
-                    <Table<StudentSemesterPerformanceRow>
-                        className="semester-performance-table"
-                        rowKey="key"
-                        columns={columns}
-                        dataSource={rows}
-                        pagination={false}
-                        tableLayout="fixed"
-                    />
-                </Col>
-            </Row>
+            <StudentSemesterChart rows={rows} />
+
+            <Modal
+                title="ตารางผลการเรียนแต่ละภาคการศึกษา"
+                open={tableOpen}
+                width={1100}
+                footer={null}
+                destroyOnHidden
+                onCancel={() => setTableOpen(false)}
+            >
+                <Table<StudentSemesterPerformanceRow>
+                    className="semester-performance-table"
+                    rowKey="key"
+                    columns={columns}
+                    dataSource={rows}
+                    pagination={false}
+                    scroll={{ x: 840 }}
+                />
+            </Modal>
 
             <Modal
                 open={detailRecord !== null}
                 width={860}
-                footer={
-                    <Button onClick={() => setDetailRecord(null)}>
-                        ปิดหน้าต่าง
-                    </Button>
-                }
+                footer={null}
                 destroyOnHidden
                 onCancel={() => setDetailRecord(null)}
             >
@@ -493,7 +509,12 @@ export default function StudentSemesterPerformanceSection({
                             <Typography.Text strong>
                                 GPAX {formatDecimal(detailRecord.gpax)}
                             </Typography.Text>
-                            <Typography.Text strong>
+                            <Typography.Text
+                                strong
+                                style={{
+                                    color: getDiffColor(detailRecord.diff_gpax),
+                                }}
+                            >
                                 +-GPAX {formatDiff(detailRecord.diff_gpax)}
                             </Typography.Text>
                         </div>

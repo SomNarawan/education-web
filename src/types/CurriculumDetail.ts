@@ -1,6 +1,8 @@
-export interface CurriculumDivisionCategory {
+export interface CurriculumDivision {
     id: number
     name_th: string
+    division_type: 'category' | 'group' | 'requirement'
+    children: CurriculumDivision[]
 }
 
 export interface CurriculumEnrollment {
@@ -39,10 +41,10 @@ export interface CurriculumEnrollmentPlan {
 export interface CurriculumEnrollmentRecord {
     study_year: number
     semester: string
-    semester_year: number
-    semester_year_be: number
-    semester_order: number
-    study_period: string
+    semester_year?: number
+    semester_year_be?: number
+    semester_order?: number
+    study_period?: string
     course_code: string | null
     course_name: string
     course_category: string
@@ -51,8 +53,8 @@ export interface CurriculumEnrollmentRecord {
     course_group: string | null
     course_requirement?: string | null
     grade_letter: string | null
-    grade_point: string | number | null
-    enrollment_type: string
+    grade_point?: string | number | null
+    enrollment_type?: string
     credit: number
 }
 
