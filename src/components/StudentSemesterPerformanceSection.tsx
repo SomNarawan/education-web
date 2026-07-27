@@ -1,4 +1,4 @@
-﻿import { SearchOutlined, TableOutlined } from '@ant-design/icons'
+﻿import { SearchOutlined } from '@ant-design/icons'
 import type { DualAxesConfig } from '@ant-design/plots'
 import {
     Button,
@@ -36,6 +36,17 @@ interface SemesterCreditStatusRecord {
     gpa: number
 }
 
+interface ChartTooltipRenderItem {
+    name?: string
+    value?: unknown
+    color?: string
+}
+
+interface ChartTooltipRenderOptions {
+    title: string
+    items: ChartTooltipRenderItem[]
+}
+
 type SemesterPerformanceModule = {
     default: StudentSemesterPerformance[]
 }
@@ -68,7 +79,7 @@ const chartColors = {
     warning: '#ff8a34',
     success: '#8bcf8b',
     excellent: '#8bd2f2',
-    gpax: '#000000',
+    gpax: '#4b5563',
     grid: '#d9dce3',
     axis: '#8c8c8c',
     text: '#262626',
@@ -230,10 +241,10 @@ function StudentSemesterChart({
                 tick: true,
                 tickStroke: chartColors.axis,
                 tickStrokeOpacity: 1,
-                labelFontSize: 12,
+                labelFontSize: 11,
                 labelFill: chartColors.text,
                 labelFillOpacity: 1,
-                labelFontWeight: 600,
+                labelFontWeight: 400,
                 labelAutoHide: false,
                 labelAutoRotate: {
                     optionalAngles: [0, 25, 45],
@@ -251,9 +262,10 @@ function StudentSemesterChart({
                 tickCount: 9,
                 grid: true,
                 gridStroke: chartColors.grid,
+                labelFontSize: 11,
                 labelFill: chartColors.text,
                 labelFillOpacity: 1,
-                labelFontWeight: 600,
+                labelFontWeight: 400,
                 labelFormatter: (value: string) => {
                     const numericValue = Number(value)
 
@@ -266,17 +278,52 @@ function StudentSemesterChart({
         legend: false,
         tooltip: {
             items: [
-                {
-                    field: 'gpa',
+                (datum: (typeof chartData)[number]) => ({
                     name: 'GPA',
-                    valueFormatter: (value: number) => formatDecimal(value),
-                },
-                {
-                    field: 'gpax',
+                    value: formatDecimal(datum.gpa),
+                    color: getGradeColor(datum.gpa),
+                }),
+                (datum: (typeof chartData)[number]) => ({
                     name: 'GPAX',
-                    valueFormatter: (value: number) => formatDecimal(value),
-                },
+                    value: formatDecimal(datum.gpax),
+                    color: chartColors.gpax,
+                }),
             ],
+        },
+        interaction: {
+            tooltip: {
+                shared: true,
+                render: (
+                    event: unknown,
+                    { title, items }: ChartTooltipRenderOptions,
+                ) => {
+                    void event
+                    const tooltip = document.createElement('div')
+                    tooltip.className = 'performance-chart-tooltip'
+
+                    const tooltipTitle = document.createElement('div')
+                    tooltipTitle.className = 'performance-chart-tooltip-title'
+                    tooltipTitle.textContent = title
+                    tooltip.appendChild(tooltipTitle)
+
+                    items.forEach((item) => {
+                        const row = document.createElement('div')
+                        row.className = 'performance-chart-tooltip-row'
+                        row.style.color = item.color ?? chartColors.text
+
+                        const name = document.createElement('span')
+                        name.textContent = String(item.name ?? '')
+
+                        const value = document.createElement('strong')
+                        value.textContent = String(item.value ?? '')
+
+                        row.append(name, value)
+                        tooltip.appendChild(row)
+                    })
+
+                    return tooltip
+                },
+            },
         },
         children: [
             {
@@ -334,7 +381,11 @@ function StudentSemesterChart({
             <div className="semester-chart-scroll">
                 <div className="grade-chart-legend">
                     {gradeRanges.map((gradeRange, index) => (
-                        <span className="grade-legend-item" key={gradeRange}>
+                        <span
+                            className="grade-legend-item"
+                            key={gradeRange}
+                            style={{ color: gradeRangeColors[index] }}
+                        >
                             <span
                                 className="grade-legend-dot"
                                 style={{
@@ -342,9 +393,15 @@ function StudentSemesterChart({
                                 }}
                             />
                             {gradeRange}
-                            {index === gradeRanges.length - 1 && ' ~ GPAX'}
                         </span>
                     ))}
+                    <span
+                        className="grade-legend-item"
+                        style={{ color: chartColors.gpax }}
+                    >
+                        <span className="grade-legend-line" />
+                        GPAX
+                    </span>
                 </div>
 
                 <div
@@ -402,7 +459,6 @@ export default function StudentSemesterPerformanceSection({
     )
     const [rows, setRows] = useState<StudentSemesterPerformanceRow[]>([])
     const [loading, setLoading] = useState(false)
-    const [tableOpen, setTableOpen] = useState(false)
     const [detailRecord, setDetailRecord] =
         useState<StudentSemesterPerformanceRow | null>(null)
 
@@ -543,35 +599,27 @@ export default function StudentSemesterPerformanceSection({
             title="รายงานผลการเรียนแต่ละภาคการศึกษา"
             size="small"
             loading={loading}
-            extra={
-                <Button
-                    type="primary"
-                    icon={<TableOutlined />}
-                    onClick={() => setTableOpen(true)}
-                >
-                    ดูตาราง
-                </Button>
-            }
         >
-            <StudentSemesterChart creditStatuses={creditStatuses} rows={rows} />
-
-            <Modal
-                title="ตารางผลการเรียนแต่ละภาคการศึกษา"
-                open={tableOpen}
-                width={1100}
-                footer={null}
-                destroyOnHidden
-                onCancel={() => setTableOpen(false)}
-            >
-                <Table<StudentSemesterPerformanceRow>
-                    className="semester-performance-table"
-                    rowKey="key"
-                    columns={columns}
-                    dataSource={rows}
-                    pagination={false}
-                    scroll={{ x: 840 }}
+            <div className="performance-chart-table-layout">
+                <StudentSemesterChart
+                    creditStatuses={creditStatuses}
+                    rows={rows}
                 />
-            </Modal>
+                <section
+                    className="performance-table-panel"
+                    aria-label="ตารางผลการเรียนแต่ละภาคการศึกษา"
+                >
+                    <Table<StudentSemesterPerformanceRow>
+                        className="semester-performance-table"
+                        rowKey="key"
+                        columns={columns}
+                        dataSource={rows}
+                        pagination={false}
+                        size="small"
+                        tableLayout="fixed"
+                    />
+                </section>
+            </div>
 
             <Modal
                 open={detailRecord !== null}

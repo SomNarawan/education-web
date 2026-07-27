@@ -343,7 +343,7 @@ body {
     align-items: center;
     margin: 8px 0 12px;
     color: #005fe6;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -361,10 +361,55 @@ body {
     flex: 0 0 16px;
 }
 
+.grade-legend-line {
+    width: 18px;
+    height: 3px;
+    flex: 0 0 18px;
+    border-radius: 2px;
+    background: currentColor;
+}
+
+.performance-chart-tooltip {
+    min-width: 130px;
+    padding: 8px 10px;
+    font-size: 11px;
+}
+
+.performance-chart-tooltip-title {
+    margin-bottom: 4px;
+    color: #262626;
+    font-weight: 700;
+}
+
+.performance-chart-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    line-height: 1.8;
+}
+
 .semester-performance-chart {
     display: block;
     width: 100%;
     height: 440px;
+}
+
+.performance-chart-table-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.performance-chart-table-layout--credit-table
+    .course-group-credit-chart-section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.performance-table-panel {
+    min-width: 0;
 }
 
 .chart-loading {
@@ -391,8 +436,11 @@ body {
 }
 
 .semester-performance-table .ant-table-cell {
-    padding-inline: 8px !important;
+    padding: 5px 3px !important;
+    font-size: 12px;
+    line-height: 1.3;
     overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .semester-detail-summary {
@@ -421,6 +469,13 @@ body {
         font-size: 18px;
     }
 }
+
+@media (max-width: 960px) {
+    .performance-chart-table-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .semester-chart-panel {
     display: flex;
     flex-direction: column;
@@ -451,11 +506,12 @@ body {
     justify-content: space-between;
     gap: 12px;
     color: #111827;
+    font-size: 11px;
     font-weight: 700;
 }
 
 .semester-credit-status-header strong {
-    font-size: 22px;
+    font-size: 11px;
 }
 
 .semester-credit-status .ant-progress {
@@ -464,7 +520,7 @@ body {
 
 .semester-credit-status-caption {
     color: #6b7280;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .course-group-performance-list {
@@ -493,7 +549,7 @@ body {
 .course-group-credit-chart-title {
     margin-bottom: 14px;
     color: #111827;
-    font-size: 16px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -517,7 +573,7 @@ body {
     align-self: stretch;
     min-height: 42px;
     color: #005fe6;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.35;
 }
 
@@ -580,7 +636,7 @@ body {
 
 .course-group-credit-donut-center strong,
 .course-group-credit-donut-center span {
-    font-size: clamp(11px, 1.2vw, 17px);
+    font-size: 11px;
     font-weight: 400;
     line-height: 1.4;
 }
@@ -588,7 +644,7 @@ body {
 .course-group-credit-chart-caption {
     margin-top: 8px;
     color: #64748b;
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .course-group-credit-popover {
@@ -641,8 +697,11 @@ body {
 }
 
 .course-group-performance-table .ant-table-cell {
-    padding-inline: 12px !important;
+    padding: 5px 3px !important;
+    font-size: 12px;
+    line-height: 1.3;
     overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 @media (max-width: 768px) {
@@ -672,11 +731,11 @@ body {
 
 .chart-svg-tooltip-title {
     fill: #111827;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
 }
 
 .chart-svg-tooltip-text {
     fill: #4b5563;
-    font-size: 12px;
+    font-size: 11px;
 }

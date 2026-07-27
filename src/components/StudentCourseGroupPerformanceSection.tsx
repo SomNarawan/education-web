@@ -1,6 +1,5 @@
-import { TableOutlined } from '@ant-design/icons'
 import type { ColumnConfig, PieConfig } from '@ant-design/plots'
-import { Button, Card, Empty, Modal, Popover, Spin, Table, message } from 'antd'
+import { Card, Empty, Popover, Spin, Table, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type {
@@ -161,10 +160,10 @@ function CourseGroupChart({
                 tickStroke: chartColors.axis,
                 tickStrokeOpacity: 1,
                 size: 120,
-                labelFontSize: 12,
+                labelFontSize: 11,
                 labelFill: chartColors.text,
                 labelFillOpacity: 1,
-                labelFontWeight: 600,
+                labelFontWeight: 400,
                 labelAutoHide: false,
                 labelFormatter: (label: string) =>
                     wrapAxisLabel(label).join('\n'),
@@ -180,9 +179,10 @@ function CourseGroupChart({
                 tickCount: 9,
                 grid: true,
                 gridStroke: chartColors.grid,
+                labelFontSize: 11,
                 labelFill: chartColors.text,
                 labelFillOpacity: 1,
-                labelFontWeight: 600,
+                labelFontWeight: 400,
                 labelFormatter: (value: string) => {
                     const numericValue = Number(value)
 
@@ -389,9 +389,6 @@ export default function StudentCourseGroupPerformanceSection({
 }: StudentCourseGroupPerformanceSectionProps) {
     const [datasets, setDatasets] = useState<CourseGroupDataset[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedDataset, setSelectedDataset] =
-        useState<CourseGroupDataset | null>(null)
-
     useEffect(() => {
         const loadDatasets = async () => {
             try {
@@ -521,40 +518,41 @@ export default function StudentCourseGroupPerformanceSection({
                               ? `ผลการเรียนในแต่ละหมวดวิชา: ชุดที่ ${index + 1}`
                               : 'ผลการเรียนในแต่ละหมวดวิชา'
                     }
-                    extra={
-                        <Button
-                            type="primary"
-                            icon={<TableOutlined />}
-                            onClick={() => setSelectedDataset(dataset)}
-                        >
-                            ดูตาราง
-                        </Button>
-                    }
                     size="small"
                     loading={loading}
                 >
-                    <CourseGroupChart rows={dataset.rows} />
-                    <CourseGroupCreditCharts rows={dataset.rows} />
+                    <div
+                        className={`performance-chart-table-layout${
+                            dataset.rows.length === 1
+                                ? ' performance-chart-table-layout--credit-table'
+                                : ''
+                        }`}
+                    >
+                        {dataset.rows.length === 1 ? (
+                            <CourseGroupCreditCharts rows={dataset.rows} />
+                        ) : (
+                            <CourseGroupChart rows={dataset.rows} />
+                        )}
+                        <section
+                            className="performance-table-panel"
+                            aria-label="ตารางผลการเรียนในแต่ละหมวดวิชา"
+                        >
+                            <Table<StudentCourseGroupPerformanceRow>
+                                className="course-group-performance-table"
+                                rowKey="key"
+                                columns={columns}
+                                dataSource={dataset.rows}
+                                pagination={false}
+                                size="small"
+                                tableLayout="fixed"
+                            />
+                        </section>
+                    </div>
+                    {dataset.rows.length > 1 && (
+                        <CourseGroupCreditCharts rows={dataset.rows} />
+                    )}
                 </Card>
             ))}
-
-            <Modal
-                title="ตารางผลการเรียนในแต่ละหมวดวิชา"
-                open={selectedDataset !== null}
-                width={1100}
-                footer={null}
-                destroyOnHidden
-                onCancel={() => setSelectedDataset(null)}
-            >
-                <Table<StudentCourseGroupPerformanceRow>
-                    className="course-group-performance-table"
-                    rowKey="key"
-                    columns={columns}
-                    dataSource={selectedDataset?.rows ?? []}
-                    pagination={false}
-                    scroll={{ x: 760 }}
-                />
-            </Modal>
         </div>
     )
 }
