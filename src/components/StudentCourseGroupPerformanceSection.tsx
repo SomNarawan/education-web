@@ -317,6 +317,16 @@ function CourseGroupCreditCharts({
                                 },
                             ],
                         },
+                        interaction: {
+                            tooltip: {
+                                mount: 'body',
+                                css: {
+                                    '.g2-tooltip': {
+                                        'z-index': 1000,
+                                    },
+                                },
+                            },
+                        },
                     }
 
                     return (

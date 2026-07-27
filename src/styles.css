@@ -369,25 +369,6 @@ body {
     background: currentColor;
 }
 
-.performance-chart-tooltip {
-    min-width: 130px;
-    padding: 8px 10px;
-    font-size: 11px;
-}
-
-.performance-chart-tooltip-title {
-    margin-bottom: 4px;
-    color: #262626;
-    font-weight: 700;
-}
-
-.performance-chart-tooltip-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
-    line-height: 1.8;
-}
-
 .semester-performance-chart {
     display: block;
     width: 100%;

@@ -36,17 +36,6 @@ interface SemesterCreditStatusRecord {
     gpa: number
 }
 
-interface ChartTooltipRenderItem {
-    name?: string
-    value?: unknown
-    color?: string
-}
-
-interface ChartTooltipRenderOptions {
-    title: string
-    items: ChartTooltipRenderItem[]
-}
-
 type SemesterPerformanceModule = {
     default: StudentSemesterPerformance[]
 }
@@ -276,52 +265,15 @@ function StudentSemesterChart({
             },
         },
         legend: false,
-        tooltip: {
-            items: [
-                (datum: (typeof chartData)[number]) => ({
-                    name: 'GPA',
-                    value: formatDecimal(datum.gpa),
-                    color: getGradeColor(datum.gpa),
-                }),
-                (datum: (typeof chartData)[number]) => ({
-                    name: 'GPAX',
-                    value: formatDecimal(datum.gpax),
-                    color: chartColors.gpax,
-                }),
-            ],
-        },
         interaction: {
             tooltip: {
-                shared: true,
-                render: (
-                    event: unknown,
-                    { title, items }: ChartTooltipRenderOptions,
-                ) => {
-                    void event
-                    const tooltip = document.createElement('div')
-                    tooltip.className = 'performance-chart-tooltip'
-
-                    const tooltipTitle = document.createElement('div')
-                    tooltipTitle.className = 'performance-chart-tooltip-title'
-                    tooltipTitle.textContent = title
-                    tooltip.appendChild(tooltipTitle)
-
-                    items.forEach((item) => {
-                        const row = document.createElement('div')
-                        row.className = 'performance-chart-tooltip-row'
-                        row.style.color = item.color ?? chartColors.text
-
-                        const name = document.createElement('span')
-                        name.textContent = String(item.name ?? '')
-
-                        const value = document.createElement('strong')
-                        value.textContent = String(item.value ?? '')
-
-                        row.append(name, value)
-                        tooltip.appendChild(row)
-                    })
-
-                    return tooltip
+                shared: false,
+                series: false,
+                mount: 'body',
+                css: {
+                    '.g2-tooltip': {
+                        'z-index': 1000,
+                    },
                 },
             },
         },
@@ -340,6 +292,17 @@ function StudentSemesterChart({
                 style: {
                     fillOpacity: 0.68,
                 },
+                tooltip: {
+                    title: 'semesterLabel',
+                    items: [
+                        {
+                            field: 'gpa',
+                            name: 'GPA',
+                            valueFormatter: (value: number) =>
+                                formatDecimal(value),
+                        },
+                    ],
+                },
             },
             {
                 type: 'line',
@@ -355,6 +318,7 @@ function StudentSemesterChart({
                     stroke: chartColors.gpax,
                     lineWidth: 3,
                 },
+                tooltip: false,
             },
             {
                 type: 'point',
@@ -371,6 +335,17 @@ function StudentSemesterChart({
                     stroke: chartColors.gpax,
                     lineWidth: 2,
                     r: 4,
+                },
+                tooltip: {
+                    title: 'semesterLabel',
+                    items: [
+                        {
+                            field: 'gpax',
+                            name: 'GPAX',
+                            valueFormatter: (value: number) =>
+                                formatDecimal(value),
+                        },
+                    ],
                 },
             },
         ],
@@ -416,7 +391,10 @@ function StudentSemesterChart({
                             </div>
                         }
                     >
-                        <DualAxes {...chartConfig} />
+                        <DualAxes
+                            key={'semester-performance-tooltip-v3'}
+                            {...chartConfig}
+                        />
                     </Suspense>
                 </div>
             </div>
