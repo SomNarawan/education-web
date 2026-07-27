@@ -1,7 +1,17 @@
-import { SearchOutlined, TableOutlined } from '@ant-design/icons'
-import { Button, Card, Modal, Table, Typography, message } from 'antd'
+﻿import { SearchOutlined, TableOutlined } from '@ant-design/icons'
+import type { DualAxesConfig } from '@ant-design/plots'
+import {
+    Button,
+    Card,
+    Modal,
+    Progress,
+    Spin,
+    Table,
+    Typography,
+    message,
+} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type {
     StudentSemesterEnrollment,
     StudentSemesterPerformance,
@@ -16,31 +26,36 @@ interface SemesterCreditStatus {
     label: string
     value: number
     total: number
-    color: string
+    gpa: number
+}
+
+interface SemesterCreditStatusRecord {
+    type: string
+    credits_study: number
+    credits_all: number
+    gpa: number
 }
 
 type SemesterPerformanceModule = {
     default: StudentSemesterPerformance[]
 }
 
+type SemesterCreditStatusModule = {
+    default: SemesterCreditStatusRecord[]
+}
+
 const semesterPerformanceRows = import.meta.glob<SemesterPerformanceModule>(
     '../data/graph/by_semester/*.json',
 )
 
-const creditStatusMocks: SemesterCreditStatus[] = [
-    {
-        label: 'หน่วยกิตที่เรียน',
-        value: 124,
-        total: 132,
-        color: '#1677ff',
-    },
-    {
-        label: 'หน่วยกิตที่เรียนเกิน',
-        value: 12,
-        total: 30,
-        color: '#ff8a34',
-    },
-]
+const semesterCreditStatusRows = import.meta.glob<SemesterCreditStatusModule>(
+    '../data/graph/by_credit/*.json',
+)
+
+const creditStatusLabels: Record<string, string> = {
+    credit_study: 'หน่วยกิตที่เรียน',
+    credit_over: 'หน่วยกิตที่เรียนเกิน',
+}
 
 const semesterOrder: Record<string, number> = {
     ภาคฤดูร้อน: 0,
@@ -56,12 +71,44 @@ const chartColors = {
     gpax: '#000000',
     grid: '#d9dce3',
     axis: '#8c8c8c',
-    text: '#666666',
+    text: '#262626',
 }
 
-const semesterChartCapacity = 16
-const semesterChartStepWidth = 72
-const semesterChartHorizontalSpace = 92
+const gradeRanges = [
+    'เกรด(0-1.74)',
+    'เกรด(1.75-1.99)',
+    'เกรด(2.0-3.24)',
+    'เกรด(3.25-4.00)',
+]
+
+const gradeRangeColors = [
+    chartColors.danger,
+    chartColors.warning,
+    chartColors.success,
+    chartColors.excellent,
+]
+
+function getGradeRange(gpa: number) {
+    if (gpa >= 3.25) {
+        return gradeRanges[3]
+    }
+
+    if (gpa >= 2) {
+        return gradeRanges[2]
+    }
+
+    if (gpa >= 1.75) {
+        return gradeRanges[1]
+    }
+
+    return gradeRanges[0]
+}
+
+const DualAxes = lazy(() =>
+    import('@ant-design/plots').then((chartModule) => ({
+        default: chartModule.DualAxes,
+    })),
+)
 
 function getGradeColor(gpa: number) {
     if (gpa >= 3.25) {
@@ -133,178 +180,194 @@ function buildRows(
         }))
 }
 
+function buildCreditStatuses(
+    rows: SemesterCreditStatusRecord[],
+): SemesterCreditStatus[] {
+    return rows.map((row) => ({
+        label: creditStatusLabels[row.type] ?? row.type,
+        value: row.credits_study,
+        total: row.credits_all,
+        gpa: row.gpa,
+    }))
+}
+
 function StudentSemesterChart({
+    creditStatuses,
     rows,
 }: {
+    creditStatuses: SemesterCreditStatus[]
     rows: StudentSemesterPerformanceRow[]
 }) {
-    const chartCapacity = Math.max(semesterChartCapacity, rows.length)
-    const chartWidth =
-        chartCapacity * semesterChartStepWidth +
-        semesterChartHorizontalSpace
-    const chartHeight = 440
-    const margin = {
-        top: 22,
-        right: 24,
-        bottom: 92,
-        left: 42,
-    }
-    const innerWidth = chartWidth - margin.left - margin.right
-    const innerHeight = chartHeight - margin.top - margin.bottom
-    const stepWidth = innerWidth / Math.max(rows.length, 1)
-    const barWidth = Math.min(46, stepWidth * 0.55)
-    const yTicks = Array.from({ length: 9 }, (_, index) => index * 0.5)
-    const getY = (value: number) =>
-        margin.top + innerHeight - (Math.min(value, 4) / 4) * innerHeight
-    const gpaxPoints = rows.map((row, index) => {
-        const x = margin.left + stepWidth * index + stepWidth / 2
-        const y = getY(row.gpax)
+    const chartData = rows.map((row) => ({
+        semesterLabel: `ชั้นปี ${row.study_year} ${row.semester}`,
+        gpa: row.gpa,
+        gpax: row.gpax,
+        gradeRange: getGradeRange(row.gpa),
+    }))
+    const chartConfig: DualAxesConfig = {
+        data: chartData,
+        height: 440,
+        autoFit: true,
+        transpose: true,
+        xField: 'semesterLabel',
+        scale: {
+            y: {
+                domain: [0, 4],
+                tickCount: 9,
+                nice: false,
+            },
+            color: {
+                domain: gradeRanges,
+                range: gradeRangeColors,
+            },
+        },
+        axis: {
+            x: {
+                title: false,
+                line: true,
+                lineStroke: chartColors.axis,
+                lineStrokeOpacity: 1,
+                tick: true,
+                tickStroke: chartColors.axis,
+                tickStrokeOpacity: 1,
+                labelFontSize: 12,
+                labelFill: chartColors.text,
+                labelFillOpacity: 1,
+                labelFontWeight: 600,
+                labelAutoHide: false,
+                labelAutoRotate: {
+                    optionalAngles: [0, 25, 45],
+                    recoverWhenFailed: true,
+                },
+            },
+            y: {
+                title: false,
+                line: true,
+                lineStroke: chartColors.axis,
+                lineStrokeOpacity: 1,
+                tick: true,
+                tickStroke: chartColors.axis,
+                tickStrokeOpacity: 1,
+                tickCount: 9,
+                grid: true,
+                gridStroke: chartColors.grid,
+                labelFill: chartColors.text,
+                labelFillOpacity: 1,
+                labelFontWeight: 600,
+                labelFormatter: (value: string) => {
+                    const numericValue = Number(value)
 
-        return { x, y }
-    })
-    const gpaxLine = gpaxPoints
-        .map((point) => `${point.x},${point.y}`)
-        .join(' ')
+                    return numericValue === 0
+                        ? '0'
+                        : numericValue.toFixed(1)
+                },
+            },
+        },
+        legend: false,
+        tooltip: {
+            items: [
+                {
+                    field: 'gpa',
+                    name: 'GPA',
+                    valueFormatter: (value: number) => formatDecimal(value),
+                },
+                {
+                    field: 'gpax',
+                    name: 'GPAX',
+                    valueFormatter: (value: number) => formatDecimal(value),
+                },
+            ],
+        },
+        children: [
+            {
+                type: 'interval',
+                yField: 'gpa',
+                colorField: 'gradeRange',
+                scale: {
+                    y: {
+                        domain: [0, 4],
+                        key: 'semesterGradeScale',
+                        independent: false,
+                    },
+                },
+                style: {
+                    fillOpacity: 0.68,
+                },
+            },
+            {
+                type: 'line',
+                yField: 'gpax',
+                scale: {
+                    y: {
+                        domain: [0, 4],
+                        key: 'semesterGradeScale',
+                        independent: false,
+                    },
+                },
+                style: {
+                    stroke: chartColors.gpax,
+                    lineWidth: 3,
+                },
+            },
+            {
+                type: 'point',
+                yField: 'gpax',
+                scale: {
+                    y: {
+                        domain: [0, 4],
+                        key: 'semesterGradeScale',
+                        independent: false,
+                    },
+                },
+                style: {
+                    fill: '#ffffff',
+                    stroke: chartColors.gpax,
+                    lineWidth: 2,
+                    r: 4,
+                },
+            },
+        ],
+    }
 
     return (
         <div className="semester-chart-panel">
             <div className="semester-chart-scroll">
                 <div className="grade-chart-legend">
-                <span className="grade-legend-item">
-                    <span
-                        className="grade-legend-dot"
-                        style={{ background: chartColors.danger }}
-                    />
-                    เกรด(0-1.74)
-                </span>
-                <span className="grade-legend-item">
-                    <span
-                        className="grade-legend-dot"
-                        style={{ background: chartColors.warning }}
-                    />
-                    เกรด(1.75-1.99)
-                </span>
-                <span className="grade-legend-item">
-                    <span
-                        className="grade-legend-dot"
-                        style={{ background: chartColors.success }}
-                    />
-                    เกรด(2.0-3.24)
-                </span>
-                <span className="grade-legend-item">
-                    <span
-                        className="grade-legend-dot"
-                        style={{ background: chartColors.excellent }}
-                    />
-                    เกรด(3.25-4.00) ~ GPAX
-                </span>
-            </div>
-
-            <svg
-                className="semester-performance-chart"
-                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                role="img"
-                aria-label="กราฟแท่ง GPA และเส้น GPAX รายภาคการศึกษา"
-            >
-                {yTicks.map((tick) => {
-                    const y = getY(tick)
-
-                    return (
-                        <g key={tick}>
-                            <line
-                                x1={margin.left}
-                                x2={chartWidth - margin.right}
-                                y1={y}
-                                y2={y}
-                                stroke={chartColors.grid}
-                                strokeWidth="1"
+                    {gradeRanges.map((gradeRange, index) => (
+                        <span className="grade-legend-item" key={gradeRange}>
+                            <span
+                                className="grade-legend-dot"
+                                style={{
+                                    background: gradeRangeColors[index],
+                                }}
                             />
-                            <text
-                                x={margin.left - 10}
-                                y={y + 4}
-                                textAnchor="end"
-                                fill={chartColors.text}
-                                fontSize="12"
-                            >
-                                {tick === 0 ? '0' : tick.toFixed(1)}
-                            </text>
-                        </g>
-                    )
-                })}
+                            {gradeRange}
+                            {index === gradeRanges.length - 1 && ' ~ GPAX'}
+                        </span>
+                    ))}
+                </div>
 
-                <line
-                    x1={margin.left}
-                    x2={margin.left}
-                    y1={margin.top}
-                    y2={margin.top + innerHeight}
-                    stroke={chartColors.axis}
-                />
-                <line
-                    x1={margin.left}
-                    x2={chartWidth - margin.right}
-                    y1={margin.top + innerHeight}
-                    y2={margin.top + innerHeight}
-                    stroke={chartColors.axis}
-                />
-
-                {rows.map((row, index) => {
-                    const x =
-                        margin.left + stepWidth * index + (stepWidth - barWidth) / 2
-                    const y = getY(row.gpa)
-                    const barHeight = margin.top + innerHeight - y
-
-                    return (
-                        <g key={row.key}>
-                            <rect
-                                x={x}
-                                y={y}
-                                width={barWidth}
-                                height={barHeight}
-                                fill={getGradeColor(row.gpa)}
-                                opacity="0.68"
-                            />
-                            <text
-                                x={margin.left + stepWidth * index + stepWidth / 2}
-                                y={margin.top + innerHeight + 28}
-                                fill={chartColors.text}
-                                fontSize="12"
-                                textAnchor="end"
-                                transform={`rotate(-25 ${
-                                    margin.left + stepWidth * index + stepWidth / 2
-                                } ${margin.top + innerHeight + 28})`}
-                            >
-                                {`ชั้นปี ${row.study_year} ${row.semester}`}
-                            </text>
-                        </g>
-                    )
-                })}
-
-                {gpaxLine && (
-                    <polyline
-                        points={gpaxLine}
-                        fill="none"
-                        stroke={chartColors.gpax}
-                        strokeWidth="3"
-                    />
-                )}
-
-                {gpaxPoints.map((point, index) => (
-                    <circle
-                        key={rows[index].key}
-                        cx={point.x}
-                        cy={point.y}
-                        r="4"
-                        fill="none"
-                        stroke={chartColors.gpax}
-                        strokeWidth="2"
-                    />
-                ))}
-                </svg>
+                <div
+                    className="semester-performance-chart"
+                    role="img"
+                    aria-label="กราฟแท่ง GPA และเส้น GPAX รายภาคการศึกษา"
+                >
+                    <Suspense
+                        fallback={
+                            <div className="chart-loading">
+                                <Spin />
+                            </div>
+                        }
+                    >
+                        <DualAxes {...chartConfig} />
+                    </Suspense>
+                </div>
             </div>
 
             <div className="semester-credit-status-list" aria-label="สรุปหน่วยกิต">
-                {creditStatusMocks.map((status) => {
+                {creditStatuses.map((status) => {
                     const percent = getStatusPercent(status.value, status.total)
+                    const statusColor = getGradeColor(status.gpa)
 
                     return (
                         <div className="semester-credit-status" key={status.label}>
@@ -312,15 +375,14 @@ function StudentSemesterChart({
                                 <span>{status.label}</span>
                                 <strong>{status.value}</strong>
                             </div>
-                            <div className="semester-credit-status-track">
-                                <div
-                                    className="semester-credit-status-fill"
-                                    style={{
-                                        width: `${percent}%`,
-                                        background: status.color,
-                                    }}
-                                />
-                            </div>
+                            <Progress
+                                percent={Number(percent.toFixed(2))}
+                                showInfo={false}
+                                strokeColor={statusColor}
+                                railColor="#eef2f7"
+                                size={['100%', 14]}
+                                aria-label={`${status.label} ${status.value} จาก ${status.total} หน่วยกิต`}
+                            />
                             <div className="semester-credit-status-caption">
                                 {status.value}/{status.total} หน่วยกิต
                             </div>
@@ -335,6 +397,9 @@ function StudentSemesterChart({
 export default function StudentSemesterPerformanceSection({
     studentCode,
 }: StudentSemesterPerformanceSectionProps) {
+    const [creditStatuses, setCreditStatuses] = useState<SemesterCreditStatus[]>(
+        [],
+    )
     const [rows, setRows] = useState<StudentSemesterPerformanceRow[]>([])
     const [loading, setLoading] = useState(false)
     const [tableOpen, setTableOpen] = useState(false)
@@ -349,20 +414,35 @@ export default function StudentSemesterPerformanceSection({
                     semesterPerformanceRows[
                         `../data/graph/by_semester/${studentCode}.json`
                     ]
+                const creditStatusImporter =
+                    semesterCreditStatusRows[
+                        `../data/graph/by_credit/${studentCode}.json`
+                    ]
 
                 if (!importer) {
+                    setCreditStatuses([])
                     setRows([])
                     return
                 }
 
-                const module = await importer()
+                const [module, creditStatusModule] = await Promise.all([
+                    importer(),
+                    creditStatusImporter?.() ?? Promise.resolve({ default: [] }),
+                ])
                 const records = Array.isArray(module.default)
                     ? module.default
                     : []
+                const creditStatusRecords = Array.isArray(
+                    creditStatusModule.default,
+                )
+                    ? creditStatusModule.default
+                    : []
+                setCreditStatuses(buildCreditStatuses(creditStatusRecords))
                 setRows(buildRows(records))
             } catch (error) {
                 console.error(error)
                 message.error('โหลดรายงานผลการเรียนไม่สำเร็จ')
+                setCreditStatuses([])
                 setRows([])
             } finally {
                 setLoading(false)
@@ -473,7 +553,7 @@ export default function StudentSemesterPerformanceSection({
                 </Button>
             }
         >
-            <StudentSemesterChart rows={rows} />
+            <StudentSemesterChart creditStatuses={creditStatuses} rows={rows} />
 
             <Modal
                 title="ตารางผลการเรียนแต่ละภาคการศึกษา"

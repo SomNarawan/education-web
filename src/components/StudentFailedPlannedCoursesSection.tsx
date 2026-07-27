@@ -230,7 +230,7 @@ export default function StudentFailedPlannedCoursesSection({
     }, [studentCode])
 
     return (
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
             <CourseResultTable
                 title="ผลการเรียนวิชาที่ไม่ผ่านตามแผน"
                 courseNameTitle="ชื่อรายวิชายังไม่ผ่าน"

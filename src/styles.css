@@ -333,7 +333,7 @@ body {
 
 .semester-chart-scroll {
     width: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 .grade-chart-legend {
@@ -364,7 +364,14 @@ body {
 .semester-performance-chart {
     display: block;
     width: 100%;
-    height: auto;
+    height: 440px;
+}
+
+.chart-loading {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
 }
 
 .semester-performance-table .ant-table-thead>tr>th {
@@ -451,17 +458,8 @@ body {
     font-size: 22px;
 }
 
-.semester-credit-status-track {
-    width: 100%;
-    height: 14px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: #eef2f7;
-}
-
-.semester-credit-status-fill {
-    height: 100%;
-    border-radius: inherit;
+.semester-credit-status .ant-progress {
+    line-height: 1;
 }
 
 .semester-credit-status-caption {
@@ -483,7 +481,7 @@ body {
 .course-group-performance-chart {
     display: block;
     width: 100%;
-    height: auto;
+    height: 460px;
 }
 
 .course-group-credit-chart-section {
@@ -543,8 +541,18 @@ body {
     place-items: center;
     border: 0;
     border-radius: 50%;
+    background: transparent;
     cursor: pointer;
     font: inherit;
+}
+
+.course-group-credit-donut > * {
+    grid-area: 1 / 1;
+}
+
+.course-group-credit-donut > div:first-child {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .course-group-credit-donut:hover {
@@ -566,6 +574,8 @@ body {
     border-radius: 50%;
     background: #ffffff;
     color: #3f3f46;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .course-group-credit-donut-center strong,
@@ -639,4 +649,34 @@ body {
     .course-group-credit-chart-card {
         padding-inline: 8px;
     }
+}
+
+
+.chart-data-point {
+    cursor: pointer;
+    outline: none;
+}
+
+.chart-data-point:focus-visible rect:first-child {
+    stroke: #1677ff;
+    stroke-width: 2;
+}
+
+.chart-hover-target {
+    pointer-events: all;
+}
+
+.chart-svg-tooltip {
+    pointer-events: none;
+}
+
+.chart-svg-tooltip-title {
+    fill: #111827;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.chart-svg-tooltip-text {
+    fill: #4b5563;
+    font-size: 12px;
 }

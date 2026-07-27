@@ -1,7 +1,8 @@
 import { TableOutlined } from '@ant-design/icons'
-import { Button, Card, Empty, Modal, Popover, Table, message } from 'antd'
+import type { ColumnConfig, PieConfig } from '@ant-design/plots'
+import { Button, Card, Empty, Modal, Popover, Spin, Table, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type {
     StudentCourseGroupPerformance,
     StudentCourseGroupPerformanceRow,
@@ -32,7 +33,49 @@ const chartColors = {
     excellent: '#8bd2f2',
     grid: '#d9dce3',
     axis: '#8c8c8c',
-    text: '#666666',
+    text: '#262626',
+}
+
+const Column = lazy(() =>
+    import('@ant-design/plots').then((chartModule) => ({
+        default: chartModule.Column,
+    })),
+)
+
+const Pie = lazy(() =>
+    import('@ant-design/plots').then((chartModule) => ({
+        default: chartModule.Pie,
+    })),
+)
+
+const gradeRanges = [
+    'เกรด(0-1.74)',
+    'เกรด(1.75-1.99)',
+    'เกรด(2.0-3.24)',
+    'เกรด(3.25-4.00)',
+]
+
+const gradeRangeColors = [
+    chartColors.danger,
+    chartColors.warning,
+    chartColors.success,
+    chartColors.excellent,
+]
+
+function getGradeRange(gpa: number) {
+    if (gpa >= 3.25) {
+        return gradeRanges[3]
+    }
+
+    if (gpa >= 2) {
+        return gradeRanges[2]
+    }
+
+    if (gpa >= 1.75) {
+        return gradeRanges[1]
+    }
+
+    return gradeRanges[0]
 }
 
 function getGradeColor(gpa: number) {
@@ -78,145 +121,125 @@ function wrapAxisLabel(label: string, maxCharactersPerLine = 20) {
 
 function CourseGroupChart({
     rows,
-    chartWidth,
 }: {
     rows: StudentCourseGroupPerformanceRow[]
-    chartWidth: number
 }) {
-    const xAxisLabels = rows.map((row) => wrapAxisLabel(row.course_group))
-    const chartHeight = 460
-    const margin = {
-        top: 18,
-        right: 20,
-        bottom: 120,
-        left: 42,
+    const chartData = rows.map((row) => ({
+        courseGroup: row.course_group,
+        gpa: row.gpa,
+        gradeRange: getGradeRange(row.gpa),
+    }))
+    const chartConfig: ColumnConfig = {
+        data: chartData,
+        height: 460,
+        autoFit: true,
+        transpose: true,
+        xField: 'courseGroup',
+        yField: 'gpa',
+        colorField: 'gradeRange',
+        scale: {
+            y: {
+                domain: [0, 4],
+                tickCount: 9,
+                nice: false,
+            },
+            color: {
+                domain: gradeRanges,
+                range: gradeRangeColors,
+            },
+            x: {
+                padding: 0.28,
+            },
+        },
+        axis: {
+            x: {
+                title: false,
+                line: true,
+                lineStroke: chartColors.axis,
+                lineStrokeOpacity: 1,
+                tick: true,
+                tickStroke: chartColors.axis,
+                tickStrokeOpacity: 1,
+                size: 120,
+                labelFontSize: 12,
+                labelFill: chartColors.text,
+                labelFillOpacity: 1,
+                labelFontWeight: 600,
+                labelAutoHide: false,
+                labelFormatter: (label: string) =>
+                    wrapAxisLabel(label).join('\n'),
+            },
+            y: {
+                title: false,
+                line: true,
+                lineStroke: chartColors.axis,
+                lineStrokeOpacity: 1,
+                tick: true,
+                tickStroke: chartColors.axis,
+                tickStrokeOpacity: 1,
+                tickCount: 9,
+                grid: true,
+                gridStroke: chartColors.grid,
+                labelFill: chartColors.text,
+                labelFillOpacity: 1,
+                labelFontWeight: 600,
+                labelFormatter: (value: string) => {
+                    const numericValue = Number(value)
+
+                    return numericValue === 0
+                        ? '0'
+                        : numericValue.toFixed(1)
+                },
+            },
+        },
+        legend: false,
+        style: {
+            fillOpacity: 0.78,
+        },
+        tooltip: {
+            items: [
+                {
+                    field: 'gpa',
+                    name: 'เกรดเฉลี่ย',
+                    valueFormatter: (value: number) => value.toFixed(2),
+                },
+            ],
+        },
     }
-    const innerWidth = chartWidth - margin.left - margin.right
-    const innerHeight = chartHeight - margin.top - margin.bottom
-    const stepWidth = innerWidth / Math.max(rows.length, 1)
-    const barWidth = Math.min(118, stepWidth * 0.72)
-    const yTicks = Array.from({ length: 9 }, (_, index) => index * 0.5)
-    const getY = (value: number) =>
-        margin.top + innerHeight - (Math.min(Math.max(value, 0), 4) / 4) * innerHeight
 
     return (
         <div className="course-group-chart-scroll">
             <div className="grade-chart-legend">
-                <span className="grade-legend-item grade-legend-danger">
+                {gradeRanges.map((gradeRange, index) => (
                     <span
-                        className="grade-legend-dot"
-                        style={{ background: chartColors.danger }}
-                    />
-                    เกรด(0-1.74)
-                </span>
-                <span className="grade-legend-item grade-legend-warning">
-                    <span
-                        className="grade-legend-dot"
-                        style={{ background: chartColors.warning }}
-                    />
-                    เกรด(1.75-1.99)
-                </span>
-                <span className="grade-legend-item grade-legend-success">
-                    <span
-                        className="grade-legend-dot"
-                        style={{ background: chartColors.success }}
-                    />
-                    เกรด(2.0-3.24)
-                </span>
-                <span className="grade-legend-item">
-                    <span
-                        className="grade-legend-dot"
-                        style={{ background: chartColors.excellent }}
-                    />
-                    เกรด(3.25-4.00)
-                </span>
+                        className="grade-legend-item"
+                        key={gradeRange}
+                        style={{ color: gradeRangeColors[index] }}
+                    >
+                        <span
+                            className="grade-legend-dot"
+                            style={{ background: gradeRangeColors[index] }}
+                        />
+                        {gradeRange}
+                    </span>
+                ))}
             </div>
 
-            <svg
+            <div
                 className="course-group-performance-chart"
-                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                 role="img"
                 aria-label="กราฟเกรดเฉลี่ยแยกตามหมวดวิชา"
             >
-                {yTicks.map((tick) => {
-                    const y = getY(tick)
-
-                    return (
-                        <g key={tick}>
-                            <line
-                                x1={margin.left}
-                                x2={chartWidth - margin.right}
-                                y1={y}
-                                y2={y}
-                                stroke={chartColors.grid}
-                            />
-                            <text
-                                x={margin.left - 10}
-                                y={y + 4}
-                                textAnchor="end"
-                                fill={chartColors.text}
-                                fontSize="12"
-                            >
-                                {tick === 0 ? '0' : tick.toFixed(1)}
-                            </text>
-                        </g>
-                    )
-                })}
-
-                <line
-                    x1={margin.left}
-                    x2={margin.left}
-                    y1={margin.top}
-                    y2={margin.top + innerHeight}
-                    stroke={chartColors.axis}
-                />
-                <line
-                    x1={margin.left}
-                    x2={chartWidth - margin.right}
-                    y1={margin.top + innerHeight}
-                    y2={margin.top + innerHeight}
-                    stroke={chartColors.axis}
-                />
-
-                {rows.map((row, index) => {
-                    const centerX =
-                        margin.left + stepWidth * index + stepWidth / 2
-                    const x = centerX - barWidth / 2
-                    const y = getY(row.gpa)
-                    const barHeight = margin.top + innerHeight - y
-
-                    return (
-                        <g key={row.key}>
-                            <rect
-                                x={x}
-                                y={y}
-                                width={barWidth}
-                                height={barHeight}
-                                fill={getGradeColor(row.gpa)}
-                                opacity="0.78"
-                            />
-                            <text
-                                x={centerX}
-                                y={margin.top + innerHeight + 27}
-                                textAnchor="middle"
-                                fill={chartColors.text}
-                                fontSize="12"
-                            >
-                                <title>{row.course_group}</title>
-                                {xAxisLabels[index].map((line, lineIndex) => (
-                                    <tspan
-                                        key={`${row.key}-${lineIndex}`}
-                                        x={centerX}
-                                        dy={lineIndex === 0 ? 0 : 18}
-                                    >
-                                        {line}
-                                    </tspan>
-                                ))}
-                            </text>
-                        </g>
-                    )
-                })}
-            </svg>
+                <Suspense
+                    fallback={
+                        <div className="chart-loading">
+                            <Spin />
+                        </div>
+                    }
+                >
+                    <Column {...chartConfig} />
+                </Suspense>
+            </div>
         </div>
     )
 }
@@ -251,6 +274,50 @@ function CourseGroupCreditCharts({
                             ? (completedCredits / totalCredits) * 100
                             : 0
                     const gradeColor = getGradeColor(row.gpa)
+                    const remainingCredits = Math.max(
+                        totalCredits - completedCredits,
+                        0,
+                    )
+                    const pieData = [
+                        {
+                            status: 'เรียนแล้ว',
+                            chartCredits: completedCredits,
+                            credits: completedCredits,
+                        },
+                        {
+                            status: 'คงเหลือ',
+                            chartCredits:
+                                totalCredits > 0 ? remainingCredits : 1,
+                            credits: remainingCredits,
+                        },
+                    ]
+                    const pieConfig: PieConfig = {
+                        data: pieData,
+                        height: 150,
+                        autoFit: true,
+                        angleField: 'chartCredits',
+                        colorField: 'status',
+                        innerRadius: 0.58,
+                        radius: 0.92,
+                        scale: {
+                            color: {
+                                domain: ['เรียนแล้ว', 'คงเหลือ'],
+                                range: [gradeColor, '#d9d9d9'],
+                            },
+                        },
+                        legend: false,
+                        label: false,
+                        tooltip: {
+                            items: [
+                                {
+                                    field: 'credits',
+                                    name: 'หน่วยกิต',
+                                    valueFormatter: (value: number) =>
+                                        value.toString(),
+                                },
+                            ],
+                        },
+                    }
 
                     return (
                         <div
@@ -289,12 +356,12 @@ function CourseGroupCreditCharts({
                             >
                                 <button
                                     className="course-group-credit-donut"
-                                    style={{
-                                        background: `conic-gradient(${gradeColor} 0% ${percentage}%, #d9d9d9 ${percentage}% 100%)`,
-                                    }}
                                     type="button"
                                     aria-label={`${row.course_group} เรียนแล้ว ${completedCredits} จาก ${totalCredits} หน่วยกิต กดเพื่อดูรายละเอียด`}
                                 >
+                                    <Suspense fallback={null}>
+                                        <Pie {...pieConfig} />
+                                    </Suspense>
                                     <span className="course-group-credit-donut-center">
                                         <strong>
                                             {Number.isInteger(percentage)
@@ -428,15 +495,6 @@ export default function StudentCourseGroupPerformanceSection({
         ],
         [],
     )
-    const sharedChartWidth = useMemo(
-        () =>
-            Math.max(
-                760,
-                ...datasets.map((dataset) => dataset.rows.length * 180 + 80),
-            ),
-        [datasets],
-    )
-
     if (datasets.length === 0) {
         return (
             <Card
@@ -475,10 +533,7 @@ export default function StudentCourseGroupPerformanceSection({
                     size="small"
                     loading={loading}
                 >
-                    <CourseGroupChart
-                        rows={dataset.rows}
-                        chartWidth={sharedChartWidth}
-                    />
+                    <CourseGroupChart rows={dataset.rows} />
                     <CourseGroupCreditCharts rows={dataset.rows} />
                 </Card>
             ))}
