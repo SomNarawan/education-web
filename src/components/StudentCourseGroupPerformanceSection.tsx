@@ -1,7 +1,15 @@
 import type { ColumnConfig, PieConfig } from '@ant-design/plots'
 import { Card, Empty, Popover, Spin, Table, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import {
+    Suspense,
+    lazy,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import type {
     StudentCourseGroupPerformance,
     StudentCourseGroupPerformanceRow,
@@ -249,6 +257,47 @@ function CourseGroupCreditCharts({
 }: {
     rows: StudentCourseGroupPerformanceRow[]
 }) {
+    const gridRef = useRef<HTMLDivElement>(null)
+    const [labelHeight, setLabelHeight] = useState(0)
+
+    useLayoutEffect(() => {
+        const grid = gridRef.current
+
+        if (!grid) {
+            return
+        }
+
+        const labels = Array.from(
+            grid.querySelectorAll<HTMLElement>(
+                '.course-group-credit-chart-label-content',
+            ),
+        )
+
+        const syncLabelHeight = () => {
+            const tallestLabelHeight = Math.ceil(
+                Math.max(
+                    0,
+                    ...labels.map(
+                        (label) => label.getBoundingClientRect().height,
+                    ),
+                ),
+            )
+
+            setLabelHeight((currentHeight) =>
+                currentHeight === tallestLabelHeight
+                    ? currentHeight
+                    : tallestLabelHeight,
+            )
+        }
+
+        syncLabelHeight()
+
+        const resizeObserver = new ResizeObserver(syncLabelHeight)
+        labels.forEach((label) => resizeObserver.observe(label))
+
+        return () => resizeObserver.disconnect()
+    }, [rows])
+
     return (
         <div
             className="course-group-credit-chart-section"
@@ -259,6 +308,7 @@ function CourseGroupCreditCharts({
             </div>
             <div
                 className="course-group-credit-chart-grid"
+                ref={gridRef}
                 style={{
                     gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`,
                 }}
@@ -334,9 +384,16 @@ function CourseGroupCreditCharts({
                             className="course-group-credit-chart-card"
                             key={`credit-${row.key}`}
                         >
-                            <div className="course-group-credit-chart-label">
-                                <span>หน่วยกิตการเรียน</span>
-                                <strong>{row.course_group}</strong>
+                            <div
+                                className="course-group-credit-chart-label"
+                                style={{
+                                    height: labelHeight || undefined,
+                                }}
+                            >
+                                <div className="course-group-credit-chart-label-content">
+                                    <span>หน่วยกิตการเรียน</span>
+                                    <strong>{row.course_group}</strong>
+                                </div>
                             </div>
                             <Popover
                                 trigger="click"

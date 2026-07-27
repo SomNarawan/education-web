@@ -552,18 +552,17 @@ body {
 
 .course-group-credit-chart-label {
     align-self: stretch;
-    min-height: 42px;
     color: #005fe6;
     font-size: 11px;
     line-height: 1.35;
 }
 
-.course-group-credit-chart-label span,
-.course-group-credit-chart-label strong {
+.course-group-credit-chart-label-content span,
+.course-group-credit-chart-label-content strong {
     display: block;
 }
 
-.course-group-credit-chart-label strong {
+.course-group-credit-chart-label-content strong {
     color: #334155;
     font-weight: 600;
     overflow-wrap: anywhere;
