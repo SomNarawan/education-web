@@ -13,14 +13,9 @@ import {
 import type { StudentCourseGroupPerformanceRow } from '../types/StudentCourseGroupPerformance'
 import type {
     CourseGroupDataset,
-    CourseGroupPerformanceModule,
     StudentCourseGroupPerformanceSectionProps,
 } from './StudentCourseGroupPerformanceSection.types'
-
-const courseGroupPerformanceModules =
-    import.meta.glob<CourseGroupPerformanceModule>(
-        '../data/graph/by_group/*.json',
-    )
+import { getStudentGraphs } from '../services/studentJsonDataService'
 
 const chartColors = {
     danger: '#ff5b5b',
@@ -88,12 +83,6 @@ function getGradeColor(gpa: number) {
     }
 
     return chartColors.danger
-}
-
-function getDatasetOrder(path: string) {
-    const match = path.match(/_(\d+)\.json$/)
-
-    return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER
 }
 
 function wrapAxisLabel(label: string, maxCharactersPerLine = 20) {
@@ -458,34 +447,16 @@ export default function StudentCourseGroupPerformanceSection({
         const loadDatasets = async () => {
             try {
                 setLoading(true)
-                const prefix = `../data/graph/by_group/${studentCode}_`
-                const matchingModules = Object.entries(
-                    courseGroupPerformanceModules,
-                )
-                    .filter(([path]) => path.startsWith(prefix))
-                    .sort(([firstPath], [secondPath]) => {
-                        return (
-                            getDatasetOrder(firstPath) -
-                            getDatasetOrder(secondPath)
-                        )
-                    })
-
-                const loadedDatasets = await Promise.all(
-                    matchingModules.map(async ([path, importer]) => {
-                        const module = await importer()
-                        const records = Array.isArray(module.default)
-                            ? module.default
-                            : []
-
-                        return {
-                            id: path,
-                            rows: records.map((record, index) => ({
-                                ...record,
-                                key: `${path}-${index}`,
-                            })),
-                        }
-                    }),
-                )
+                const data = await getStudentGraphs(studentCode)
+                const loadedDatasets = Object.entries(data.by_group)
+                    .filter(([, records]) => records.length > 0)
+                    .map(([group, records]) => ({
+                        id: group,
+                        rows: records.map((record, index) => ({
+                            ...record,
+                            key: `${group}-${index}`,
+                        })),
+                    }))
 
                 setDatasets(loadedDatasets)
             } catch (error) {

@@ -19,20 +19,11 @@ import type {
 } from '../types/StudentSemesterPerformance'
 import type {
     SemesterCreditStatus,
-    SemesterCreditStatusModule,
     SemesterCreditStatusRecord,
-    SemesterPerformanceModule,
     StudentSemesterChartProps,
     StudentSemesterPerformanceSectionProps,
 } from './StudentSemesterPerformanceSection.types'
-
-const semesterPerformanceRows = import.meta.glob<SemesterPerformanceModule>(
-    '../data/graph/by_semester/*.json',
-)
-
-const semesterCreditStatusRows = import.meta.glob<SemesterCreditStatusModule>(
-    '../data/graph/by_credit/*.json',
-)
+import { getStudentGraphs } from '../services/studentJsonDataService'
 
 const creditStatusLabels: Record<string, string> = {
     credit_study: 'หน่วยกิตที่เรียน',
@@ -423,35 +414,9 @@ export default function StudentSemesterPerformanceSection({
         const loadRows = async () => {
             try {
                 setLoading(true)
-                const importer =
-                    semesterPerformanceRows[
-                        `../data/graph/by_semester/${studentCode}.json`
-                    ]
-                const creditStatusImporter =
-                    semesterCreditStatusRows[
-                        `../data/graph/by_credit/${studentCode}.json`
-                    ]
-
-                if (!importer) {
-                    setCreditStatuses([])
-                    setRows([])
-                    return
-                }
-
-                const [module, creditStatusModule] = await Promise.all([
-                    importer(),
-                    creditStatusImporter?.() ?? Promise.resolve({ default: [] }),
-                ])
-                const records = Array.isArray(module.default)
-                    ? module.default
-                    : []
-                const creditStatusRecords = Array.isArray(
-                    creditStatusModule.default,
-                )
-                    ? creditStatusModule.default
-                    : []
-                setCreditStatuses(buildCreditStatuses(creditStatusRecords))
-                setRows(buildRows(records))
+                const data = await getStudentGraphs(studentCode)
+                setCreditStatuses(buildCreditStatuses(data.by_credit))
+                setRows(buildRows(data.by_semester))
             } catch (error) {
                 console.error(error)
                 message.error('โหลดรายงานผลการเรียนไม่สำเร็จ')

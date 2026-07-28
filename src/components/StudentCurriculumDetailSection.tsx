@@ -9,6 +9,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import CustomTable from './custom/CustomTable'
 import { getCurriculumDivisions } from '../services/masterDataService'
+import { getStudentEnrollment } from '../services/studentJsonDataService'
 import type {
     CurriculumCourseRow,
     CurriculumDivision,
@@ -17,14 +18,9 @@ import type {
 import type {
     CourseTableProps,
     CurriculumTreeData,
-    EnrollmentRowsModule,
     StudentCurriculumDetailSectionProps,
     TreeSelection,
 } from './StudentCurriculumDetailSection.types'
-
-const enrollmentRows = import.meta.glob<EnrollmentRowsModule>(
-    '../data/enrollments/*.json',
-)
 
 function getCourseCategory(row: CurriculumEnrollmentRecord) {
     return row.course_category || row.curriculum_division || 'ไม่ระบุหมวดวิชา'
@@ -199,19 +195,8 @@ export default function StudentCurriculumDetailSection({
         const loadCourses = async () => {
             try {
                 setLoadingCourses(true)
-                const importer =
-                    enrollmentRows[`../data/enrollments/${studentCode}.json`]
-
-                if (!importer) {
-                    setRows([])
-                    return
-                }
-
-                const module = await importer()
-                const records = Array.isArray(module.default)
-                    ? module.default
-                    : []
-                setRows(buildRows(records))
+                const data = await getStudentEnrollment(studentCode)
+                setRows(buildRows(data.enrollment))
             } catch (error) {
                 console.error(error)
                 message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')

@@ -7,20 +7,9 @@ import type {
 } from '../types/CurriculumDetail'
 import type {
     CourseResultTableProps,
-    EnrollmentRowsImporters,
-    EnrollmentRowsModule,
     StudentFailedPlannedCoursesSectionProps,
 } from './StudentFailedPlannedCoursesSection.types'
-
-const notPassEnrollments = import.meta.glob<EnrollmentRowsModule>(
-    '../data/enrollments_not_pass/*.json',
-)
-const passEnrollments = import.meta.glob<EnrollmentRowsModule>(
-    '../data/enrollments_pass/*.json',
-)
-const overEnrollments = import.meta.glob<EnrollmentRowsModule>(
-    '../data/enrollments_over/*.json',
-)
+import { getStudentEnrollmentStatuses } from '../services/studentJsonDataService'
 
 const columns: ColumnsType<FailedPlannedCourseRow> = [
     {
@@ -91,20 +80,10 @@ function buildRows(
     }))
 }
 
-async function loadRows(
-    importers: EnrollmentRowsImporters,
-    directory: string,
-    studentCode: string,
+function loadRows(
+    records: CurriculumEnrollmentRecord[],
     keyPrefix: string,
 ) {
-    const importer = importers[`../data/${directory}/${studentCode}.json`]
-
-    if (!importer) {
-        return []
-    }
-
-    const module = await importer()
-    const records = Array.isArray(module.default) ? module.default : []
     return buildRows(records, keyPrefix)
 }
 
@@ -182,26 +161,13 @@ export default function StudentFailedPlannedCoursesSection({
         const loadCourses = async () => {
             try {
                 setLoading(true)
-                const [notPassRows, passRows, overRows] = await Promise.all([
-                    loadRows(
-                        notPassEnrollments,
-                        'enrollments_not_pass',
-                        studentCode,
-                        'not-pass',
-                    ),
-                    loadRows(
-                        passEnrollments,
-                        'enrollments_pass',
-                        studentCode,
-                        'pass',
-                    ),
-                    loadRows(
-                        overEnrollments,
-                        'enrollments_over',
-                        studentCode,
-                        'over',
-                    ),
-                ])
+                const data = await getStudentEnrollmentStatuses(studentCode)
+                const notPassRows = loadRows(
+                    data.enrollment_not_pass,
+                    'not-pass',
+                )
+                const passRows = loadRows(data.enrollment_pass, 'pass')
+                const overRows = loadRows(data.enrollment_over, 'over')
 
                 setFailedRows(notPassRows)
                 setClearedBacklogRows(passRows)

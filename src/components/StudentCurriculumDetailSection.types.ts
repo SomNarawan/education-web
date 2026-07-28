@@ -1,15 +1,8 @@
 import type { DataNode } from 'antd/es/tree'
-import type {
-    CurriculumCourseRow,
-    CurriculumEnrollmentRecord,
-} from '../types/CurriculumDetail'
+import type { CurriculumCourseRow } from '../types/CurriculumDetail'
 
 export interface StudentCurriculumDetailSectionProps {
     studentCode: string
-}
-
-export type EnrollmentRowsModule = {
-    default: CurriculumEnrollmentRecord[]
 }
 
 export interface CourseTableProps {
