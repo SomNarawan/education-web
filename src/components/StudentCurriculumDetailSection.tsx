@@ -6,7 +6,6 @@ import {
 } from '@ant-design/icons'
 import { Breadcrumb, Button, Card, Tooltip, Tree, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type { DataNode } from 'antd/es/tree'
 import { useEffect, useMemo, useState } from 'react'
 import CustomTable from './custom/CustomTable'
 import { getCurriculumDivisions } from '../services/masterDataService'
@@ -15,14 +14,13 @@ import type {
     CurriculumDivision,
     CurriculumEnrollmentRecord,
 } from '../types/CurriculumDetail'
-
-interface StudentCurriculumDetailSectionProps {
-    studentCode: string
-}
-
-type EnrollmentRowsModule = {
-    default: CurriculumEnrollmentRecord[]
-}
+import type {
+    CourseTableProps,
+    CurriculumTreeData,
+    EnrollmentRowsModule,
+    StudentCurriculumDetailSectionProps,
+    TreeSelection,
+} from './StudentCurriculumDetailSection.types'
 
 const enrollmentRows = import.meta.glob<EnrollmentRowsModule>(
     '../data/enrollments/*.json',
@@ -90,10 +88,7 @@ function buildRows(rows: CurriculumEnrollmentRecord[]): CurriculumCourseRow[] {
 function CourseTable({
     rows,
     loading,
-}: {
-    rows: CurriculumCourseRow[]
-    loading: boolean
-}) {
+}: CourseTableProps) {
     return (
         <CustomTable<CurriculumCourseRow>
             className="curriculum-detail-table"
@@ -105,18 +100,6 @@ function CourseTable({
             showNo={false}
         />
     )
-}
-
-interface CurriculumTreeData {
-    nodes: DataNode[]
-    rowKeysByNode: Map<string, Set<string>>
-    pathByNode: Map<string, string[]>
-    generalEducationKey?: string
-}
-
-interface TreeSelection {
-    studentCode: string
-    key: string
 }
 
 function buildCurriculumTree(
@@ -149,7 +132,7 @@ function buildCurriculumTree(
         candidateRows: CurriculumCourseRow[],
         parentKey = 'root',
         parentPath: string[] = [],
-    ): DataNode => {
+    ): CurriculumTreeData['nodes'][number] => {
         const nodeKey = `${parentKey}-division-${division.id}`
         const nodePath = [...parentPath, division.name_th]
         if (division.name_th === 'หมวดวิชาศึกษาทั่วไป') {

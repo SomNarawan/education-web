@@ -5,16 +5,12 @@ import type {
     CurriculumEnrollmentRecord,
     FailedPlannedCourseRow,
 } from '../types/CurriculumDetail'
-
-interface StudentFailedPlannedCoursesSectionProps {
-    studentCode: string
-}
-
-type EnrollmentRowsModule = {
-    default: CurriculumEnrollmentRecord[]
-}
-
-type EnrollmentRowsImporters = Record<string, () => Promise<EnrollmentRowsModule>>
+import type {
+    CourseResultTableProps,
+    EnrollmentRowsImporters,
+    EnrollmentRowsModule,
+    StudentFailedPlannedCoursesSectionProps,
+} from './StudentFailedPlannedCoursesSection.types'
 
 const notPassEnrollments = import.meta.glob<EnrollmentRowsModule>(
     '../data/enrollments_not_pass/*.json',
@@ -128,12 +124,7 @@ function CourseResultTable({
     courseNameTitle,
     rows,
     loading,
-}: {
-    title: string
-    courseNameTitle: string
-    rows: FailedPlannedCourseRow[]
-    loading: boolean
-}) {
+}: CourseResultTableProps) {
     const totalCredit = useMemo(
         () => rows.reduce((total, row) => total + row.credit, 0),
         [rows],

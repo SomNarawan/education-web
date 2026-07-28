@@ -10,23 +10,12 @@ import {
     useRef,
     useState,
 } from 'react'
+import type { StudentCourseGroupPerformanceRow } from '../types/StudentCourseGroupPerformance'
 import type {
-    StudentCourseGroupPerformance,
-    StudentCourseGroupPerformanceRow,
-} from '../types/StudentCourseGroupPerformance'
-
-interface StudentCourseGroupPerformanceSectionProps {
-    studentCode: string
-}
-
-interface CourseGroupDataset {
-    id: string
-    rows: StudentCourseGroupPerformanceRow[]
-}
-
-type CourseGroupPerformanceModule = {
-    default: StudentCourseGroupPerformance[]
-}
+    CourseGroupDataset,
+    CourseGroupPerformanceModule,
+    StudentCourseGroupPerformanceSectionProps,
+} from './StudentCourseGroupPerformanceSection.types'
 
 const courseGroupPerformanceModules =
     import.meta.glob<CourseGroupPerformanceModule>(
@@ -131,7 +120,16 @@ function CourseGroupChart({
 }: {
     rows: StudentCourseGroupPerformanceRow[]
 }) {
-    const chartData = rows.map((row) => ({
+    const [firstRow, ...remainingRows] = rows
+    const sortedRows = firstRow
+        ? [
+              firstRow,
+              ...remainingRows.sort(
+                  (first, second) => second.gpa - first.gpa,
+              ),
+          ]
+        : []
+    const chartData = sortedRows.map((row) => ({
         courseGroup: row.course_group,
         gpa: row.gpa,
         gradeRange: getGradeRange(row.gpa),

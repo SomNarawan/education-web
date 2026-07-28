@@ -17,32 +17,14 @@ import type {
     StudentSemesterPerformance,
     StudentSemesterPerformanceRow,
 } from '../types/StudentSemesterPerformance'
-
-interface StudentSemesterPerformanceSectionProps {
-    studentCode: string
-}
-
-interface SemesterCreditStatus {
-    label: string
-    value: number
-    total: number
-    gpa: number
-}
-
-interface SemesterCreditStatusRecord {
-    type: string
-    credits_study: number
-    credits_all: number
-    gpa: number
-}
-
-type SemesterPerformanceModule = {
-    default: StudentSemesterPerformance[]
-}
-
-type SemesterCreditStatusModule = {
-    default: SemesterCreditStatusRecord[]
-}
+import type {
+    SemesterCreditStatus,
+    SemesterCreditStatusModule,
+    SemesterCreditStatusRecord,
+    SemesterPerformanceModule,
+    StudentSemesterChartProps,
+    StudentSemesterPerformanceSectionProps,
+} from './StudentSemesterPerformanceSection.types'
 
 const semesterPerformanceRows = import.meta.glob<SemesterPerformanceModule>(
     '../data/graph/by_semester/*.json',
@@ -194,10 +176,7 @@ function buildCreditStatuses(
 function StudentSemesterChart({
     creditStatuses,
     rows,
-}: {
-    creditStatuses: SemesterCreditStatus[]
-    rows: StudentSemesterPerformanceRow[]
-}) {
+}: StudentSemesterChartProps) {
     const chartData = rows.map((row) => ({
         semesterLabel: `ชั้นปี ${row.study_year} ${row.semester}`,
         gpa: row.gpa,
