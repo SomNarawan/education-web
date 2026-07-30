@@ -1,27 +1,25 @@
 import type { ColumnConfig, PieConfig } from '@ant-design/plots'
-import { Card, Empty, Popover, Spin, Table, message } from 'antd'
+import { Card, Empty, Popover, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
     Suspense,
     lazy,
-    useEffect,
     useLayoutEffect,
     useMemo,
     useRef,
     useState,
 } from 'react'
 import type { StudentCourseGroupPerformanceRow } from '../types/StudentCourseGroupPerformance'
-import type {
-    CourseGroupDataset,
-    StudentCourseGroupPerformanceSectionProps,
-} from './StudentCourseGroupPerformanceSection.types'
-import { getStudentGraphs } from '../services/studentJsonDataService'
+import type { StudentCourseGroupPerformanceSectionProps } from './StudentCourseGroupPerformanceSection.types'
+import { useStudentCourseGroupPerformance } from '../hooks/useStudentCourseGroupPerformance'
+import {
+    getGradeColor,
+    getGradeRange,
+    gradeRangeColors,
+    gradeRanges,
+} from '../utils/grade'
 
 const chartColors = {
-    danger: '#ff5b5b',
-    warning: '#ff8a34',
-    success: '#8bcf8b',
-    excellent: '#8bd2f2',
     grid: '#d9dce3',
     axis: '#8c8c8c',
     text: '#262626',
@@ -38,52 +36,6 @@ const Pie = lazy(() =>
         default: chartModule.Pie,
     })),
 )
-
-const gradeRanges = [
-    'เกรด(0-1.74)',
-    'เกรด(1.75-1.99)',
-    'เกรด(2.0-3.24)',
-    'เกรด(3.25-4.00)',
-]
-
-const gradeRangeColors = [
-    chartColors.danger,
-    chartColors.warning,
-    chartColors.success,
-    chartColors.excellent,
-]
-
-function getGradeRange(gpa: number) {
-    if (gpa >= 3.25) {
-        return gradeRanges[3]
-    }
-
-    if (gpa >= 2) {
-        return gradeRanges[2]
-    }
-
-    if (gpa >= 1.75) {
-        return gradeRanges[1]
-    }
-
-    return gradeRanges[0]
-}
-
-function getGradeColor(gpa: number) {
-    if (gpa >= 3.25) {
-        return chartColors.excellent
-    }
-
-    if (gpa >= 2) {
-        return chartColors.success
-    }
-
-    if (gpa >= 1.75) {
-        return chartColors.warning
-    }
-
-    return chartColors.danger
-}
 
 function wrapAxisLabel(label: string, maxCharactersPerLine = 20) {
     const characters = Array.from(label.trim())
@@ -441,35 +393,8 @@ function CourseGroupCreditCharts({
 export default function StudentCourseGroupPerformanceSection({
     studentCode,
 }: StudentCourseGroupPerformanceSectionProps) {
-    const [datasets, setDatasets] = useState<CourseGroupDataset[]>([])
-    const [loading, setLoading] = useState(true)
-    useEffect(() => {
-        const loadDatasets = async () => {
-            try {
-                setLoading(true)
-                const data = await getStudentGraphs(studentCode)
-                const loadedDatasets = Object.entries(data.by_group)
-                    .filter(([, records]) => records.length > 0)
-                    .map(([group, records]) => ({
-                        id: group,
-                        rows: records.map((record, index) => ({
-                            ...record,
-                            key: `${group}-${index}`,
-                        })),
-                    }))
-
-                setDatasets(loadedDatasets)
-            } catch (error) {
-                console.error(error)
-                message.error('โหลดผลการเรียนแยกตามหมวดวิชาไม่สำเร็จ')
-                setDatasets([])
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadDatasets()
-    }, [studentCode])
+    const { datasets, loading } =
+        useStudentCourseGroupPerformance(studentCode)
 
     const columns = useMemo<
         ColumnsType<StudentCourseGroupPerformanceRow>

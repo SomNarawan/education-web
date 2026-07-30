@@ -1,15 +1,12 @@
-import { Card, Space, Table, message } from 'antd'
+import { Card, Space, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useEffect, useMemo, useState } from 'react'
-import type {
-    CurriculumEnrollmentRecord,
-    FailedPlannedCourseRow,
-} from '../types/CurriculumDetail'
+import { useMemo } from 'react'
+import type { FailedPlannedCourseRow } from '../types/CurriculumDetail'
 import type {
     CourseResultTableProps,
     StudentFailedPlannedCoursesSectionProps,
 } from './StudentFailedPlannedCoursesSection.types'
-import { getStudentEnrollmentStatuses } from '../services/studentJsonDataService'
+import { useStudentFailedPlannedCourses } from '../hooks/useStudentFailedPlannedCourses'
 
 const columns: ColumnsType<FailedPlannedCourseRow> = [
     {
@@ -69,23 +66,6 @@ const columns: ColumnsType<FailedPlannedCourseRow> = [
         render: (value: string | null) => value || '-',
     },
 ]
-
-function buildRows(
-    rows: CurriculumEnrollmentRecord[],
-    keyPrefix: string,
-): FailedPlannedCourseRow[] {
-    return rows.map((row, index) => ({
-        ...row,
-        key: `${keyPrefix}-${row.course_code || 'course'}-${index}`,
-    }))
-}
-
-function loadRows(
-    records: CurriculumEnrollmentRecord[],
-    keyPrefix: string,
-) {
-    return buildRows(records, keyPrefix)
-}
 
 function buildColumns(courseNameTitle: string): ColumnsType<FailedPlannedCourseRow> {
     return columns.map((column) =>
@@ -148,43 +128,12 @@ function CourseResultTable({
 export default function StudentFailedPlannedCoursesSection({
     studentCode,
 }: StudentFailedPlannedCoursesSectionProps) {
-    const [failedRows, setFailedRows] = useState<FailedPlannedCourseRow[]>([])
-    const [clearedBacklogRows, setClearedBacklogRows] = useState<
-        FailedPlannedCourseRow[]
-    >([])
-    const [overCurriculumRows, setOverCurriculumRows] = useState<
-        FailedPlannedCourseRow[]
-    >([])
-    const [loading, setLoading] = useState(false)
-
-    useEffect(() => {
-        const loadCourses = async () => {
-            try {
-                setLoading(true)
-                const data = await getStudentEnrollmentStatuses(studentCode)
-                const notPassRows = loadRows(
-                    data.enrollment_not_pass,
-                    'not-pass',
-                )
-                const passRows = loadRows(data.enrollment_pass, 'pass')
-                const overRows = loadRows(data.enrollment_over, 'over')
-
-                setFailedRows(notPassRows)
-                setClearedBacklogRows(passRows)
-                setOverCurriculumRows(overRows)
-            } catch (error) {
-                console.error(error)
-                message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
-                setFailedRows([])
-                setClearedBacklogRows([])
-                setOverCurriculumRows([])
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadCourses()
-    }, [studentCode])
+    const {
+        failedRows,
+        clearedBacklogRows,
+        overCurriculumRows,
+        loading,
+    } = useStudentFailedPlannedCourses(studentCode)
 
     return (
         <Space orientation="vertical" size="large" style={{ width: '100%' }}>

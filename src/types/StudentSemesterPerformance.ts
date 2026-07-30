@@ -20,3 +20,17 @@ export interface StudentSemesterPerformanceRow
     extends StudentSemesterPerformance {
     key: string
 }
+
+export interface SemesterCreditStatus {
+    label: string
+    value: number
+    total: number
+    gpa: number
+}
+
+export interface SemesterCreditStatusRecord {
+    type: string
+    credits_study: number
+    credits_all: number
+    gpa: number
+}

@@ -3,78 +3,36 @@ import type { DualAxesConfig } from '@ant-design/plots'
 import {
     Button,
     Card,
-    Modal,
     Progress,
     Spin,
     Table,
-    Typography,
-    message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useMemo, useState } from 'react'
+import type { StudentSemesterPerformanceRow } from '../types/StudentSemesterPerformance'
 import type {
-    StudentSemesterEnrollment,
-    StudentSemesterPerformance,
-    StudentSemesterPerformanceRow,
-} from '../types/StudentSemesterPerformance'
-import type {
-    SemesterCreditStatus,
-    SemesterCreditStatusRecord,
     StudentSemesterChartProps,
     StudentSemesterPerformanceSectionProps,
 } from './StudentSemesterPerformanceSection.types'
-import { getStudentGraphs } from '../services/studentJsonDataService'
-
-const creditStatusLabels: Record<string, string> = {
-    credit_study: 'หน่วยกิตที่เรียน',
-    credit_over: 'หน่วยกิตที่เรียนเกิน',
-}
-
-const semesterOrder: Record<string, number> = {
-    ภาคฤดูร้อน: 0,
-    ภาคต้น: 1,
-    ภาคปลาย: 2,
-}
+import { useStudentSemesterPerformance } from '../hooks/useStudentSemesterPerformance'
+import {
+    getGradeColor,
+    getGradeRange,
+    gradeRangeColors,
+    gradeRanges,
+} from '../utils/grade'
+import {
+    formatDecimal,
+    formatDiff,
+    getDiffColor,
+} from '../utils/performanceFormat'
+import SemesterDetailModal from './SemesterDetailModal'
 
 const chartColors = {
-    danger: '#ff5b5b',
-    warning: '#ff8a34',
-    success: '#8bcf8b',
-    excellent: '#8bd2f2',
     gpax: '#4b5563',
     grid: '#d9dce3',
     axis: '#8c8c8c',
     text: '#262626',
-}
-
-const gradeRanges = [
-    'เกรด(0-1.74)',
-    'เกรด(1.75-1.99)',
-    'เกรด(2.0-3.24)',
-    'เกรด(3.25-4.00)',
-]
-
-const gradeRangeColors = [
-    chartColors.danger,
-    chartColors.warning,
-    chartColors.success,
-    chartColors.excellent,
-]
-
-function getGradeRange(gpa: number) {
-    if (gpa >= 3.25) {
-        return gradeRanges[3]
-    }
-
-    if (gpa >= 2) {
-        return gradeRanges[2]
-    }
-
-    if (gpa >= 1.75) {
-        return gradeRanges[1]
-    }
-
-    return gradeRanges[0]
 }
 
 const DualAxes = lazy(() =>
@@ -83,85 +41,12 @@ const DualAxes = lazy(() =>
     })),
 )
 
-function getGradeColor(gpa: number) {
-    if (gpa >= 3.25) {
-        return chartColors.excellent
-    }
-
-    if (gpa >= 2) {
-        return chartColors.success
-    }
-
-    if (gpa >= 1.75) {
-        return chartColors.warning
-    }
-
-    return chartColors.danger
-}
-
-function formatDecimal(value: number) {
-    return value.toFixed(2)
-}
-
-function formatDiff(value: string | number) {
-    const numericValue = Number(value)
-
-    if (Number.isNaN(numericValue)) {
-        return String(value)
-    }
-
-    if (numericValue > 0) {
-        return `+${formatDecimal(numericValue)}`
-    }
-
-    return formatDecimal(numericValue)
-}
-
-function getDiffColor(value: string | number) {
-    const numericValue = Number(value)
-
-    return !Number.isNaN(numericValue) && numericValue < 0
-        ? '#ff0000'
-        : '#008000'
-}
-
 function getStatusPercent(value: number, total: number) {
     if (total <= 0) {
         return 0
     }
 
     return Math.min((value / total) * 100, 100)
-}
-
-function buildRows(
-    rows: StudentSemesterPerformance[],
-): StudentSemesterPerformanceRow[] {
-    return [...rows]
-        .sort((a, b) => {
-            if (a.semester_year_be !== b.semester_year_be) {
-                return a.semester_year_be - b.semester_year_be
-            }
-
-            return (
-                (semesterOrder[a.semester] ?? 99) -
-                (semesterOrder[b.semester] ?? 99)
-            )
-        })
-        .map((row, index) => ({
-            ...row,
-            key: `${row.semester_year_be}-${row.semester}-${index}`,
-        }))
-}
-
-function buildCreditStatuses(
-    rows: SemesterCreditStatusRecord[],
-): SemesterCreditStatus[] {
-    return rows.map((row) => ({
-        label: creditStatusLabels[row.type] ?? row.type,
-        value: row.credits_study,
-        total: row.credits_all,
-        gpa: row.gpa,
-    }))
 }
 
 function StudentSemesterChart({
@@ -402,33 +287,10 @@ function StudentSemesterChart({
 export default function StudentSemesterPerformanceSection({
     studentCode,
 }: StudentSemesterPerformanceSectionProps) {
-    const [creditStatuses, setCreditStatuses] = useState<SemesterCreditStatus[]>(
-        [],
-    )
-    const [rows, setRows] = useState<StudentSemesterPerformanceRow[]>([])
-    const [loading, setLoading] = useState(false)
+    const { creditStatuses, rows, loading } =
+        useStudentSemesterPerformance(studentCode)
     const [detailRecord, setDetailRecord] =
         useState<StudentSemesterPerformanceRow | null>(null)
-
-    useEffect(() => {
-        const loadRows = async () => {
-            try {
-                setLoading(true)
-                const data = await getStudentGraphs(studentCode)
-                setCreditStatuses(buildCreditStatuses(data.by_credit))
-                setRows(buildRows(data.by_semester))
-            } catch (error) {
-                console.error(error)
-                message.error('โหลดรายงานผลการเรียนไม่สำเร็จ')
-                setCreditStatuses([])
-                setRows([])
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadRows()
-    }, [studentCode])
 
     const columns = useMemo<ColumnsType<StudentSemesterPerformanceRow>>(
         () => [
@@ -492,30 +354,6 @@ export default function StudentSemesterPerformanceSection({
         [],
     )
 
-    const detailColumns = useMemo<ColumnsType<StudentSemesterEnrollment>>(
-        () => [
-            {
-                title: 'GPA',
-                dataIndex: 'grade_letter',
-                key: 'grade_letter',
-                width: 100,
-                render: (value: string | null) => value || '-',
-            },
-            {
-                title: 'จำนวนหน่วยกิต',
-                dataIndex: 'credit',
-                key: 'credit',
-                width: 180,
-            },
-            {
-                title: 'รายชื่อวิชา',
-                dataIndex: 'course_name',
-                key: 'course_name',
-            },
-        ],
-        [],
-    )
-
     return (
         <Card
             title="รายงานผลการเรียนแต่ละภาคการศึกษา"
@@ -543,47 +381,10 @@ export default function StudentSemesterPerformanceSection({
                 </section>
             </div>
 
-            <Modal
-                open={detailRecord !== null}
-                width={860}
-                footer={null}
-                destroyOnHidden
-                onCancel={() => setDetailRecord(null)}
-            >
-                {detailRecord && (
-                    <>
-                        <div className="semester-detail-summary">
-                            <Typography.Text strong>
-                                GPA {formatDecimal(detailRecord.gpa)}
-                            </Typography.Text>
-                            <Typography.Text strong>
-                                GPAX {formatDecimal(detailRecord.gpax)}
-                            </Typography.Text>
-                            <Typography.Text
-                                strong
-                                style={{
-                                    color: getDiffColor(detailRecord.diff_gpax),
-                                }}
-                            >
-                                +-GPAX {formatDiff(detailRecord.diff_gpax)}
-                            </Typography.Text>
-                        </div>
-                        <Typography.Title level={3}>
-                            ผลการเรียนของนิสิตชั้นปี {detailRecord.study_year}{' '}
-                            {detailRecord.semester} พ.ศ. {detailRecord.semester_year_be}
-                        </Typography.Title>
-                        <Table<StudentSemesterEnrollment>
-                            className="semester-detail-table"
-                            rowKey={(record, index) =>
-                                `${record.course_name}-${index ?? 0}`
-                            }
-                            columns={detailColumns}
-                            dataSource={detailRecord.enrollments}
-                            pagination={false}
-                        />
-                    </>
-                )}
-            </Modal>
+            <SemesterDetailModal
+                record={detailRecord}
+                onClose={() => setDetailRecord(null)}
+            />
         </Card>
     )
 }

@@ -4,12 +4,10 @@ import {
     DoubleRightOutlined,
     FolderOutlined,
 } from '@ant-design/icons'
-import { Breadcrumb, Button, Card, Tooltip, Tree, message } from 'antd'
+import { Breadcrumb, Button, Card, Tooltip, Tree } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import CustomTable from './custom/CustomTable'
-import { getCurriculumDivisions } from '../services/masterDataService'
-import { getStudentEnrollment } from '../services/studentJsonDataService'
 import type {
     CurriculumCourseRow,
     CurriculumDivision,
@@ -21,6 +19,7 @@ import type {
     StudentCurriculumDetailSectionProps,
     TreeSelection,
 } from './StudentCurriculumDetailSection.types'
+import { useStudentCurriculumDetail } from '../hooks/useStudentCurriculumDetail'
 
 function getCourseCategory(row: CurriculumEnrollmentRecord) {
     return row.course_category || row.curriculum_division || 'ไม่ระบุหมวดวิชา'
@@ -73,13 +72,6 @@ const columns: ColumnsType<CurriculumCourseRow> = [
         width: '8%',
     },
 ]
-
-function buildRows(rows: CurriculumEnrollmentRecord[]): CurriculumCourseRow[] {
-    return rows.map((row, index) => ({
-        ...row,
-        key: `${row.course_code || 'course'}-${index}`,
-    }))
-}
 
 function CourseTable({
     rows,
@@ -167,47 +159,10 @@ function buildCurriculumTree(
 export default function StudentCurriculumDetailSection({
     studentCode,
 }: StudentCurriculumDetailSectionProps) {
-    const [divisions, setDivisions] = useState<CurriculumDivision[]>([])
-    const [rows, setRows] = useState<CurriculumCourseRow[]>([])
-    const [loadingCategories, setLoadingCategories] = useState(false)
-    const [loadingCourses, setLoadingCourses] = useState(false)
+    const { divisions, rows, loadingCategories, loadingCourses } =
+        useStudentCurriculumDetail(studentCode)
     const [treeSelection, setTreeSelection] = useState<TreeSelection>()
     const [isStructureCollapsed, setIsStructureCollapsed] = useState(false)
-
-    useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                setLoadingCategories(true)
-                const data = await getCurriculumDivisions()
-                setDivisions(data)
-            } catch (error) {
-                console.error(error)
-                message.error('โหลดโครงสร้างหลักสูตรไม่สำเร็จ')
-            } finally {
-                setLoadingCategories(false)
-            }
-        }
-
-        loadCategories()
-    }, [])
-
-    useEffect(() => {
-        const loadCourses = async () => {
-            try {
-                setLoadingCourses(true)
-                const data = await getStudentEnrollment(studentCode)
-                setRows(buildRows(data.enrollment))
-            } catch (error) {
-                console.error(error)
-                message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
-                setRows([])
-            } finally {
-                setLoadingCourses(false)
-            }
-        }
-
-        loadCourses()
-    }, [studentCode])
 
     const curriculumTree = useMemo(
         () => buildCurriculumTree(divisions, rows),

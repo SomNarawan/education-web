@@ -10,3 +10,8 @@ export interface StudentCourseGroupPerformanceRow
     extends StudentCourseGroupPerformance {
     key: string
 }
+
+export interface CourseGroupDataset {
+    id: string
+    rows: StudentCourseGroupPerformanceRow[]
+}
