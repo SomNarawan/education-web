@@ -1,12 +1,12 @@
 import { Card, Space, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo } from 'react'
-import type { FailedPlannedCourseRow } from '../types/CurriculumDetail'
+import type { FailedPlannedCourseRow } from '../../../types/CurriculumDetail'
 import type {
     CourseResultTableProps,
     StudentFailedPlannedCoursesSectionProps,
 } from './StudentFailedPlannedCoursesSection.types'
-import { useStudentFailedPlannedCourses } from '../hooks/useStudentFailedPlannedCourses'
+import { useStudentFailedPlannedCourses } from './useStudentFailedPlannedCourses'
 
 const columns: ColumnsType<FailedPlannedCourseRow> = [
     {

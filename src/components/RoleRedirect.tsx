@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { Spin } from 'antd'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
 export default function RoleRedirect() {
     const { token, currentRole } = useAuth()

@@ -1,10 +1,11 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../hooks/useAuth'
+import type { AppRole } from '../types/Auth'
 
 type ProtectedRouteProps = {
     children: React.ReactElement
-    allowedRoles: string[]
+    allowedRoles: AppRole[]
 }
 
 export default function ProtectedRoute({

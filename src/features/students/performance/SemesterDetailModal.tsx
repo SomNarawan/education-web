@@ -3,12 +3,12 @@ import type { ColumnsType } from 'antd/es/table'
 import type {
     StudentSemesterEnrollment,
     StudentSemesterPerformanceRow,
-} from '../types/StudentSemesterPerformance'
+} from '../../../types/StudentSemesterPerformance'
 import {
     formatDecimal,
     formatDiff,
     getDiffColor,
-} from '../utils/performanceFormat'
+} from '../../../utils/performanceFormat'
 
 interface SemesterDetailModalProps {
     record: StudentSemesterPerformanceRow | null

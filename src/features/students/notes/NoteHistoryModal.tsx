@@ -2,7 +2,7 @@ import { DeleteOutlined } from '@ant-design/icons'
 import { Button, Modal, Popconfirm, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
-import type { NoteListResponse } from '../types/NoteListResponse'
+import type { NoteListResponse } from '../../../types/NoteListResponse'
 
 const { Text } = Typography
 

@@ -9,15 +9,14 @@ import {
     useRef,
     useState,
 } from 'react'
-import type { StudentCourseGroupPerformanceRow } from '../types/StudentCourseGroupPerformance'
+import type { StudentCourseGroupPerformanceRow } from '../../../types/StudentCourseGroupPerformance'
 import type { StudentCourseGroupPerformanceSectionProps } from './StudentCourseGroupPerformanceSection.types'
-import { useStudentCourseGroupPerformance } from '../hooks/useStudentCourseGroupPerformance'
 import {
     getGradeColor,
     getGradeRange,
     gradeRangeColors,
     gradeRanges,
-} from '../utils/grade'
+} from '../../../utils/grade'
 
 const chartColors = {
     grid: '#d9dce3',
@@ -391,10 +390,9 @@ function CourseGroupCreditCharts({
 }
 
 export default function StudentCourseGroupPerformanceSection({
-    studentCode,
+    datasets,
+    loading = false,
 }: StudentCourseGroupPerformanceSectionProps) {
-    const { datasets, loading } =
-        useStudentCourseGroupPerformance(studentCode)
 
     const columns = useMemo<
         ColumnsType<StudentCourseGroupPerformanceRow>

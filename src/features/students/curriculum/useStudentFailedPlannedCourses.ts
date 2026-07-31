@@ -1,10 +1,10 @@
 import { message } from 'antd'
 import { useEffect, useState } from 'react'
-import { getStudentEnrollmentStatuses } from '../services/studentJsonDataService'
+import { getStudentEnrollmentStatuses } from '../../../services/studentJsonDataService'
 import type {
     CurriculumEnrollmentRecord,
     FailedPlannedCourseRow,
-} from '../types/CurriculumDetail'
+} from '../../../types/CurriculumDetail'
 
 function buildRows(
     rows: CurriculumEnrollmentRecord[],
