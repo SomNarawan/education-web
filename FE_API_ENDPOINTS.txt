@@ -1,0 +1,330 @@
+FE API ENDPOINTS
+================
+
+ตรวจจาก source code ของ education-web ณ วันที่ 2026-08-01
+
+Base URL
+--------
+VITE_API_URL=http://localhost:8000/api
+
+Request headers
+---------------
+Content-Type: application/json
+Authorization: Bearer {auth_token}   (ส่งเมื่อมี auth_token ใน localStorage)
+
+หมายเหตุ
+--------
+- รายการนี้แยกตามรูปแบบ request ที่ FE เรียกจริง แม้จะใช้ method และ path เดียวกัน
+- query parameter ที่ไม่มีค่า/เป็นค่าว่างจะไม่ถูกส่ง
+- {id}, {studentCode}, {teacherId}, {departmentId} และ {facultyId} เป็นค่าที่เปลี่ยนตามข้อมูลผู้ใช้
+- /auth/callback เป็น route ของ Frontend ไม่ใช่ API request
+
+
+1. AUTHENTICATION
+=================
+
+[1] โหลดข้อมูลผู้ใช้หลังได้รับ token
+Method: GET
+Path: /me
+Query: ไม่มี
+Body: ไม่มี
+
+
+2. STUDENT LIST: รูปแบบการเรียก GET /students
+================================================
+
+[2] หน้านิสิตในที่ปรึกษา: โหลดครั้งแรก
+Method: GET
+Path: /students
+Query:
+  teacher_id={teacherId ของผู้ใช้ที่ login}       required
+  student_status_id=2                            ค่าเริ่มต้น
+ตัวอย่าง:
+  GET /students?teacher_id=10&student_status_id=2
+
+[3] หน้านิสิตในที่ปรึกษา: ค้นหาด้วยสถานะ/Note
+Method: GET
+Path: /students
+Query:
+  teacher_id={teacherId ของผู้ใช้ที่ login}       required
+  student_status_id={studentStatusId}             optional
+  search_note={noteType หรือข้อความ Note}         optional
+ตัวอย่าง:
+  GET /students?teacher_id=10&student_status_id=2&search_note=ติดตาม
+
+[4] หน้านิสิตในที่ปรึกษา: ล้างตัวกรอง
+Method: GET
+Path: /students
+Query:
+  teacher_id={teacherId ของผู้ใช้ที่ login}       required
+ตัวอย่าง:
+  GET /students?teacher_id=10
+
+[5] หน้านิสิตในภาควิชา (Teacher): โหลดครั้งแรก
+Method: GET
+Path: /students
+Query:
+  department_id={departmentId ของผู้ใช้ที่ login} required
+  student_status_id=2                             ค่าเริ่มต้น
+ตัวอย่าง:
+  GET /students?department_id=20&student_status_id=2
+
+[6] หน้านิสิตในภาควิชา: ค้นหาด้วยสถานะ/Note
+Method: GET
+Path: /students
+Query:
+  department_id={departmentId}                    required
+    - Teacher: ใช้ departmentId ของผู้ใช้ที่ login
+    - Admin: ใช้ภาควิชาที่เลือกจากหน้าจอ
+  student_status_id={studentStatusId}              optional
+  search_note={noteType หรือข้อความ Note}          optional
+ตัวอย่าง:
+  GET /students?department_id=20&student_status_id=2&search_note=อื่นๆ
+
+[7] หน้านิสิตในภาควิชา (Teacher): ล้างตัวกรอง
+Method: GET
+Path: /students
+Query:
+  department_id={departmentId ของผู้ใช้ที่ login} required
+ตัวอย่าง:
+  GET /students?department_id=20
+
+[8] หน้านิสิตในคณะ: ค้นหาจากข้อความ
+Method: GET
+Path: /students
+Query:
+  faculty_id={facultyId ของผู้ใช้ที่ login}        required
+  search_text={ข้อความค้นหาที่ trim แล้ว}          required จากหน้าจอ
+ตัวอย่าง:
+  GET /students?faculty_id=30&search_text=สมชาย
+
+ข้อสังเกตของ GET /students
+-------------------------
+- FE ไม่มีการเรียก GET /students แบบไม่มี query parameter
+- หน้าในคณะไม่โหลดรายชื่อทันที ต้องกรอก search_text แล้วกดค้นหาก่อน
+- search_text ถูกใช้เฉพาะหน้าค้นหานิสิตในคณะ
+- search_note ถูกใช้ในหน้านิสิตในที่ปรึกษาและหน้านิสิตในภาควิชา
+
+
+3. STUDENT CRUD
+===============
+
+[9] โหลดรายละเอียดนิสิต
+Method: GET
+Path: /students/{id}
+Query: ไม่มี
+Body: ไม่มี
+
+[10] เพิ่มนิสิต
+Method: POST
+Path: /students
+Query: ไม่มี
+JSON Body:
+  student_code
+  student_id_card
+  title_id
+  first_name_th
+  last_name_th
+  first_name_en
+  last_name_en
+  phone
+  email
+  study_plan_id
+  entry_year
+  teacher_id
+  admission_channel_id
+  high_school_id
+  guardian_title_id
+  guardian_first_name_th
+  guardian_last_name_th
+  guardian_relationship_id
+  guardian_phone
+  student_status_id
+  gpa
+  passed_credits
+  not_passed_credits
+  overed_credits
+
+[11] แก้ไขนิสิต
+Method: PUT
+Path: /students/{id}
+Query: ไม่มี
+JSON Body: fields เดียวกับ POST /students
+
+[12] ลบนิสิต
+Method: DELETE
+Path: /students/{id}
+Query: ไม่มี
+Body: ไม่มี
+
+
+4. STUDENT JSON DATA
+====================
+
+[13] ข้อมูลการลงทะเบียน/หลักสูตร
+Method: GET
+Path: /students/json-data/enrollment/{studentCode}
+Query: ไม่มี
+Body: ไม่มี
+หมายเหตุ: FE ใช้ encodeURIComponent กับ studentCode
+
+[14] ข้อมูลสถานะการลงทะเบียน/รายวิชา
+Method: GET
+Path: /students/json-data/enrollment-statuses/{studentCode}
+Query: ไม่มี
+Body: ไม่มี
+หมายเหตุ: FE ใช้ encodeURIComponent กับ studentCode
+
+[15] ข้อมูลกราฟผลการเรียน
+Method: GET
+Path: /students/json-data/graphs/{studentCode}
+Query: ไม่มี
+Body: ไม่มี
+หมายเหตุ: FE ใช้ encodeURIComponent กับ studentCode
+
+
+5. NOTES
+========
+
+[16] โหลดประเภท Note
+Method: GET
+Path: /note-types
+Query: ไม่มี
+Body: ไม่มี
+
+[17] โหลดประวัติ Note ของนิสิต
+Method: GET
+Path: /notes
+Query:
+  student_id={studentId}                           required
+ตัวอย่าง:
+  GET /notes?student_id=100
+
+[18] เพิ่ม Note
+Method: POST
+Path: /notes
+Query: ไม่มี
+JSON Body:
+  student_id: number                               required
+  note_type_id: number                             required
+  remark: string | null                            optional/null
+
+[19] ลบ Note
+Method: DELETE
+Path: /notes/{id}
+Query: ไม่มี
+Body: ไม่มี
+
+
+6. MASTER DATA
+==============
+
+[20] คำนำหน้าชื่อ
+Method: GET
+Path: /titles
+Query: ไม่มี
+
+[21] รายการอาจารย์ทั้งหมดสำหรับ Student Form
+Method: GET
+Path: /teachers
+Query: ไม่มี
+
+[22] รายการอาจารย์ของภาควิชาสำหรับหน้าจัดอาจารย์ที่ปรึกษา
+Method: GET
+Path: /teachers
+Query:
+  department_id={departmentId}                    required
+ตัวอย่าง:
+  GET /teachers?department_id=20
+
+[23] สถานะนิสิต
+Method: GET
+Path: /student-statuses
+Query: ไม่มี
+
+[24] ช่องทางการรับเข้า
+Method: GET
+Path: /admission-channels
+Query: ไม่มี
+
+[25] โรงเรียน
+Method: GET
+Path: /high-schools
+Query: ไม่มี
+
+[26] แผนการเรียน
+Method: GET
+Path: /study-plan-tracks
+Query: ไม่มี
+
+[27] ความสัมพันธ์ผู้ปกครอง
+Method: GET
+Path: /relationships
+Query: ไม่มี
+
+[28] ภาควิชาในระบบ
+Method: GET
+Path: /system-departments
+Query: ไม่มี
+
+[29] หมวด/กลุ่มรายวิชาในหลักสูตร
+Method: GET
+Path: /curriculum-divisions
+Query: ไม่มี
+
+
+7. ADVISOR ASSIGNMENT
+=====================
+
+[30] นิสิตในภาควิชาที่ยังไม่มีอาจารย์ที่ปรึกษา
+Method: GET
+Path: /students/without-advisor
+Query:
+  department_id={departmentId}                    required
+ตัวอย่าง:
+  GET /students/without-advisor?department_id=20
+
+[31] นิสิตของอาจารย์ที่ปรึกษา
+Method: GET
+Path: /students/by-teacher
+Query:
+  teacher_id={teacherId}                           required
+ตัวอย่าง:
+  GET /students/by-teacher?teacher_id=10
+
+ข้อสังเกต:
+- การลากย้ายนิสิตระหว่างสองฝั่งในหน้าจัดอาจารย์ที่ปรึกษาเปลี่ยนเฉพาะ React state
+- ปัจจุบัน FE ยังไม่มี POST/PUT/DELETE สำหรับบันทึกการจัดอาจารย์ที่ปรึกษา
+
+
+8. DATA SYNC
+============
+
+[32] Sync คณะ
+Method: GET
+Path: /system-faculties/sync
+Query: ไม่มี
+Body: ไม่มี
+
+[33] Sync ภาควิชา
+Method: GET
+Path: /system-departments/sync
+Query: ไม่มี
+Body: ไม่มี
+
+[34] Sync อาจารย์
+Method: GET
+Path: /teachers/sync
+Query: ไม่มี
+Body: ไม่มี
+
+
+SUMMARY
+=======
+
+- รูปแบบ request ที่แยกรายการไว้: 34 รายการ
+- HTTP methods ที่ใช้: GET, POST, PUT, DELETE
+- ไม่มี PATCH request
+- API client: src/config/axios.ts
+- API services: src/services/*.ts
+- GET /me เรียกโดย src/context/AuthContext.tsx

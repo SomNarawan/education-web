@@ -1,6 +1,7 @@
 import React from 'react'
 import {
     DatabaseOutlined,
+    SolutionOutlined,
     SyncOutlined,
     TeamOutlined,
 } from '@ant-design/icons'
@@ -54,6 +55,12 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             icon: <TeamOutlined />,
             label: 'รายชื่อนิสิตในคณะ',
             allowedRoles: ['teacher', 'admin'],
+        },
+        {
+            key: '/advisor-assignments',
+            icon: <SolutionOutlined />,
+            label: 'กำหนดอาจารย์ที่ปรึกษา',
+            allowedRoles: ['admin'],
         },
         {
             key: '/sync',
