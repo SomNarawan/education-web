@@ -10,18 +10,10 @@ Row,
 Select,
 } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
-import { useEffect, useState } from 'react'
-import type { StudentFormValues } from '../types/StudentFormValues'
-import type { StudentDetailResponse } from '../types/StudentDetailResponse'
-import {
-    getTitles,
-    getTeachers,
-    getStudentStatuses,
-    getAdmissionChannels,
-    getHighSchools,
-    getGuardianRelationships,
-    getStudyPlans,
-} from '../services/masterDataService'
+import { useEffect } from 'react'
+import type { StudentFormValues } from '../../../types/StudentFormValues'
+import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
+import { useStudentFormOptions } from './useStudentFormOptions'
 
 interface StudentFormModalProps {
     open: boolean
@@ -35,16 +27,6 @@ interface FormValues extends Omit<StudentFormValues, 'entry_year'> {
     entry_year?: Dayjs
 }
 
-interface DropdownData {
-    titles: Array<{ id: number; title_abbr_th: string; title_abbr_en: string }>
-    teachers: Array<{ id: number; full_name_th: string }>
-    studentStatuses: Array<{ id: number; status_name: string }>
-    admissionChannels: Array<{ id: number; channel_name: string }>
-    highSchools: Array<{ id: number; school_name: string }>
-    guardianRelationships: Array<{ id: number; relationship_name: string }>
-    studyPlans: Array<{ id: number; name_th: string }>
-}
-
 export default function StudentFormModal({
 open,
 loading,
@@ -53,46 +35,11 @@ onCancel,
 onSave,
 }: StudentFormModalProps) {
 const [form] = Form.useForm<FormValues>()
-const [dropdownData, setDropdownData] = useState<DropdownData>({
-    titles: [],
-    teachers: [],
-    studentStatuses: [],
-    admissionChannels: [],
-    highSchools: [],
-    guardianRelationships: [],
-    studyPlans: [],
-})
+const { options: dropdownData, loading: optionsLoading } =
+    useStudentFormOptions(open)
 
 useEffect(() => {
     if (!open) return
-
-    const loadDropdownData = async () => {
-        try {
-            const [titles, teachers, studentStatuses, admissionChannels, highSchools, guardianRelationships, studyPlans] = await Promise.all([
-                getTitles(),
-                getTeachers(),
-                getStudentStatuses(),
-                getAdmissionChannels(),
-                getHighSchools(),
-                getGuardianRelationships(),
-                getStudyPlans(),
-            ])
-
-            setDropdownData({
-                titles,
-                teachers,
-                studentStatuses,
-                admissionChannels,
-                highSchools,
-                guardianRelationships,
-                studyPlans,
-            })
-        } catch (error) {
-            console.error(error)
-        }
-    }
-
-    loadDropdownData()
 
     if (editingStudent) {
         form.setFieldsValue({
@@ -123,7 +70,7 @@ return (
         okText="บันทึก"
         cancelText="ยกเลิก"
         width={1000}
-        confirmLoading={loading}
+        confirmLoading={loading || optionsLoading}
     >
         <Form layout="vertical" form={form}>
             <Card title="1. รหัสนิสิต" size="small" style={{ marginBottom: 16 }}>

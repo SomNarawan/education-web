@@ -1,50 +1,68 @@
 import React, {
     useCallback,
     createContext,
-    useContext,
     useEffect,
     useState,
     useRef,
 } from 'react'
 import api from '../config/axios'
 import { message } from 'antd'
-
-type User = {
-    id?: number
-    nontriId?: number | string | null
-    teacherId?: number | null
-    name?: string
-    roles: string[]
-    departmentId?: number | null
-    facultyId?: number | null
-}
+import type { ApiResponse } from '../types/ApiResponse'
+import type { AppRole, AuthUser, MeResponse } from '../types/Auth'
 
 type AuthContextType = {
     token: string | null
-    user: User | null
-    currentRole: string | null
+    user: AuthUser | null
+    currentRole: AppRole | null
     loginWithToken: (token: string) => Promise<void>
     logout: () => void
-    setCurrentRole: (role: string) => void
+    setCurrentRole: (role: AppRole) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
+function parseStoredUser(value: string | null): AuthUser | null {
+    if (!value) {
+        return null
+    }
+
+    try {
+        const parsed: unknown = JSON.parse(value)
+
+        if (
+            typeof parsed !== 'object' ||
+            parsed === null ||
+            !('roles' in parsed) ||
+            !Array.isArray(parsed.roles)
+        ) {
+            return null
+        }
+
+        return parsed as AuthUser
+    } catch {
+        return null
+    }
+}
+
+function getStoredRole(): AppRole | null {
+    const role = localStorage.getItem('current_role')
+    return role === 'admin' || role === 'teacher' ? role : null
+}
+
+export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
     const [token, setToken] = useState<string | null>(() => {
         return localStorage.getItem('auth_token')
     })
 
-    const [user, setUser] = useState<User | null>(() => {
-        const storedUser = localStorage.getItem('auth_user')
-        return storedUser ? JSON.parse(storedUser) : null
-    })
+    const [user, setUser] = useState<AuthUser | null>(() =>
+        parseStoredUser(localStorage.getItem('auth_user')),
+    )
 
-    const [currentRole, setCurrentRoleState] = useState<string | null>(() => {
-        return localStorage.getItem('current_role')
-    })
+    const [currentRole, setCurrentRoleState] = useState<AppRole | null>(
+        getStoredRole,
+    )
 
     const fetchingRef = useRef(false)
 
@@ -54,14 +72,17 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         let cancelled = false
         fetchingRef.current = true
 
-        api.get('/me')
+        api.get<ApiResponse<MeResponse> | MeResponse>('/me')
             .then((res) => {
                 if (cancelled) return
 
-                const payload = res.data?.data ?? res.data
+                const response = res.data
+                const payload =
+                    'data' in response ? response.data : response
 
                 const roles = payload.role ?? []
-                const id = payload.id ?? payload.nontri_id
+                const rawId = payload.id ?? payload.nontri_id
+                const id = rawId == null ? undefined : Number(rawId)
                 const nontriId = payload.nontri_id ?? null
                 const teacherId = payload.teacher_id ?? null
                 const name = payload.name
@@ -70,7 +91,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
 
                 const facultyId = payload.faculty_id ?? null
 
-                const authUser: User = {
+                const authUser: AuthUser = {
                     id,
                     nontriId,
                     teacherId: teacherId ? Number(teacherId) : null,
@@ -83,7 +104,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
                 setUser(authUser)
                 localStorage.setItem('auth_user', JSON.stringify(authUser))
 
-                const storedRole = localStorage.getItem('current_role')
+                const storedRole = getStoredRole()
                 const responseRole = payload.current_role
 
                 const roleToSet =
@@ -145,7 +166,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         localStorage.removeItem('current_role')
     }, [])
 
-    const setCurrentRole = useCallback((role: string) => {
+    const setCurrentRole = useCallback((role: AppRole) => {
         setCurrentRoleState(role)
         localStorage.setItem('current_role', role)
     }, [])
@@ -164,16 +185,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
             {children}
         </AuthContext.Provider>
     )
-}
-
-export function useAuth() {
-    const ctx = useContext(AuthContext)
-
-    if (!ctx) {
-        throw new Error('useAuth must be used within AuthProvider')
-    }
-
-    return ctx
 }
 
 export default AuthContext

@@ -7,7 +7,8 @@ import {
 import { Menu } from 'antd'
 import type { MenuProps } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../hooks/useAuth'
+import type { AppRole } from '../types/Auth'
 
 interface SideMenuProps {
     collapsed: boolean
@@ -21,7 +22,7 @@ type AppMenuItem = {
     key: string
     icon: React.ReactNode
     label: string
-    allowedRoles: string[]
+    allowedRoles: AppRole[]
 }
 
 export default function SideMenu({ collapsed }: SideMenuProps) {

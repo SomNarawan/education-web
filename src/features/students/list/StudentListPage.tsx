@@ -3,28 +3,30 @@ const { Text } = Typography
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import StudentTable from '../components/StudentTable'
-import StudentFormModal from '../components/StudentFormModal'
-import type { StudentFormValues } from '../types/StudentFormValues'
-import type { StudentListResponse } from '../types/StudentListResponse'
-import type { StudentDetailResponse } from '../types/StudentDetailResponse'
-import { getStudentDetail, getStudentsByPage, createStudent, updateStudent, deleteStudent } from '../services/studentService'
-import { getNoteTypes } from '../services/noteTypeService'
-import { getStudentStatuses, getSystemDepartments } from '../services/masterDataService'
-import { useAuth } from '../context/AuthContext'
+import StudentTable from './StudentTable'
+import StudentFormModal from './StudentFormModal'
+import type { StudentFormValues } from '../../../types/StudentFormValues'
+import type { StudentListResponse } from '../../../types/StudentListResponse'
+import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
+import { getStudentDetail, getStudentsByPage, createStudent, updateStudent, deleteStudent } from '../../../services/studentService'
+import { getNoteTypes } from '../../../services/noteTypeService'
+import { getStudentStatuses, getSystemDepartments } from '../../../services/masterDataService'
+import { useAuth } from '../../../hooks/useAuth'
+import type { SelectOption } from '../../../types/MasterData'
+import type { StudentGroup } from '../../../types/StudentRoute'
 
-type StudentGroup = 'advisor' | 'department' | 'faculty'
 type NoteSearchType = string | undefined
-
-type OptionItem = {
-    label: string
-    value: number
-}
 
 const OTHER_NOTE_VALUE = 'อื่นๆ'
 const DEFAULT_STUDENT_STATUS = 2
 
-export default function StudentList() {
+export default function StudentListPage() {
+    const { studentGroup } = useParams()
+
+    return <StudentList key={studentGroup} />
+}
+
+function StudentList() {
     const { studentGroup } = useParams<{
         studentGroup?: StudentGroup
     }>()
@@ -52,9 +54,11 @@ export default function StudentList() {
         { label: string; value: string }[]
     >([])
 
-    const [departmentOptions, setDepartmentOptions] = useState<OptionItem[]>([])
+    const [departmentOptions, setDepartmentOptions] = useState<SelectOption[]>(
+        [],
+    )
     const [studentStatusOptions, setStudentStatusOptions] = useState<
-        OptionItem[]
+        SelectOption[]
     >([])
     const [selectedDepartmentId, setSelectedDepartmentId] = useState<
         number | undefined
@@ -160,28 +164,16 @@ export default function StudentList() {
     )
 
     useEffect(() => {
-        setNoteSearchType(undefined)
-        setNoteSearchText('')
-        setStudentSearchText('')
-        setHasFacultySearched(false)
-        setStudents([])
-        setSelectedStudentStatusId(undefined)
-
-        if (!isDepartmentListPage || isTeacher) {
-            setSelectedDepartmentId(undefined)
-        }
-    }, [currentStudentGroup, isDepartmentListPage, isTeacher])
-
-    useEffect(() => {
         if (isFacultyListPage) {
             return
         }
 
         if (isAdmin && isDepartmentListPage) {
-            setStudents([])
             return
         }
 
+        // Initial API synchronization is intentionally triggered by route/auth inputs.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadStudents({
             studentStatusId: DEFAULT_STUDENT_STATUS,
         })
@@ -232,7 +224,7 @@ export default function StudentList() {
                     ])
 
                 setStudentStatusOptions(
-                    studentStatuses.map((item: any) => ({
+                    studentStatuses.map((item) => ({
                         label: item.status_name ?? '-',
                         value: item.id,
                     })),
@@ -241,7 +233,7 @@ export default function StudentList() {
 
                 if (isAdmin && isDepartmentListPage) {
                     setDepartmentOptions(
-                        systemDepartments.map((item: any) => ({
+                        systemDepartments.map((item) => ({
                             label: item.th_name ?? '-',
                             value: item.id,
                         })),

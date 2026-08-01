@@ -1,4 +1,4 @@
-import type { FailedPlannedCourseRow } from '../types/CurriculumDetail'
+import type { FailedPlannedCourseRow } from '../../../types/CurriculumDetail'
 
 export interface StudentFailedPlannedCoursesSectionProps {
     studentCode: string

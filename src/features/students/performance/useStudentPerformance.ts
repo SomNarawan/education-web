@@ -1,12 +1,13 @@
 import { message } from 'antd'
 import { useEffect, useState } from 'react'
-import { getStudentGraphs } from '../services/studentJsonDataService'
+import { getStudentGraphs } from '../../../services/studentJsonDataService'
+import type { CourseGroupDataset } from '../../../types/StudentCourseGroupPerformance'
 import type {
     SemesterCreditStatus,
     SemesterCreditStatusRecord,
     StudentSemesterPerformance,
     StudentSemesterPerformanceRow,
-} from '../types/StudentSemesterPerformance'
+} from '../../../types/StudentSemesterPerformance'
 
 const creditStatusLabels: Record<string, string> = {
     credit_study: 'หน่วยกิตที่เรียน',
@@ -19,7 +20,7 @@ const semesterOrder: Record<string, number> = {
     ภาคปลาย: 2,
 }
 
-function buildRows(
+function buildSemesterRows(
     rows: StudentSemesterPerformance[],
 ): StudentSemesterPerformanceRow[] {
     return [...rows]
@@ -50,32 +51,71 @@ function buildCreditStatuses(
     }))
 }
 
-export function useStudentSemesterPerformance(studentCode: string) {
+export function useStudentPerformance(studentCode: string) {
     const [creditStatuses, setCreditStatuses] = useState<
         SemesterCreditStatus[]
     >([])
-    const [rows, setRows] = useState<StudentSemesterPerformanceRow[]>([])
+    const [semesterRows, setSemesterRows] = useState<
+        StudentSemesterPerformanceRow[]
+    >([])
+    const [courseGroupDatasets, setCourseGroupDatasets] = useState<
+        CourseGroupDataset[]
+    >([])
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
+        if (!studentCode) {
+            return
+        }
+
+        let cancelled = false
+
         const loadPerformance = async () => {
             try {
                 setLoading(true)
                 const data = await getStudentGraphs(studentCode)
+
+                if (cancelled) return
+
                 setCreditStatuses(buildCreditStatuses(data.by_credit))
-                setRows(buildRows(data.by_semester))
+                setSemesterRows(buildSemesterRows(data.by_semester))
+                setCourseGroupDatasets(
+                    Object.entries(data.by_group)
+                        .filter(([, records]) => records.length > 0)
+                        .map(([group, records]) => ({
+                            id: group,
+                            rows: records.map((record, index) => ({
+                                ...record,
+                                key: `${group}-${index}`,
+                            })),
+                        })),
+                )
             } catch (error) {
+                if (cancelled) return
+
                 console.error(error)
                 message.error('โหลดรายงานผลการเรียนไม่สำเร็จ')
                 setCreditStatuses([])
-                setRows([])
+                setSemesterRows([])
+                setCourseGroupDatasets([])
             } finally {
-                setLoading(false)
+                if (!cancelled) {
+                    setLoading(false)
+                }
             }
         }
 
         loadPerformance()
+
+        return () => {
+            cancelled = true
+        }
     }, [studentCode])
 
-    return { creditStatuses, rows, loading }
+    return {
+        creditStatuses,
+        semesterRows,
+        courseGroupDatasets,
+        loading,
+    }
 }

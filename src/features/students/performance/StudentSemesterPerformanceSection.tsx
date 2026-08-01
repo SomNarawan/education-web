@@ -9,23 +9,22 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { Suspense, lazy, useMemo, useState } from 'react'
-import type { StudentSemesterPerformanceRow } from '../types/StudentSemesterPerformance'
+import type { StudentSemesterPerformanceRow } from '../../../types/StudentSemesterPerformance'
 import type {
     StudentSemesterChartProps,
     StudentSemesterPerformanceSectionProps,
 } from './StudentSemesterPerformanceSection.types'
-import { useStudentSemesterPerformance } from '../hooks/useStudentSemesterPerformance'
 import {
     getGradeColor,
     getGradeRange,
     gradeRangeColors,
     gradeRanges,
-} from '../utils/grade'
+} from '../../../utils/grade'
 import {
     formatDecimal,
     formatDiff,
     getDiffColor,
-} from '../utils/performanceFormat'
+} from '../../../utils/performanceFormat'
 import SemesterDetailModal from './SemesterDetailModal'
 
 const chartColors = {
@@ -285,10 +284,10 @@ function StudentSemesterChart({
 }
 
 export default function StudentSemesterPerformanceSection({
-    studentCode,
+    creditStatuses,
+    rows,
+    loading = false,
 }: StudentSemesterPerformanceSectionProps) {
-    const { creditStatuses, rows, loading } =
-        useStudentSemesterPerformance(studentCode)
     const [detailRecord, setDetailRecord] =
         useState<StudentSemesterPerformanceRow | null>(null)
 

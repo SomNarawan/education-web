@@ -5,53 +5,27 @@ import {
     Select,
     Row,
     Skeleton,
-    Typography,
     message,
 } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
 import { FileTextOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
-import type { StudentDetailResponse } from '../types/StudentDetailResponse'
-import type { NoteListResponse } from '../types/NoteListResponse'
-import { getStudentDetail } from '../services/studentService'
-import { createNote, getNotes, deleteNote } from '../services/noteService'
-import { getNoteTypes } from '../services/noteTypeService'
-import NoteHistoryModal from '../components/NoteHistoryModal'
-import StudentSemesterPerformanceSection from '../components/StudentSemesterPerformanceSection'
-import StudentCourseGroupPerformanceSection from '../components/StudentCourseGroupPerformanceSection'
-import StudentFailedPlannedCoursesSection from '../components/StudentFailedPlannedCoursesSection'
-import StudentCurriculumDetailSection from '../components/StudentCurriculumDetailSection'
+import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
+import { getStudentDetail } from '../../../services/studentService'
+import { createNote } from '../../../services/noteService'
+import { getNoteTypes } from '../../../services/noteTypeService'
+import NoteHistoryModal from '../notes/NoteHistoryModal'
+import StudentSemesterPerformanceSection from '../performance/StudentSemesterPerformanceSection'
+import StudentCourseGroupPerformanceSection from '../performance/StudentCourseGroupPerformanceSection'
+import StudentFailedPlannedCoursesSection from '../curriculum/StudentFailedPlannedCoursesSection'
+import StudentCurriculumDetailSection from '../curriculum/StudentCurriculumDetailSection'
+import { useStudentPerformance } from '../performance/useStudentPerformance'
+import { useStudentNotes } from '../notes/useStudentNotes'
+import DetailItem from '../../../components/custom/DetailItem'
+import type { NoteTypeListResponse } from '../../../types/NoteTypeListResponse'
 
-const { Text } = Typography
-interface NoteType {
-    id: number
-    note: string
-}
-
-function DetailItem({
-    label,
-    value,
-}: {
-    label: string
-    value?: ReactNode
-}) {
-    return (
-        <Row style={{ marginBottom: 18 }}>
-            <Col span={10}>
-                <Text strong style={{ color: '#000000' }}>
-                    {label} :
-                </Text>
-            </Col>
-            <Col span={14}>
-                <Text>{value || '-'}</Text>
-            </Col>
-        </Row>
-    )
-}
-
-export default function StudentDetail() {
+export default function StudentDetailPage() {
     const { id } = useParams()
 
     const [student, setStudent] = useState<StudentDetailResponse | null>(null)
@@ -59,12 +33,22 @@ export default function StudentDetail() {
 
     const [noteTypeId, setNoteTypeId] = useState<number>()
     const [remark, setRemark] = useState('')
-    const [noteTypes, setNoteTypes] = useState<NoteType[]>([])
+    const [noteTypes, setNoteTypes] = useState<NoteTypeListResponse[]>([])
     const [savingNote, setSavingNote] = useState(false)
 
     const [noteHistoryOpen, setNoteHistoryOpen] = useState(false)
-    const [notes, setNotes] = useState<NoteListResponse[]>([])
-    const [loadingNotes, setLoadingNotes] = useState(false)
+    const {
+        notes,
+        loading: loadingNotes,
+        loadNotes,
+        removeNote,
+    } = useStudentNotes(student?.id)
+    const {
+        creditStatuses,
+        semesterRows,
+        courseGroupDatasets,
+        loading: loadingPerformance,
+    } = useStudentPerformance(student?.student_code ?? '')
 
     const selectedNoteType = noteTypes.find(
         (noteType) => noteType.id === noteTypeId
@@ -111,28 +95,14 @@ export default function StudentDetail() {
         loadNoteTypes()
     }, [loadNoteTypes, loadStudent])
 
-    const loadNotes = async (studentId: number) => {
-        const data = await getNotes(studentId)
-        setNotes(data)
-    }
-
     const handleOpenNoteHistory = async () => {
-        try {
-            if (!student?.id) {
-                message.error('ไม่พบข้อมูลนิสิต')
-                return
-            }
-
-            setNoteHistoryOpen(true)
-            setLoadingNotes(true)
-
-            await loadNotes(student.id)
-        } catch (error) {
-            console.error(error)
-            message.error('โหลดประวัติ Note ไม่สำเร็จ')
-        } finally {
-            setLoadingNotes(false)
+        if (!student?.id) {
+            message.error('ไม่พบข้อมูลนิสิต')
+            return
         }
+
+        setNoteHistoryOpen(true)
+        await loadNotes()
     }
 
     const handleAddNote = async () => {
@@ -165,7 +135,7 @@ export default function StudentDetail() {
             setRemark('')
 
             if (noteHistoryOpen) {
-                await loadNotes(student.id)
+                await loadNotes()
             }
         } catch (error) {
             console.error(error)
@@ -176,18 +146,7 @@ export default function StudentDetail() {
     }
 
     const handleDeleteNote = async (id: number) => {
-        try {
-            await deleteNote(id)
-
-            message.success('ลบ Note สำเร็จ')
-
-            if (student) {
-                await loadNotes(student.id)
-            }
-        } catch (error) {
-            console.error(error)
-            message.error('ลบ Note ไม่สำเร็จ')
-        }
+        await removeNote(id)
     }
 
     return (
@@ -396,13 +355,16 @@ export default function StudentDetail() {
 
                             <Col xs={24}>
                                 <StudentSemesterPerformanceSection
-                                    studentCode={student.student_code}
+                                    creditStatuses={creditStatuses}
+                                    rows={semesterRows}
+                                    loading={loadingPerformance}
                                 />
                             </Col>
 
                             <Col xs={24}>
                                 <StudentCourseGroupPerformanceSection
-                                    studentCode={student.student_code}
+                                    datasets={courseGroupDatasets}
+                                    loading={loadingPerformance}
                                 />
                             </Col>
 

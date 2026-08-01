@@ -1,10 +1,12 @@
 import type {
     SemesterCreditStatus,
     StudentSemesterPerformanceRow,
-} from '../types/StudentSemesterPerformance'
+} from '../../../types/StudentSemesterPerformance'
 
 export interface StudentSemesterPerformanceSectionProps {
-    studentCode: string
+    creditStatuses: SemesterCreditStatus[]
+    rows: StudentSemesterPerformanceRow[]
+    loading?: boolean
 }
 
 export interface StudentSemesterChartProps {

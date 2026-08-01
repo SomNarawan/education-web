@@ -1,5 +1,5 @@
 import type { DataNode } from 'antd/es/tree'
-import type { CurriculumCourseRow } from '../types/CurriculumDetail'
+import type { CurriculumCourseRow } from '../../../types/CurriculumDetail'
 
 export interface StudentCurriculumDetailSectionProps {
     studentCode: string

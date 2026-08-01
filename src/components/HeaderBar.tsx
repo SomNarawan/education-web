@@ -1,8 +1,10 @@
 import { Avatar, Dropdown, Space } from 'antd'
+import type { MenuProps } from 'antd'
 import { UserOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import kuLogo from '../assets/newLogoUniversity1.png'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../hooks/useAuth'
+import type { AppRole } from '../types/Auth'
 
 export default function HeaderBar() {
     const navigate = useNavigate()
@@ -10,7 +12,7 @@ export default function HeaderBar() {
 
     const roleOptions = user?.roles ?? []
 
-    const handleRoleChange = (role: string) => {
+    const handleRoleChange = (role: AppRole) => {
         setCurrentRole(role)
         navigate(
             role === 'admin'
@@ -31,7 +33,7 @@ export default function HeaderBar() {
         onClick: () => handleRoleChange(r),
     }))
 
-    const items: any[] = [
+    const items: MenuProps['items'] = [
         ...roleItems,
         { type: 'divider', key: 'div' },
         { key: 'logout', label: 'ออกจากระบบ', onClick: () => logout() },

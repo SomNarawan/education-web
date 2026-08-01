@@ -1,4 +1,4 @@
-import { Button, Popconfirm, Space, Tag, message } from 'antd'
+import { Button, Popconfirm, Space, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
     DeleteOutlined,
@@ -8,11 +8,10 @@ import {
 } from '@ant-design/icons'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type { StudentListResponse } from '../types/StudentListResponse'
-import type { NoteListResponse } from '../types/NoteListResponse'
-import { getNotes } from '../services/noteService'
-import NoteHistoryModal from './NoteHistoryModal'
-import CustomTable from './custom/CustomTable'
+import type { StudentListResponse } from '../../../types/StudentListResponse'
+import NoteHistoryModal from '../notes/NoteHistoryModal'
+import CustomTable from '../../../components/custom/CustomTable'
+import { useStudentNotes } from '../notes/useStudentNotes'
 
 interface StudentTableProps {
     students: StudentListResponse[]
@@ -35,23 +34,17 @@ export default function StudentTable({
     const location = useLocation()
 
     const [noteModalOpen, setNoteModalOpen] = useState(false)
-    const [notes, setNotes] = useState<NoteListResponse[]>([])
-    const [loadingNotes, setLoadingNotes] = useState(false)
+    const {
+        notes,
+        loading: loadingNotes,
+        loadNotes,
+    } = useStudentNotes()
 
     const isAdvisorPage = studentGroup === 'advisor'
 
     const handleOpenNotes = async (studentId: number) => {
-        try {
-            setNoteModalOpen(true)
-            setLoadingNotes(true)
-
-            const data = await getNotes(studentId)
-            setNotes(data)
-        } catch (error) {
-            message.error('โหลดประวัติ Note ไม่สำเร็จ')
-        } finally {
-            setLoadingNotes(false)
-        }
+        setNoteModalOpen(true)
+        await loadNotes(studentId)
     }
 
     const advisorColumn: ColumnsType<StudentListResponse>[number] = {

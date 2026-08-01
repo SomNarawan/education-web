@@ -7,19 +7,19 @@ import {
 import { Breadcrumb, Button, Card, Tooltip, Tree } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo, useState } from 'react'
-import CustomTable from './custom/CustomTable'
+import CustomTable from '../../../components/custom/CustomTable'
 import type {
     CurriculumCourseRow,
     CurriculumDivision,
     CurriculumEnrollmentRecord,
-} from '../types/CurriculumDetail'
+} from '../../../types/CurriculumDetail'
 import type {
     CourseTableProps,
     CurriculumTreeData,
     StudentCurriculumDetailSectionProps,
     TreeSelection,
 } from './StudentCurriculumDetailSection.types'
-import { useStudentCurriculumDetail } from '../hooks/useStudentCurriculumDetail'
+import { useStudentCurriculumDetail } from './useStudentCurriculumDetail'
 
 function getCourseCategory(row: CurriculumEnrollmentRecord) {
     return row.course_category || row.curriculum_division || 'ไม่ระบุหมวดวิชา'
