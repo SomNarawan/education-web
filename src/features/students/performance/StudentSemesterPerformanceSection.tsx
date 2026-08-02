@@ -1,5 +1,5 @@
 ﻿import { SearchOutlined } from '@ant-design/icons'
-import type { DualAxesConfig } from '@ant-design/plots'
+import type { ColumnConfig } from '@ant-design/plots'
 import {
     Button,
     Card,
@@ -28,15 +28,14 @@ import {
 import SemesterDetailModal from './SemesterDetailModal'
 
 const chartColors = {
-    gpax: '#4b5563',
     grid: '#d9dce3',
     axis: '#8c8c8c',
     text: '#262626',
 }
 
-const DualAxes = lazy(() =>
+const Column = lazy(() =>
     import('@ant-design/plots').then((chartModule) => ({
-        default: chartModule.DualAxes,
+        default: chartModule.Column,
     })),
 )
 
@@ -55,15 +54,15 @@ function StudentSemesterChart({
     const chartData = rows.map((row) => ({
         semesterLabel: `ชั้นปี ${row.study_year} ${row.semester}`,
         gpa: row.gpa,
-        gpax: row.gpax,
         gradeRange: getGradeRange(row.gpa),
     }))
-    const chartConfig: DualAxesConfig = {
+    const chartConfig: ColumnConfig = {
         data: chartData,
         height: 440,
         autoFit: true,
-        transpose: true,
         xField: 'semesterLabel',
+        yField: 'gpa',
+        colorField: 'gradeRange',
         scale: {
             y: {
                 domain: [0, 4],
@@ -90,7 +89,7 @@ function StudentSemesterChart({
                 labelFontWeight: 400,
                 labelAutoHide: false,
                 labelAutoRotate: {
-                    optionalAngles: [0, 25, 45],
+                    optionalAngles: [0, 25, 45, 90],
                     recoverWhenFailed: true,
                 },
             },
@@ -119,90 +118,19 @@ function StudentSemesterChart({
             },
         },
         legend: false,
-        interaction: {
-            tooltip: {
-                shared: false,
-                series: false,
-                mount: 'body',
-                css: {
-                    '.g2-tooltip': {
-                        'z-index': 1000,
-                    },
-                },
-            },
+        style: {
+            fillOpacity: 0.78,
         },
-        children: [
-            {
-                type: 'interval',
-                yField: 'gpa',
-                colorField: 'gradeRange',
-                scale: {
-                    y: {
-                        domain: [0, 4],
-                        key: 'semesterGradeScale',
-                        independent: false,
-                    },
+        tooltip: {
+            title: 'semesterLabel',
+            items: [
+                {
+                    field: 'gpa',
+                    name: 'GPA',
+                    valueFormatter: (value: number) => formatDecimal(value),
                 },
-                style: {
-                    fillOpacity: 0.68,
-                },
-                tooltip: {
-                    title: 'semesterLabel',
-                    items: [
-                        {
-                            field: 'gpa',
-                            name: 'GPA',
-                            valueFormatter: (value: number) =>
-                                formatDecimal(value),
-                        },
-                    ],
-                },
-            },
-            {
-                type: 'line',
-                yField: 'gpax',
-                scale: {
-                    y: {
-                        domain: [0, 4],
-                        key: 'semesterGradeScale',
-                        independent: false,
-                    },
-                },
-                style: {
-                    stroke: chartColors.gpax,
-                    lineWidth: 3,
-                },
-                tooltip: false,
-            },
-            {
-                type: 'point',
-                yField: 'gpax',
-                scale: {
-                    y: {
-                        domain: [0, 4],
-                        key: 'semesterGradeScale',
-                        independent: false,
-                    },
-                },
-                style: {
-                    fill: '#ffffff',
-                    stroke: chartColors.gpax,
-                    lineWidth: 2,
-                    r: 4,
-                },
-                tooltip: {
-                    title: 'semesterLabel',
-                    items: [
-                        {
-                            field: 'gpax',
-                            name: 'GPAX',
-                            valueFormatter: (value: number) =>
-                                formatDecimal(value),
-                        },
-                    ],
-                },
-            },
-        ],
+            ],
+        },
     }
 
     return (
@@ -224,19 +152,12 @@ function StudentSemesterChart({
                             {gradeRange}
                         </span>
                     ))}
-                    <span
-                        className="grade-legend-item"
-                        style={{ color: chartColors.gpax }}
-                    >
-                        <span className="grade-legend-line" />
-                        GPAX
-                    </span>
                 </div>
 
                 <div
                     className="semester-performance-chart"
                     role="img"
-                    aria-label="กราฟแท่ง GPA และเส้น GPAX รายภาคการศึกษา"
+                    aria-label="กราฟแท่ง GPA แนวตั้งรายภาคการศึกษา"
                 >
                     <Suspense
                         fallback={
@@ -245,10 +166,7 @@ function StudentSemesterChart({
                             </div>
                         }
                     >
-                        <DualAxes
-                            key={'semester-performance-tooltip-v3'}
-                            {...chartConfig}
-                        />
+                        <Column {...chartConfig} />
                     </Suspense>
                 </div>
             </div>

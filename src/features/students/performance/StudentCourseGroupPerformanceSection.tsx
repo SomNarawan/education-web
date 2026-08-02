@@ -1,4 +1,4 @@
-import type { ColumnConfig, PieConfig } from '@ant-design/plots'
+import type { DualAxesConfig, PieConfig } from '@ant-design/plots'
 import { Card, Empty, Popover, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -19,14 +19,15 @@ import {
 } from '../../../utils/grade'
 
 const chartColors = {
+    line: '#4b5563',
     grid: '#d9dce3',
     axis: '#8c8c8c',
     text: '#262626',
 }
 
-const Column = lazy(() =>
+const DualAxes = lazy(() =>
     import('@ant-design/plots').then((chartModule) => ({
-        default: chartModule.Column,
+        default: chartModule.DualAxes,
     })),
 )
 
@@ -55,33 +56,34 @@ function wrapAxisLabel(label: string, maxCharactersPerLine = 20) {
     return lines.length > 0 ? lines : ['']
 }
 
+function buildCourseGroupChartData(
+    rows: StudentCourseGroupPerformanceRow[],
+) {
+    const [referenceRow, ...remainingRows] = rows
+    const chartData = remainingRows
+        .sort((first, second) => second.gpa - first.gpa)
+        .map((row) => ({
+            courseGroup: row.course_group,
+            gpa: row.gpa,
+            referenceGpa: referenceRow?.gpa ?? 0,
+            gradeRange: getGradeRange(row.gpa),
+        }))
+
+    return { chartData, referenceRow }
+}
+
 function CourseGroupChart({
     rows,
 }: {
     rows: StudentCourseGroupPerformanceRow[]
 }) {
-    const [firstRow, ...remainingRows] = rows
-    const sortedRows = firstRow
-        ? [
-              firstRow,
-              ...remainingRows.sort(
-                  (first, second) => second.gpa - first.gpa,
-              ),
-          ]
-        : []
-    const chartData = sortedRows.map((row) => ({
-        courseGroup: row.course_group,
-        gpa: row.gpa,
-        gradeRange: getGradeRange(row.gpa),
-    }))
-    const chartConfig: ColumnConfig = {
+    const { chartData, referenceRow } = buildCourseGroupChartData(rows)
+    const chartConfig: DualAxesConfig = {
         data: chartData,
         height: 460,
         autoFit: true,
         transpose: true,
         xField: 'courseGroup',
-        yField: 'gpa',
-        colorField: 'gradeRange',
         scale: {
             y: {
                 domain: [0, 4],
@@ -139,18 +141,57 @@ function CourseGroupChart({
             },
         },
         legend: false,
-        style: {
-            fillOpacity: 0.78,
+        interaction: {
+            tooltip: {
+                shared: false,
+                series: false,
+                mount: 'body',
+            },
         },
-        tooltip: {
-            items: [
-                {
-                    field: 'gpa',
-                    name: 'เกรดเฉลี่ย',
-                    valueFormatter: (value: number) => value.toFixed(2),
+        children: [
+            {
+                type: 'interval',
+                yField: 'gpa',
+                colorField: 'gradeRange',
+                scale: {
+                    y: {
+                        domain: [0, 4],
+                        key: 'courseGroupGradeScale',
+                        independent: false,
+                    },
                 },
-            ],
-        },
+                style: {
+                    fillOpacity: 0.78,
+                },
+                tooltip: {
+                    title: 'courseGroup',
+                    items: [
+                        {
+                            field: 'gpa',
+                            name: 'GPA',
+                            valueFormatter: (value: number) =>
+                                value.toFixed(2),
+                        },
+                    ],
+                },
+            },
+            {
+                type: 'line',
+                yField: 'referenceGpa',
+                scale: {
+                    y: {
+                        domain: [0, 4],
+                        key: 'courseGroupGradeScale',
+                        independent: false,
+                    },
+                },
+                style: {
+                    stroke: chartColors.line,
+                    lineWidth: 3,
+                },
+                tooltip: false,
+            },
+        ],
     }
 
     return (
@@ -169,12 +210,21 @@ function CourseGroupChart({
                         {gradeRange}
                     </span>
                 ))}
+                {referenceRow && (
+                    <span
+                        className="grade-legend-item"
+                        style={{ color: chartColors.line }}
+                    >
+                        <span className="grade-legend-line" />
+                        {`${referenceRow.course_group} (${referenceRow.gpa.toFixed(2)})`}
+                    </span>
+                )}
             </div>
 
             <div
                 className="course-group-performance-chart"
                 role="img"
-                aria-label="กราฟเกรดเฉลี่ยแยกตามหมวดวิชา"
+                aria-label="กราฟเส้น GPA ของข้อมูลรายการแรกและกราฟแท่งแนวนอนของข้อมูลรายการอื่น"
             >
                 <Suspense
                     fallback={
@@ -183,7 +233,7 @@ function CourseGroupChart({
                         </div>
                     }
                 >
-                    <Column {...chartConfig} />
+                    <DualAxes {...chartConfig} />
                 </Suspense>
             </div>
         </div>
