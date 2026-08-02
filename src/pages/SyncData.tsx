@@ -7,9 +7,15 @@ import { Button, Modal, Space, Tag, Tooltip, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
 import dayjs from 'dayjs'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import CustomTable from '../components/custom/CustomTable'
-import { getSyncHistory, syncMasterData } from '../services/syncService'
+import {
+    getSyncedSystemDepartments,
+    getSyncedSystemFaculties,
+    getSyncedTeachers,
+    getSyncHistory,
+    syncMasterData,
+} from '../services/syncService'
 import type { ApiResponse } from '../types/ApiResponse'
 import type {
     SyncDataType,
@@ -18,6 +24,9 @@ import type {
     SyncStatus,
     SyncTableRecord,
     SyncType,
+    SyncedSystemDepartment,
+    SyncedSystemFaculty,
+    SyncedTeacher,
 } from '../types/SyncData'
 
 const syncOptions: { label: string; value: SyncDataType }[] = [
@@ -46,13 +55,20 @@ const statusDisplay: Record<
     error: { color: 'error', label: 'ไม่สำเร็จ' },
 }
 
-const detailColumns: ColumnsType<{ key: string; detail: string }> = [
-    {
-        title: 'รายละเอียดข้อมูล',
-        dataIndex: 'detail',
-        key: 'detail',
-    },
-]
+interface SyncDetailTableRecord {
+    id: number
+    thName?: string
+    enName?: string
+    thShortName?: string
+    enShortName?: string
+    systemFacultyId?: number
+    nontriId?: string
+    fullNameTh?: string
+    departmentId?: number
+    deletedAt: string | null
+    createdAt: string
+    updatedAt: string
+}
 
 const syncTypeByDataType: Record<SyncDataType, SyncType> = {
     faculty: 1,
@@ -72,13 +88,185 @@ function getSyncStatus(status: string | null): SyncStatus {
     return 'waiting'
 }
 
-function formatSyncDate(value: string | null): string | null {
+function formatSyncDate(value: string | null | undefined): string | null {
     if (!value) {
         return null
     }
 
     const date = dayjs(value)
     return date.isValid() ? date.format('DD/MM/YYYY HH:mm:ss') : null
+}
+
+const auditDetailColumns: ColumnsType<SyncDetailTableRecord> = [
+    {
+        title: 'ลบเมื่อ',
+        dataIndex: 'deletedAt',
+        key: 'deletedAt',
+        width: 160,
+        render: (value: string | null) => formatSyncDate(value) ?? '-',
+    },
+    {
+        title: 'สร้างเมื่อ',
+        dataIndex: 'createdAt',
+        key: 'createdAt',
+        width: 160,
+        render: (value: string) => formatSyncDate(value) ?? '-',
+    },
+    {
+        title: 'แก้ไขเมื่อ',
+        dataIndex: 'updatedAt',
+        key: 'updatedAt',
+        width: 160,
+        render: (value: string) => formatSyncDate(value) ?? '-',
+    },
+]
+
+const detailColumnsByType: Record<
+    SyncDataType,
+    ColumnsType<SyncDetailTableRecord>
+> = {
+    faculty: [
+        { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+        {
+            title: 'ชื่อคณะ (ไทย)',
+            dataIndex: 'thName',
+            key: 'thName',
+            width: 220,
+        },
+        {
+            title: 'ชื่อคณะ (อังกฤษ)',
+            dataIndex: 'enName',
+            key: 'enName',
+            width: 260,
+        },
+        {
+            title: 'ชื่อย่อ (ไทย)',
+            dataIndex: 'thShortName',
+            key: 'thShortName',
+            width: 120,
+        },
+        {
+            title: 'ชื่อย่อ (อังกฤษ)',
+            dataIndex: 'enShortName',
+            key: 'enShortName',
+            width: 130,
+        },
+        ...auditDetailColumns,
+    ],
+    department: [
+        { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+        {
+            title: 'ชื่อภาควิชา (ไทย)',
+            dataIndex: 'thName',
+            key: 'thName',
+            width: 240,
+        },
+        {
+            title: 'ชื่อภาควิชา (อังกฤษ)',
+            dataIndex: 'enName',
+            key: 'enName',
+            width: 280,
+        },
+        {
+            title: 'ชื่อย่อ (ไทย)',
+            dataIndex: 'thShortName',
+            key: 'thShortName',
+            width: 120,
+        },
+        {
+            title: 'ชื่อย่อ (อังกฤษ)',
+            dataIndex: 'enShortName',
+            key: 'enShortName',
+            width: 130,
+        },
+        {
+            title: 'รหัสคณะ',
+            dataIndex: 'systemFacultyId',
+            key: 'systemFacultyId',
+            width: 110,
+        },
+        ...auditDetailColumns,
+    ],
+    teacher: [
+        { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+        {
+            title: 'Nontri ID',
+            dataIndex: 'nontriId',
+            key: 'nontriId',
+            width: 140,
+        },
+        {
+            title: 'ชื่ออาจารย์',
+            dataIndex: 'fullNameTh',
+            key: 'fullNameTh',
+            width: 220,
+        },
+        {
+            title: 'รหัสภาควิชา',
+            dataIndex: 'departmentId',
+            key: 'departmentId',
+            width: 130,
+        },
+        ...auditDetailColumns,
+    ],
+}
+
+function mapFacultyDetails(
+    faculties: SyncedSystemFaculty[],
+): SyncDetailTableRecord[] {
+    return faculties.map((faculty) => ({
+        id: faculty.id,
+        thName: faculty.th_name,
+        enName: faculty.en_name,
+        thShortName: faculty.th_short_name,
+        enShortName: faculty.en_short_name,
+        deletedAt: faculty.deleted_at,
+        createdAt: faculty.created_at,
+        updatedAt: faculty.updated_at,
+    }))
+}
+
+function mapDepartmentDetails(
+    departments: SyncedSystemDepartment[],
+): SyncDetailTableRecord[] {
+    return departments.map((department) => ({
+        id: department.id,
+        thName: department.th_name,
+        enName: department.en_name,
+        thShortName: department.th_short_name,
+        enShortName: department.en_short_name,
+        systemFacultyId: department.system_faculty_id,
+        deletedAt: department.deleted_at,
+        createdAt: department.created_at,
+        updatedAt: department.updated_at,
+    }))
+}
+
+function mapTeacherDetails(
+    teachers: SyncedTeacher[],
+): SyncDetailTableRecord[] {
+    return teachers.map((teacher) => ({
+        id: teacher.id,
+        nontriId: teacher.nontri_id,
+        fullNameTh: teacher.full_name_th,
+        departmentId: teacher.department_id,
+        deletedAt: teacher.deleted_at,
+        createdAt: teacher.created_at,
+        updatedAt: teacher.updated_at,
+    }))
+}
+
+async function loadSyncDetails(
+    dataType: SyncDataType,
+): Promise<SyncDetailTableRecord[]> {
+    switch (dataType) {
+        case 'faculty':
+            return mapFacultyDetails(await getSyncedSystemFaculties())
+        case 'department':
+            return mapDepartmentDetails(await getSyncedSystemDepartments())
+        case 'teacher':
+            return mapTeacherDetails(await getSyncedTeachers())
+    }
 }
 
 function mapHistoryToRecords(history: SyncHistoryRecord[]): SyncTableRecord[] {
@@ -204,10 +392,13 @@ export default function SyncData() {
     const [syncingType, setSyncingType] = useState<SyncDataType | null>(null)
     const [detailRecord, setDetailRecord] =
         useState<SyncTableRecord | null>(null)
+    const [detailData, setDetailData] = useState<SyncDetailTableRecord[]>([])
+    const [detailLoading, setDetailLoading] = useState(false)
     const [errorRecord, setErrorRecord] =
         useState<SyncTableRecord | null>(null)
     const [records, setRecords] = useState(initialRecords)
     const [historyLoading, setHistoryLoading] = useState(true)
+    const detailRequestId = useRef(0)
 
     const loadSyncHistory = useCallback(async (showError = true) => {
         try {
@@ -277,6 +468,38 @@ export default function SyncData() {
         }
     }
 
+    const handleViewDetail = async (record: SyncTableRecord) => {
+        const requestId = detailRequestId.current + 1
+        detailRequestId.current = requestId
+        setDetailRecord(record)
+        setDetailData([])
+        setDetailLoading(true)
+
+        try {
+            const data = await loadSyncDetails(record.key)
+
+            if (detailRequestId.current === requestId) {
+                setDetailData(data)
+            }
+        } catch (error) {
+            console.error(error)
+            if (detailRequestId.current === requestId) {
+                message.error('โหลดรายละเอียดข้อมูลไม่สำเร็จ')
+            }
+        } finally {
+            if (detailRequestId.current === requestId) {
+                setDetailLoading(false)
+            }
+        }
+    }
+
+    const handleCloseDetail = () => {
+        detailRequestId.current += 1
+        setDetailRecord(null)
+        setDetailData([])
+        setDetailLoading(false)
+    }
+
     const columns: ColumnsType<SyncTableRecord> = [
         ...createResultColumns(setErrorRecord),
         {
@@ -300,11 +523,12 @@ export default function SyncData() {
                     </Button>
                     <Button
                         icon={<EyeOutlined />}
+                        aria-label={'ดูข้อมูล ' + record.label}
                         style={{
                             borderColor: '#1677ff',
                             color: '#1677ff',
                         }}
-                        onClick={() => setDetailRecord(record)}
+                        onClick={() => void handleViewDetail(record)}
                     />
                 </Space>
             ),
@@ -336,16 +560,23 @@ export default function SyncData() {
                 width={900}
                 footer={null}
                 destroyOnHidden
-                onCancel={() => setDetailRecord(null)}
+                onCancel={handleCloseDetail}
             >
-                <CustomTable<{ key: string; detail: string }>
-                    columns={detailColumns}
-                    dataSource={[]}
+                <CustomTable<SyncDetailTableRecord>
+                    columns={
+                        detailRecord
+                            ? detailColumnsByType[detailRecord.key]
+                            : []
+                    }
+                    dataSource={detailData}
+                    loading={detailLoading}
+                    rowKey={'id'}
                     showNo={false}
                     searchPlaceholder="ค้นหาข้อมูล..."
                     pagination={false}
+                    scroll={{ x: 'max-content' }}
                     locale={{
-                        emptyText: 'รายละเอียดข้อมูลจะเพิ่มในขั้นตอนถัดไป',
+                        emptyText: 'ไม่พบข้อมูลที่ Sync',
                     }}
                 />
             </Modal>

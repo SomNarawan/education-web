@@ -27,6 +27,34 @@ export interface SyncHistoryRecord {
     updated_at: string | null
 }
 
+interface SyncedDataBase {
+    id: number
+    deleted_at: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface SyncedSystemFaculty extends SyncedDataBase {
+    th_name: string
+    en_name: string
+    th_short_name: string
+    en_short_name: string
+}
+
+export interface SyncedSystemDepartment extends SyncedDataBase {
+    th_name: string
+    en_name: string
+    th_short_name: string
+    en_short_name: string
+    system_faculty_id: number
+}
+
+export interface SyncedTeacher extends SyncedDataBase {
+    nontri_id: string
+    full_name_th: string
+    department_id: number
+}
+
 export type SyncStatus = 'waiting' | 'success' | 'error'
 
 export interface SyncTableRecord {

@@ -4,6 +4,9 @@ import type {
     SyncDataType,
     SyncHistoryRecord,
     SyncResult,
+    SyncedSystemDepartment,
+    SyncedSystemFaculty,
+    SyncedTeacher,
 } from '../types/SyncData'
 
 const syncEndpoints: Record<SyncDataType, string> = {
@@ -24,6 +27,33 @@ export async function syncMasterData(
 
 export async function getSyncHistory(): Promise<SyncHistoryRecord[]> {
     const response = await api.get<ApiResponse<SyncHistoryRecord[]>>('/syncs')
+
+    return response.data.data
+}
+
+export async function getSyncedSystemFaculties(): Promise<
+    SyncedSystemFaculty[]
+> {
+    const response = await api.get<ApiResponse<SyncedSystemFaculty[]>>(
+        '/system-faculties',
+    )
+
+    return response.data.data
+}
+
+export async function getSyncedSystemDepartments(): Promise<
+    SyncedSystemDepartment[]
+> {
+    const response = await api.get<ApiResponse<SyncedSystemDepartment[]>>(
+        '/system-departments',
+    )
+
+    return response.data.data
+}
+
+export async function getSyncedTeachers(): Promise<SyncedTeacher[]> {
+    const response =
+        await api.get<ApiResponse<SyncedTeacher[]>>('/teachers/all')
 
     return response.data.data
 }
