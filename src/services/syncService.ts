@@ -1,6 +1,10 @@
 import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
-import type { SyncDataType, SyncResult } from '../types/SyncData'
+import type {
+    SyncDataType,
+    SyncHistoryRecord,
+    SyncResult,
+} from '../types/SyncData'
 
 const syncEndpoints: Record<SyncDataType, string> = {
     faculty: '/system-faculties/sync',
@@ -14,6 +18,12 @@ export async function syncMasterData(
     const response = await api.get<ApiResponse<SyncResult>>(
         syncEndpoints[dataType],
     )
+
+    return response.data.data
+}
+
+export async function getSyncHistory(): Promise<SyncHistoryRecord[]> {
+    const response = await api.get<ApiResponse<SyncHistoryRecord[]>>('/syncs')
 
     return response.data.data
 }
