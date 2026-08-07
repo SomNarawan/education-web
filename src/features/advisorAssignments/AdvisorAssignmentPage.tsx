@@ -405,14 +405,14 @@ export default function AdvisorAssignmentPage() {
             rowKey="student_code"
             loading={loading}
             size="small"
-            scroll={{ x: 440 }}
+            scroll={{ x: 440, y: 585 }}
             locale={{
                 emptyText: !selectedTeacherId
                     ? 'กรุณาเลือกอาจารย์ที่ปรึกษา'
                     : 'ไม่พบข้อมูลนิสิต',
             }}
             pagination={{
-                pageSize: 8,
+                pageSize: 15,
                 showSizeChanger: false,
                 size: 'small',
                 showTotal: (total) => `ทั้งหมด ${total} คน`,

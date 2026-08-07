@@ -813,6 +813,10 @@ body {
     font-weight: 600;
 }
 
+.advisor-assignment-table {
+    min-height: 680px;
+}
+
 .advisor-assignment-table .ant-table-row[draggable='true'] {
     cursor: grab;
 }
