@@ -1,6 +1,7 @@
 import React from 'react'
 import {
     DatabaseOutlined,
+    FileExcelOutlined,
     SolutionOutlined,
     SyncOutlined,
     TeamOutlined,
@@ -60,6 +61,12 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             key: '/advisor-assignments',
             icon: <SolutionOutlined />,
             label: 'กำหนดอาจารย์ที่ปรึกษา',
+            allowedRoles: ['admin'],
+        },
+        {
+            key: '/student-imports',
+            icon: <FileExcelOutlined />,
+            label: 'นำเข้านิสิต',
             allowedRoles: ['admin'],
         },
         {

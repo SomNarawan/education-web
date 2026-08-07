@@ -649,6 +649,105 @@ body {
     color: #ff8a00;
 }
 
+.student-import-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.student-import-page .page-title-section {
+    margin-bottom: 0;
+}
+
+.student-import-card {
+    border: 0;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.student-import-card .ant-upload-wrapper {
+    display: block;
+}
+
+.student-import-card .ant-upload-drag {
+    min-height: 190px;
+    border-color: #b7c6dc;
+    background: #f8fbff;
+}
+
+.student-import-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.student-import-selected-file {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid #86d6a2;
+    border-radius: 10px;
+    background: #f0fff4;
+}
+
+.student-import-selected-file-icon {
+    display: grid;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 10px;
+    background: #d8f5e2;
+    color: #16803b;
+    font-size: 23px;
+}
+
+.student-import-selected-file-info {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    color: #16803b;
+}
+
+.student-import-selected-file-info > .ant-typography {
+    max-width: 100%;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.student-import-actions .ant-btn {
+    min-width: 150px;
+}
+
+.student-import-history h4.ant-typography {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .student-import-card .ant-card-body,
+    .student-import-history {
+        padding: 16px;
+    }
+
+    .student-import-actions .ant-btn {
+        width: 100%;
+    }
+
+    .student-import-selected-file {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .student-import-selected-file-info {
+        width: calc(100% - 56px);
+    }
+}
+
 .course-group-over-heading,
 .course-group-over-value {
     color: #722ed1;

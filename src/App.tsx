@@ -14,6 +14,7 @@ const StudentDetail = lazy(
 )
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const SyncData = lazy(() => import('./pages/SyncData'))
+const StudentImport = lazy(() => import('./pages/StudentImport'))
 const AdvisorAssignment = lazy(
     () => import('./features/advisorAssignments/AdvisorAssignmentPage'),
 )
@@ -68,6 +69,15 @@ export default function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <AdvisorAssignment />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="student-imports"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <StudentImport />
                                 </ProtectedRoute>
                             }
                         />
