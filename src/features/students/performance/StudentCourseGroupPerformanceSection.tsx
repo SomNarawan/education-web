@@ -519,8 +519,8 @@ export default function StudentCourseGroupPerformanceSection({
                                 เรียนเกิน
                             </span>
                         ),
-                        dataIndex: 'over_credits',
-                        key: 'over_credits',
+                        dataIndex: 'overed_credits',
+                        key: 'overed_credits',
                         align: 'center',
                         render: (value: number | null | undefined) => (
                             <span className="course-group-over-value">
