@@ -163,21 +163,21 @@ Body: ไม่มี
 
 [13] ข้อมูลการลงทะเบียน/หลักสูตร
 Method: GET
-Path: /students/json-data/enrollment/{studentCode}
+Path: /students/{studentCode}/enrollments
 Query: ไม่มี
 Body: ไม่มี
 หมายเหตุ: FE ใช้ encodeURIComponent กับ studentCode
 
 [14] ข้อมูลสถานะการลงทะเบียน/รายวิชา
 Method: GET
-Path: /students/json-data/enrollment-statuses/{studentCode}
+Path: /students/{studentCode}/enrollment-statuses
 Query: ไม่มี
 Body: ไม่มี
 หมายเหตุ: FE ใช้ encodeURIComponent กับ studentCode
 
 [15] ข้อมูลกราฟผลการเรียน
 Method: GET
-Path: /students/json-data/graphs/{studentCode}
+Path: /students/{studentCode}/performance-summary
 Query: ไม่มี
 Body: ไม่มี
 หมายเหตุ: FE ใช้ encodeURIComponent กับ studentCode
@@ -254,7 +254,7 @@ Query: ไม่มี
 
 [26] แผนการเรียน
 Method: GET
-Path: /study-plan-tracks
+Path: /study-plans
 Query: ไม่มี
 
 [27] ความสัมพันธ์ผู้ปกครอง
@@ -301,19 +301,19 @@ Query:
 ============
 
 [32] Sync คณะ
-Method: GET
+Method: POST
 Path: /system-faculties/sync
 Query: ไม่มี
 Body: ไม่มี
 
 [33] Sync ภาควิชา
-Method: GET
+Method: POST
 Path: /system-departments/sync
 Query: ไม่มี
 Body: ไม่มี
 
 [34] Sync อาจารย์
-Method: GET
+Method: POST
 Path: /teachers/sync
 Query: ไม่มี
 Body: ไม่มี

@@ -41,8 +41,7 @@ export async function getHighSchools(): Promise<HighSchool[]> {
 }
 
 export async function getStudyPlans(): Promise<StudyPlan[]> {
-    const response =
-        await api.get<ApiResponse<StudyPlan[]>>('/study-plan-tracks')
+    const response = await api.get<ApiResponse<StudyPlan[]>>('/study-plans')
     return response.data.data
 }
 

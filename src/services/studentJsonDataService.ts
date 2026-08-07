@@ -10,7 +10,7 @@ export async function getStudentEnrollment(
     studentCode: string,
 ): Promise<StudentEnrollmentData> {
     const response = await api.get<ApiResponse<StudentEnrollmentData>>(
-        `/students/json-data/enrollment/${encodeURIComponent(studentCode)}`,
+        `/students/${encodeURIComponent(studentCode)}/enrollments`,
     )
 
     return response.data.data
@@ -20,7 +20,7 @@ export async function getStudentEnrollmentStatuses(
     studentCode: string,
 ): Promise<StudentEnrollmentStatusesData> {
     const response = await api.get<ApiResponse<StudentEnrollmentStatusesData>>(
-        `/students/json-data/enrollment-statuses/${encodeURIComponent(studentCode)}`,
+        `/students/${encodeURIComponent(studentCode)}/enrollment-statuses`,
     )
 
     return response.data.data
@@ -30,7 +30,7 @@ export async function getStudentGraphs(
     studentCode: string,
 ): Promise<StudentGraphData> {
     const response = await api.get<ApiResponse<StudentGraphData>>(
-        `/students/json-data/graphs/${encodeURIComponent(studentCode)}`,
+        `/students/${encodeURIComponent(studentCode)}/performance-summary`,
     )
 
     return response.data.data

@@ -18,7 +18,7 @@ const syncEndpoints: Record<SyncDataType, string> = {
 export async function syncMasterData(
     dataType: SyncDataType,
 ): Promise<SyncResult> {
-    const response = await api.get<ApiResponse<SyncResult>>(
+    const response = await api.post<ApiResponse<SyncResult>>(
         syncEndpoints[dataType],
     )
 
@@ -52,8 +52,9 @@ export async function getSyncedSystemDepartments(): Promise<
 }
 
 export async function getSyncedTeachers(): Promise<SyncedTeacher[]> {
-    const response =
-        await api.get<ApiResponse<SyncedTeacher[]>>('/teachers/all')
+    const response = await api.get<ApiResponse<SyncedTeacher[]>>('/teachers', {
+        params: { include_deleted: true },
+    })
 
     return response.data.data
 }
