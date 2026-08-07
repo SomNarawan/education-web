@@ -649,6 +649,11 @@ body {
     color: #ff8a00;
 }
 
+.course-group-over-heading,
+.course-group-over-value {
+    color: #722ed1;
+}
+
 .grade-legend-success,
 .course-group-completed-heading,
 .course-group-completed-value {

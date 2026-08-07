@@ -514,12 +514,19 @@ export default function StudentCourseGroupPerformanceSection({
                         ),
                     },
                     {
-                        title: 'เรียนเกิน',
-                        dataIndex: 'overed_credits',
-                        key: 'overed_credits',
+                        title: (
+                            <span className="course-group-over-heading">
+                                เรียนเกิน
+                            </span>
+                        ),
+                        dataIndex: 'over_credits',
+                        key: 'over_credits',
                         align: 'center',
-                        render: (value: number | null | undefined) =>
-                            value ?? '-',
+                        render: (value: number | null | undefined) => (
+                            <span className="course-group-over-value">
+                                {value ?? '-'}
+                            </span>
+                        ),
                     },
                 ],
             },

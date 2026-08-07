@@ -4,7 +4,7 @@ export interface StudentCourseGroupPerformance {
     credits: number
     completed_credits: number
     remaining_credits: number
-    overed_credits?: number | null
+    over_credits?: number | null
 }
 
 export interface StudentCourseGroupPerformanceRow
