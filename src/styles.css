@@ -672,6 +672,11 @@ body {
     background: #eeeeee;
 }
 
+.course-group-performance-table .ant-table-tbody>tr.course-group-reference-row>td {
+    background: #f1dce5 !important;
+    font-weight: 600;
+}
+
 .course-group-performance-table .ant-table-tbody>tr>td {
     border-bottom-color: #dfe5ef;
 }

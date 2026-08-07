@@ -59,17 +59,30 @@ function wrapAxisLabel(label: string, maxCharactersPerLine = 20) {
 function buildCourseGroupChartData(
     rows: StudentCourseGroupPerformanceRow[],
 ) {
-    const [referenceRow, ...remainingRows] = rows
-    const chartData = remainingRows
-        .sort((first, second) => second.gpa - first.gpa)
-        .map((row) => ({
-            courseGroup: row.course_group,
-            gpa: row.gpa,
-            referenceGpa: referenceRow?.gpa ?? 0,
-            gradeRange: getGradeRange(row.gpa),
-        }))
+    const [referenceRow, ...remainingRows] = sortCourseGroupRowsByGpa(rows)
+    const chartData = remainingRows.map((row) => ({
+        courseGroup: row.course_group,
+        gpa: row.gpa,
+        referenceGpa: referenceRow?.gpa ?? 0,
+        gradeRange: getGradeRange(row.gpa),
+    }))
 
     return { chartData, referenceRow }
+}
+
+function sortCourseGroupRowsByGpa(
+    rows: StudentCourseGroupPerformanceRow[],
+) {
+    const [referenceRow, ...remainingRows] = rows
+
+    if (!referenceRow) {
+        return []
+    }
+
+    return [
+        referenceRow,
+        ...remainingRows.sort((first, second) => second.gpa - first.gpa),
+    ]
 }
 
 function CourseGroupChart({
@@ -461,42 +474,54 @@ export default function StudentCourseGroupPerformanceSection({
                 render: (value: number) => value.toFixed(2),
             },
             {
-                title: 'หน่วยกิตทั้งหมด',
-                dataIndex: 'credits',
-                key: 'credits',
-                align: 'center',
-            },
-            {
-                title: (
-                    <>
-                        จำนวนหน่วยกิตที่
-                        <span className="course-group-completed-heading">
-                            เรียนไปแล้ว
-                        </span>
-                    </>
-                ),
-                dataIndex: 'completed_credits',
-                key: 'completed_credits',
-                align: 'center',
-                render: (value: number) => (
-                    <span className="course-group-completed-value">{value}</span>
-                ),
-            },
-            {
-                title: (
-                    <>
-                        จำนวนหน่วยกิตที่
-                        <span className="course-group-remaining-heading">
-                            ยังไม่เรียน
-                        </span>
-                    </>
-                ),
-                dataIndex: 'remaining_credits',
-                key: 'remaining_credits',
-                align: 'center',
-                render: (value: number) => (
-                    <span className="course-group-remaining-value">{value}</span>
-                ),
+                title: 'จำนวนหน่วยกิต',
+                key: 'credit_summary',
+                children: [
+                    {
+                        title: 'ทั้งหมด',
+                        dataIndex: 'credits',
+                        key: 'credits',
+                        align: 'center',
+                    },
+                    {
+                        title: (
+                            <span className="course-group-completed-heading">
+                                เรียนไปแล้ว
+                            </span>
+                        ),
+                        dataIndex: 'completed_credits',
+                        key: 'completed_credits',
+                        align: 'center',
+                        render: (value: number) => (
+                            <span className="course-group-completed-value">
+                                {value}
+                            </span>
+                        ),
+                    },
+                    {
+                        title: (
+                            <span className="course-group-remaining-heading">
+                                ยังไม่เรียน
+                            </span>
+                        ),
+                        dataIndex: 'remaining_credits',
+                        key: 'remaining_credits',
+                        align: 'center',
+                        render: (value: number) => (
+                            <span className="course-group-remaining-value">
+                                {value}
+                            </span>
+                        ),
+                    },
+                    {
+                        title: 'เรียนเกิน',
+                        dataIndex: 'overed_credits',
+                        key: 'overed_credits',
+                        align: 'center',
+                        render: (value: number | null | undefined) =>
+                            value ?? '-',
+                    },
+                ],
             },
         ],
         [],
@@ -550,7 +575,15 @@ export default function StudentCourseGroupPerformanceSection({
                                 className="course-group-performance-table"
                                 rowKey="key"
                                 columns={columns}
-                                dataSource={dataset.rows}
+                                dataSource={sortCourseGroupRowsByGpa(
+                                    dataset.rows,
+                                )}
+                                rowClassName={(_, rowIndex) =>
+                                    rowIndex === 0
+                                        ? 'course-group-reference-row'
+                                        : ''
+                                }
+                                bordered
                                 pagination={false}
                                 size="small"
                                 tableLayout="fixed"
