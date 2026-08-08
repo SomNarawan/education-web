@@ -12,8 +12,8 @@ import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import type { DragEvent } from 'react'
 import {
-    getStudentsByTeacher,
-    getStudentsWithoutAdvisor,
+    getStudyingStudentsByTeacher,
+    getStudyingStudentsWithoutAdvisor,
     updateStudentAdvisors,
 } from '../../services/advisorAssignmentService'
 import { getSystemDepartments } from '../../services/masterDataService'
@@ -175,8 +175,8 @@ export default function AdvisorAssignmentPage() {
                 setLoadingAssigned(true)
 
                 const [unassigned, assigned] = await Promise.all([
-                    getStudentsWithoutAdvisor(selectedDepartmentId),
-                    getStudentsByTeacher(selectedTeacherId),
+                    getStudyingStudentsWithoutAdvisor(selectedDepartmentId),
+                    getStudyingStudentsByTeacher(selectedTeacherId),
                 ])
 
                 if (!active) return

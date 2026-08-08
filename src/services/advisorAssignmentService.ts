@@ -5,11 +5,11 @@ import type {
 } from '../types/AdvisorAssignment'
 import type { ApiResponse } from '../types/ApiResponse'
 
-export async function getStudentsWithoutAdvisor(
+export async function getStudyingStudentsWithoutAdvisor(
     departmentId: number,
 ): Promise<AdvisorAssignmentStudent[]> {
     const response = await api.get<ApiResponse<AdvisorAssignmentStudent[]>>(
-        '/students/without-advisor',
+        '/students/studying/without-advisor',
         {
             params: { department_id: departmentId },
         },
@@ -18,11 +18,11 @@ export async function getStudentsWithoutAdvisor(
     return response.data.data
 }
 
-export async function getStudentsByTeacher(
+export async function getStudyingStudentsByTeacher(
     teacherId: number,
 ): Promise<AdvisorAssignmentStudent[]> {
     const response = await api.get<ApiResponse<AdvisorAssignmentStudent[]>>(
-        '/students',
+        '/students/studying',
         {
             params: { teacher_id: teacherId },
         },
