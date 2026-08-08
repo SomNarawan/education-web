@@ -1,7 +1,9 @@
 import React from 'react'
 import {
+    BankOutlined,
     DatabaseOutlined,
     FileExcelOutlined,
+    ProfileOutlined,
     SolutionOutlined,
     SyncOutlined,
     TeamOutlined,
@@ -22,9 +24,10 @@ interface LocationState {
 
 type AppMenuItem = {
     key: string
-    icon: React.ReactNode
+    icon?: React.ReactNode
     label: string
     allowedRoles: AppRole[]
+    children?: AppMenuItem[]
 }
 
 export default function SideMenu({ collapsed }: SideMenuProps) {
@@ -75,6 +78,51 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             label: 'ซิงค์ข้อมูล',
             allowedRoles: ['admin'],
         },
+        {
+            key: '/master-data',
+            icon: <TeamOutlined />,
+            label: 'จัดการข้อมูลพื้นฐาน',
+            allowedRoles: ['admin'],
+            children: [
+                {
+                    key: '/master-data/high-schools',
+                    icon: <BankOutlined />,
+                    label: 'โรงเรียนมัธยมปลาย',
+                    allowedRoles: ['admin'],
+                },
+                {
+                    key: '/master-data/titles',
+                    icon: <ProfileOutlined />,
+                    label: 'คำนำหน้าชื่อ',
+                    allowedRoles: ['admin'],
+                },
+                {
+                    key: '/master-data/student-statuses',
+                    label: 'สถานภาพนิสิต',
+                    allowedRoles: ['admin'],
+                },
+                {
+                    key: '/master-data/admission-channels',
+                    label: 'ช่องทางการรับเข้า',
+                    allowedRoles: ['admin'],
+                },
+                {
+                    key: '/master-data/relationships',
+                    label: 'ความสัมพันธ์ผู้ปกครอง',
+                    allowedRoles: ['admin'],
+                },
+                {
+                    key: '/master-data/study-plans',
+                    label: 'แผนการเรียน',
+                    allowedRoles: ['admin'],
+                },
+                {
+                    key: '/master-data/system-departments',
+                    label: 'ภาควิชา',
+                    allowedRoles: ['admin'],
+                },
+            ],
+        },
     ]
 
     const items: MenuProps['items'] = menuItems
@@ -82,7 +130,22 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             if (!currentRole) return false
             return item.allowedRoles.includes(currentRole)
         })
-        .map(({ key, icon, label }) => ({ key, icon, label }))
+        .map(({ key, icon, label, children }) => ({
+            key,
+            icon,
+            label,
+            children: children
+                ?.filter(
+                    (item) =>
+                        Boolean(currentRole) &&
+                        item.allowedRoles.includes(currentRole as AppRole),
+                )
+                .map((item) => ({
+                    key: item.key,
+                    icon: item.icon,
+                    label: item.label,
+                })),
+        }))
 
     return (
         <>
@@ -95,6 +158,11 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
                 theme="dark"
                 mode="inline"
                 selectedKeys={[selectedKey]}
+                defaultOpenKeys={
+                    location.pathname.startsWith('/master-data')
+                        ? ['/master-data']
+                        : []
+                }
                 onClick={({ key }) => navigate(key)}
                 items={items}
             />

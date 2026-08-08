@@ -18,6 +18,9 @@ const StudentImport = lazy(() => import('./pages/StudentImport'))
 const AdvisorAssignment = lazy(
     () => import('./features/advisorAssignments/AdvisorAssignmentPage'),
 )
+const MasterDataManagement = lazy(
+    () => import('./features/masterData/MasterDataManagementPage'),
+)
 
 function PageLoading() {
     return (
@@ -87,6 +90,15 @@ export default function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <SyncData />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="master-data/:masterDataType"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <MasterDataManagement />
                                 </ProtectedRoute>
                             }
                         />
