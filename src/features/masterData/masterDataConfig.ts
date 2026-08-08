@@ -4,6 +4,7 @@ export type MasterDataType =
     | 'student-statuses'
     | 'admission-channels'
     | 'relationships'
+    | 'note-types'
 
 export interface MasterDataRecord {
     id: number
@@ -14,7 +15,12 @@ export interface MasterDataFieldDefinition {
     key: string
     label: string
     placeholder: string
-    required?: boolean
+    required: boolean
+    showInTable?: boolean
+    numberRange?: {
+        min: number
+        max: number
+    }
 }
 
 export interface MasterDataDefinition {
@@ -42,13 +48,60 @@ export const masterDataDefinitions: Record<
                 placeholder: 'กรอกชื่อโรงเรียน',
                 required: true,
             },
+            {
+                key: 'latitude',
+                label: 'ละติจูด',
+                placeholder: 'เช่น 13.3611',
+                required: true,
+                showInTable: false,
+                numberRange: {
+                    min: -90,
+                    max: 90,
+                },
+            },
+            {
+                key: 'longitude',
+                label: 'ลองจิจูด',
+                placeholder: 'เช่น 100.9847',
+                required: true,
+                showInTable: false,
+                numberRange: {
+                    min: -180,
+                    max: 180,
+                },
+            },
         ],
         mockData: [
-            { id: 1, school_name: 'โรงเรียนสาธิตมหาวิทยาลัยบูรพา' },
-            { id: 2, school_name: 'โรงเรียนชลราษฎรอำรุง' },
-            { id: 3, school_name: 'โรงเรียนชลกันยานุกูล' },
-            { id: 4, school_name: 'โรงเรียนเบญจมราชรังสฤษฎิ์' },
-            { id: 5, school_name: 'โรงเรียนระยองวิทยาคม' },
+            {
+                id: 1,
+                school_name: 'โรงเรียนสาธิตมหาวิทยาลัยบูรพา',
+                latitude: '13.2858',
+                longitude: '100.9240',
+            },
+            {
+                id: 2,
+                school_name: 'โรงเรียนชลราษฎรอำรุง',
+                latitude: '13.3611',
+                longitude: '100.9847',
+            },
+            {
+                id: 3,
+                school_name: 'โรงเรียนชลกันยานุกูล',
+                latitude: '13.3584',
+                longitude: '100.9832',
+            },
+            {
+                id: 4,
+                school_name: 'โรงเรียนเบญจมราชรังสฤษฎิ์',
+                latitude: '13.6904',
+                longitude: '101.0779',
+            },
+            {
+                id: 5,
+                school_name: 'โรงเรียนระยองวิทยาคม',
+                latitude: '12.6802',
+                longitude: '101.2789',
+            },
         ],
     },
     titles: {
@@ -134,6 +187,38 @@ export const masterDataDefinitions: Record<
             { id: 2, relationship_name: 'มารดา' },
             { id: 3, relationship_name: 'ญาติ' },
             { id: 4, relationship_name: 'ผู้ปกครองตามกฎหมาย' },
+        ],
+    },
+    'note-types': {
+        title: 'จัดการประเภท Note',
+        description: 'จัดการประเภท Note สำหรับใช้บันทึกและติดตามข้อมูลนิสิต',
+        itemLabel: 'ประเภท Note',
+        searchPlaceholder: 'ค้นหาประเภท Note...',
+        fields: [
+            {
+                key: 'note',
+                label: 'ชื่อประเภท Note',
+                placeholder: 'กรอกชื่อประเภท Note',
+                required: true,
+            },
+        ],
+        mockData: [
+            { id: 1, note: 'ผลการเรียน', status: 'active' },
+            { id: 2, note: 'การเข้าเรียน', status: 'active' },
+            { id: 3, note: 'พฤติกรรม', status: 'active' },
+            {
+                id: 4,
+                note: 'สุขภาพและความเป็นอยู่',
+                status: 'active',
+            },
+            {
+                id: 5,
+                note: 'การเงินและทุนการศึกษา',
+                status: 'active',
+            },
+            { id: 6, note: 'การให้คำปรึกษา', status: 'active' },
+            { id: 7, note: 'อื่นๆ', status: 'active' },
+            { id: 8, note: 'นัดหมายติดตาม', status: 'inactive' },
         ],
     },
 }

@@ -14,6 +14,7 @@ import { useEffect } from 'react'
 import type { StudentFormValues } from '../../../types/StudentFormValues'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
 import { useStudentFormOptions } from './useStudentFormOptions'
+import { renderRequiredFormMark } from '../../../components/custom/RequiredFormMark'
 
 interface StudentFormModalProps {
     open: boolean
@@ -72,7 +73,11 @@ return (
         width={1000}
         confirmLoading={loading || optionsLoading}
     >
-        <Form layout="vertical" form={form}>
+        <Form
+            layout="vertical"
+            form={form}
+            requiredMark={renderRequiredFormMark}
+        >
             <Card title="1. รหัสนิสิต" size="small" style={{ marginBottom: 16 }}>
                 <Form.Item
                     label="รหัสนิสิต"

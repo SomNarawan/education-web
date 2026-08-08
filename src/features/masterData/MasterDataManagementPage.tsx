@@ -1,7 +1,7 @@
-import { EditOutlined, PlusOutlined } from '@ant-design/icons'
+import { EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
 import {
-    Alert,
     Button,
+    Descriptions,
     Form,
     Input,
     Modal,
@@ -15,6 +15,7 @@ import dayjs from 'dayjs'
 import { useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import CustomTable from '../../components/custom/CustomTable'
+import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark'
 import {
     isMasterDataType,
     masterDataDefinitions,
@@ -59,9 +60,10 @@ function createInitialRecords(): Record<MasterDataType, MasterDataRecord[]> {
                     index % 2 === 1 ? '2026-08-01 13:30:00' : null,
                 updated_by: index % 2 === 1 ? mockAdministrator : null,
                 status:
-                    index === masterDataDefinitions[key].mockData.length - 1
-                        ? 'I'
-                        : 'A',
+                    record.status ??
+                    (index === masterDataDefinitions[key].mockData.length - 1
+                        ? 'inactive'
+                        : 'active'),
             }),
         )
     }
@@ -74,11 +76,17 @@ export default function MasterDataManagementPage() {
     const [form] = Form.useForm<MasterDataFormValues>()
     const [recordsByType, setRecordsByType] = useState(createInitialRecords)
     const [editState, setEditState] = useState<EditState | null>(null)
+    const [viewingRecord, setViewingRecord] =
+        useState<MasterDataRecord | null>(null)
 
     const isValidType = isMasterDataType(masterDataType)
     const currentType = isValidType ? masterDataType : 'high-schools'
     const definition = masterDataDefinitions[currentType]
     const records = recordsByType[currentType]
+    const visibleFields = definition.fields.filter(
+        (field) => field.showInTable !== false,
+    )
+    const hasHiddenFields = visibleFields.length !== definition.fields.length
 
     function handleOpenCreate() {
         form.resetFields()
@@ -98,7 +106,8 @@ export default function MasterDataManagementPage() {
     }
 
     function handleToggleStatus(record: MasterDataRecord) {
-        const nextStatus = record.status === 'A' ? 'I' : 'A'
+        const nextStatus =
+            record.status === 'active' ? 'inactive' : 'active'
 
         setRecordsByType((current) => ({
             ...current,
@@ -114,7 +123,7 @@ export default function MasterDataManagementPage() {
             ),
         }))
         message.success(
-            `${nextStatus === 'A' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}${definition.itemLabel}เรียบร้อยแล้ว`,
+            `${nextStatus === 'active' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}${definition.itemLabel}เรียบร้อยแล้ว`,
         )
     }
 
@@ -160,7 +169,7 @@ export default function MasterDataManagementPage() {
                         created_by: mockAdministrator,
                         updated_at: null,
                         updated_by: null,
-                        status: 'A',
+                        status: 'active',
                     },
                 ],
             }
@@ -176,11 +185,11 @@ export default function MasterDataManagementPage() {
     }
 
     const columns: ColumnsType<MasterDataRecord> = [
-        ...definition.fields.map((field) => ({
+        ...visibleFields.map((field) => ({
             title: field.label,
             dataIndex: field.key,
             key: field.key,
-            width: definition.fields.length > 1 ? 140 : 220,
+            width: visibleFields.length > 1 ? 140 : 220,
             ellipsis: true,
         })),
         {
@@ -222,18 +231,18 @@ export default function MasterDataManagementPage() {
             width: 110,
             align: 'center',
             filters: [
-                { text: 'ใช้งาน', value: 'A' },
-                { text: 'ไม่ใช้งาน', value: 'I' },
+                { text: 'ใช้งาน', value: 'active' },
+                { text: 'ไม่ใช้งาน', value: 'inactive' },
             ],
             onFilter: (value, record) => record.status === value,
             render: (status, record) => (
                 <Switch
-                    checked={status === 'A'}
+                    checked={status === 'active'}
                     checkedChildren="ใช้งาน"
                     unCheckedChildren="ไม่ใช้งาน"
                     aria-label={`สถานะ${definition.itemLabel}`}
                     style={
-                        status === 'A'
+                        status === 'active'
                             ? { backgroundColor: '#52c41a' }
                             : undefined
                     }
@@ -244,10 +253,21 @@ export default function MasterDataManagementPage() {
         {
             title: 'การจัดการ',
             key: 'actions',
-            width: 80,
+            width: hasHiddenFields ? 120 : 80,
             align: 'center',
             render: (_, record) => (
                 <Space>
+                    {hasHiddenFields && (
+                        <Button
+                            icon={<EyeOutlined />}
+                            aria-label={`ดูรายละเอียด${definition.itemLabel}`}
+                            style={{
+                                borderColor: '#1677ff',
+                                color: '#1677ff',
+                            }}
+                            onClick={() => setViewingRecord(record)}
+                        />
+                    )}
                     <Button
                         icon={<EditOutlined />}
                         aria-label={`แก้ไข${definition.itemLabel}`}
@@ -283,13 +303,6 @@ export default function MasterDataManagementPage() {
                 </Button>
             </div>
 
-            <Alert
-                type="info"
-                showIcon
-                message="ขณะนี้เป็นข้อมูลตัวอย่าง"
-                description="การเพิ่ม แก้ไข และเปลี่ยนสถานะจะมีผลเฉพาะในหน้านี้ และข้อมูลจะกลับเป็นค่าเริ่มต้นเมื่อรีเฟรชหน้าเว็บ"
-            />
-
             <div className="table-card master-data-table-card">
                 <div className="master-data-table-heading">
                     <div>
@@ -300,6 +313,7 @@ export default function MasterDataManagementPage() {
 
                 <CustomTable<MasterDataRecord>
                     rowKey="id"
+                    showNo={false}
                     columns={columns}
                     dataSource={records}
                     searchPlaceholder={definition.searchPlaceholder}
@@ -307,6 +321,72 @@ export default function MasterDataManagementPage() {
                     size="small"
                 />
             </div>
+
+            <Modal
+                title={`รายละเอียด${definition.itemLabel}`}
+                open={Boolean(viewingRecord)}
+                footer={
+                    <Button onClick={() => setViewingRecord(null)}>ปิด</Button>
+                }
+                onCancel={() => setViewingRecord(null)}
+            >
+                {viewingRecord && (
+                    <Descriptions
+                        bordered
+                        size="small"
+                        column={1}
+                        items={[
+                            ...definition.fields.map((field) => ({
+                                key: field.key,
+                                label: field.label,
+                                children:
+                                    viewingRecord[field.key] === null ||
+                                    viewingRecord[field.key] === ''
+                                        ? '-'
+                                        : String(viewingRecord[field.key]),
+                            })),
+                            {
+                                key: 'created_at',
+                                label: 'วันที่สร้าง',
+                                children: formatDateTime(
+                                    viewingRecord.created_at,
+                                ),
+                            },
+                            {
+                                key: 'created_by',
+                                label: 'สร้างโดย',
+                                children:
+                                    String(viewingRecord.created_by ?? '') ||
+                                    '-',
+                            },
+                            {
+                                key: 'updated_at',
+                                label: 'วันที่แก้ไข',
+                                children: formatDateTime(
+                                    viewingRecord.updated_at,
+                                ),
+                            },
+                            {
+                                key: 'updated_by',
+                                label: 'แก้ไขโดย',
+                                children:
+                                    String(viewingRecord.updated_by ?? '') ||
+                                    '-',
+                            },
+                            {
+                                key: 'status',
+                                label: 'สถานะ',
+                                children:
+                                    viewingRecord.status === 'active' ? (
+                                        <Tag color="success">ใช้งาน</Tag>
+                                    ) : (
+                                        <Tag>ไม่ใช้งาน</Tag>
+                                    ),
+                            },
+                        ]}
+                    />
+                )}
+            </Modal>
 
             <Modal
                 title={
@@ -325,7 +405,7 @@ export default function MasterDataManagementPage() {
                 <Form<MasterDataFormValues>
                     form={form}
                     layout="vertical"
-                    requiredMark="optional"
+                    requiredMark={renderRequiredFormMark}
                 >
                     {definition.fields.map((field) => (
                         <Form.Item
@@ -338,12 +418,39 @@ export default function MasterDataManagementPage() {
                                     whitespace: true,
                                     message: `กรุณากรอก${field.label}`,
                                 },
+                                {
+                                    validator: (_, value?: string) => {
+                                        if (!value || !field.numberRange) {
+                                            return Promise.resolve()
+                                        }
+
+                                        const numberValue = Number(value)
+
+                                        if (
+                                            !Number.isFinite(numberValue) ||
+                                            numberValue <
+                                                field.numberRange.min ||
+                                            numberValue > field.numberRange.max
+                                        ) {
+                                            return Promise.reject(
+                                                new Error(
+                                                    `${field.label}ต้องเป็นตัวเลขระหว่าง ${field.numberRange.min} ถึง ${field.numberRange.max}`,
+                                                ),
+                                            )
+                                        }
+
+                                        return Promise.resolve()
+                                    },
+                                },
                             ]}
                         >
                             <Input
                                 placeholder={field.placeholder}
                                 maxLength={255}
-                                showCount
+                                showCount={currentType !== 'high-schools'}
+                                inputMode={
+                                    field.numberRange ? 'decimal' : undefined
+                                }
                             />
                         </Form.Item>
                     ))}

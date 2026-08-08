@@ -1056,6 +1056,11 @@ body {
     word-break: break-word;
 }
 
+.form-required-mark {
+    margin-inline-start: 4px;
+    color: #ff4d4f;
+}
+
 @media (max-width: 768px) {
     .master-data-page .page-title-section .ant-btn {
         width: 100%;
