@@ -4,8 +4,6 @@ export type MasterDataType =
     | 'student-statuses'
     | 'admission-channels'
     | 'relationships'
-    | 'study-plans'
-    | 'system-departments'
 
 export interface MasterDataRecord {
     id: number
@@ -136,46 +134,6 @@ export const masterDataDefinitions: Record<
             { id: 2, relationship_name: 'มารดา' },
             { id: 3, relationship_name: 'ญาติ' },
             { id: 4, relationship_name: 'ผู้ปกครองตามกฎหมาย' },
-        ],
-    },
-    'study-plans': {
-        title: 'จัดการแผนการเรียน',
-        description: 'จัดการแผนการเรียนที่ใช้ประกอบข้อมูลการศึกษาของนิสิต',
-        itemLabel: 'แผนการเรียน',
-        searchPlaceholder: 'ค้นหาแผนการเรียน...',
-        fields: [
-            {
-                key: 'name_th',
-                label: 'ชื่อแผนการเรียน',
-                placeholder: 'กรอกชื่อแผนการเรียน',
-                required: true,
-            },
-        ],
-        mockData: [
-            { id: 1, name_th: 'วิทยาศาสตร์ - คณิตศาสตร์' },
-            { id: 2, name_th: 'ศิลป์ - คำนวณ' },
-            { id: 3, name_th: 'ศิลป์ - ภาษา' },
-            { id: 4, name_th: 'ประกาศนียบัตรวิชาชีพ' },
-        ],
-    },
-    'system-departments': {
-        title: 'จัดการภาควิชา',
-        description: 'จัดการรายชื่อภาควิชาที่ใช้ภายในระบบ',
-        itemLabel: 'ภาควิชา',
-        searchPlaceholder: 'ค้นหาภาควิชา...',
-        fields: [
-            {
-                key: 'th_name',
-                label: 'ชื่อภาควิชา',
-                placeholder: 'กรอกชื่อภาควิชา',
-                required: true,
-            },
-        ],
-        mockData: [
-            { id: 1, th_name: 'ภาควิชาวิทยาการคอมพิวเตอร์' },
-            { id: 2, th_name: 'ภาควิชาเทคโนโลยีสารสนเทศ' },
-            { id: 3, th_name: 'ภาควิชาคณิตศาสตร์' },
-            { id: 4, th_name: 'ภาควิชาสถิติ' },
         ],
     },
 }

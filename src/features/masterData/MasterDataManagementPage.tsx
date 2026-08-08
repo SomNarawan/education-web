@@ -296,7 +296,6 @@ export default function MasterDataManagementPage() {
                         <h2>รายการ{definition.itemLabel}</h2>
                         <Tag color="blue">Mock data</Tag>
                     </div>
-                    <span>ทั้งหมด {records.length} รายการ</span>
                 </div>
 
                 <CustomTable<MasterDataRecord>

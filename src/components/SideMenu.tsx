@@ -3,10 +3,12 @@ import {
     BankOutlined,
     DatabaseOutlined,
     FileExcelOutlined,
-    ProfileOutlined,
+    IdcardOutlined,
+    LoginOutlined,
     SolutionOutlined,
     SyncOutlined,
     TeamOutlined,
+    UserSwitchOutlined,
 } from '@ant-design/icons'
 import { Menu } from 'antd'
 import type { MenuProps } from 'antd'
@@ -92,33 +94,26 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
                 },
                 {
                     key: '/master-data/titles',
-                    icon: <ProfileOutlined />,
+                    icon: <IdcardOutlined />,
                     label: 'คำนำหน้าชื่อ',
                     allowedRoles: ['admin'],
                 },
                 {
                     key: '/master-data/student-statuses',
+                    icon: <UserSwitchOutlined />,
                     label: 'สถานภาพนิสิต',
                     allowedRoles: ['admin'],
                 },
                 {
                     key: '/master-data/admission-channels',
+                    icon: <LoginOutlined />,
                     label: 'ช่องทางการรับเข้า',
                     allowedRoles: ['admin'],
                 },
                 {
                     key: '/master-data/relationships',
+                    icon: <TeamOutlined />,
                     label: 'ความสัมพันธ์ผู้ปกครอง',
-                    allowedRoles: ['admin'],
-                },
-                {
-                    key: '/master-data/study-plans',
-                    label: 'แผนการเรียน',
-                    allowedRoles: ['admin'],
-                },
-                {
-                    key: '/master-data/system-departments',
-                    label: 'ภาควิชา',
                     allowedRoles: ['admin'],
                 },
             ],
