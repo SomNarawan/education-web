@@ -118,6 +118,8 @@ return (
                         >
                             <Select
                                 allowClear
+                                showSearch
+                                optionFilterProp={'label'}
                                 loading={loading}
                                 placeholder="เลือกคำนำหน้า"
                                 options={dropdownData.titles.map((item) => ({
@@ -240,6 +242,8 @@ return (
                         >
                             <Select
                                 allowClear
+                                showSearch
+                                optionFilterProp={'label'}
                                 loading={loading}
                                 placeholder="เลือกแผนการเรียน"
                                 options={dropdownData.studyPlans.map((item) => ({
@@ -270,16 +274,11 @@ return (
                 <Form.Item
                     label="อาจารย์ที่ปรึกษา"
                     name="teacher_id"
-                    rules={[
-                        {
-                            required: true,
-                            message: 'กรุณาเลือกอาจารย์ที่ปรึกษา',
-                        },
-                    ]}
                 >
                     <Select
                         allowClear
                         showSearch
+                        optionFilterProp={'label'}
                         loading={loading}
                         placeholder="เลือกอาจารย์ที่ปรึกษา"
                         options={dropdownData.teachers.map((item) => ({
@@ -303,6 +302,8 @@ return (
                 >
                     <Select
                         allowClear
+                        showSearch
+                        optionFilterProp={'label'}
                         loading={loading}
                         placeholder="เลือกช่องทางรับเข้า"
                         options={dropdownData.admissionChannels.map((item) => ({
@@ -327,6 +328,7 @@ return (
                     <Select
                         allowClear
                         showSearch
+                        optionFilterProp={'label'}
                         loading={loading}
                         placeholder="เลือกโรงเรียน"
                         options={dropdownData.highSchools.map((item) => ({
@@ -352,6 +354,8 @@ return (
                         >
                             <Select
                                 allowClear
+                                showSearch
+                                optionFilterProp={'label'}
                                 loading={loading}
                                 placeholder="เลือกคำนำหน้า"
                                 options={dropdownData.titles.map((item) => ({
@@ -405,6 +409,8 @@ return (
                         >
                             <Select
                                 allowClear
+                                showSearch
+                                optionFilterProp={'label'}
                                 loading={loading}
                                 placeholder="เลือกความสัมพันธ์"
                                 options={dropdownData.guardianRelationships.map(
@@ -447,6 +453,8 @@ return (
                 >
                     <Select
                         allowClear
+                        showSearch
+                        optionFilterProp={'label'}
                         loading={loading}
                         placeholder="เลือกสถานะ"
                         options={dropdownData.studentStatuses.map((item) => ({

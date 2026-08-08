@@ -12,7 +12,7 @@ export interface StudentFormValues {
     study_plan_id: number
     entry_year: number
 
-    teacher_id: number
+    teacher_id?: number
 
     admission_channel_id: number
 
