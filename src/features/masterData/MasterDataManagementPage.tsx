@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import CustomTable from '../../components/custom/CustomTable'
 import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark'
+import SchoolLocationMap from './SchoolLocationMap'
 import {
     isMasterDataType,
     masterDataDefinitions,
@@ -74,6 +75,8 @@ function createInitialRecords(): Record<MasterDataType, MasterDataRecord[]> {
 export default function MasterDataManagementPage() {
     const { masterDataType } = useParams()
     const [form] = Form.useForm<MasterDataFormValues>()
+    const latitude = Form.useWatch('latitude', form)
+    const longitude = Form.useWatch('longitude', form)
     const [recordsByType, setRecordsByType] = useState(createInitialRecords)
     const [editState, setEditState] = useState<EditState | null>(null)
     const [viewingRecord, setViewingRecord] =
@@ -325,6 +328,7 @@ export default function MasterDataManagementPage() {
             <Modal
                 title={`รายละเอียด${definition.itemLabel}`}
                 open={Boolean(viewingRecord)}
+                width={currentType === 'high-schools' ? 760 : undefined}
                 footer={
                     <Button onClick={() => setViewingRecord(null)}>ปิด</Button>
                 }
@@ -386,6 +390,15 @@ export default function MasterDataManagementPage() {
                         ]}
                     />
                 )}
+                {viewingRecord && currentType === 'high-schools' && (
+                    <div className="school-location-detail">
+                        <h3>ตำแหน่งโรงเรียน</h3>
+                        <SchoolLocationMap
+                            latitude={viewingRecord.latitude}
+                            longitude={viewingRecord.longitude}
+                        />
+                    </div>
+                )}
             </Modal>
 
             <Modal
@@ -401,6 +414,7 @@ export default function MasterDataManagementPage() {
                 onCancel={() => setEditState(null)}
                 afterClose={() => form.resetFields()}
                 destroyOnHidden
+                width={currentType === 'high-schools' ? 760 : undefined}
             >
                 <Form<MasterDataFormValues>
                     form={form}
@@ -454,6 +468,32 @@ export default function MasterDataManagementPage() {
                             />
                         </Form.Item>
                     ))}
+
+                    {currentType === 'high-schools' && (
+                        <div className="school-location-form-field">
+                            <strong>ระบุตำแหน่งบนแผนที่</strong>
+                            <p>
+                                คลิกบนแผนที่เพื่อปักหมุด
+                                หรือลากหมุดเพื่อปรับตำแหน่ง
+                            </p>
+                            <SchoolLocationMap
+                                editable
+                                latitude={latitude}
+                                longitude={longitude}
+                                onPositionChange={(
+                                    nextLatitude,
+                                    nextLongitude,
+                                ) =>
+                                    form.setFieldsValue({
+                                        latitude:
+                                            nextLatitude.toFixed(6),
+                                        longitude:
+                                            nextLongitude.toFixed(6),
+                                    })
+                                }
+                            />
+                        </div>
+                    )}
                 </Form>
             </Modal>
         </div>

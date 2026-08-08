@@ -1,6 +1,7 @@
 import React from 'react'
 import {
     BankOutlined,
+    CalculatorOutlined,
     DatabaseOutlined,
     FileExcelOutlined,
     FileTextOutlined,
@@ -68,6 +69,12 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             icon: <SolutionOutlined />,
             label: 'กำหนดอาจารย์ที่ปรึกษา',
             allowedRoles: ['admin'],
+        },
+        {
+            key: '/grade-calculator',
+            icon: <CalculatorOutlined />,
+            label: 'คำนวณผลการเรียน',
+            allowedRoles: ['teacher', 'admin'],
         },
         {
             key: '/student-imports',
