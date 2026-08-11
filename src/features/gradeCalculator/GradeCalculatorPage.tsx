@@ -39,10 +39,10 @@ import type {
 
 const { Text } = Typography
 
-const predictedAcademicYearLabel = 'ปีที่ 1'
-const predictedSemesterLabel = 'ภาคปลาย'
+const predictedAcademicYearLabel = 'ปีที่ 3'
+const predictedSemesterLabel = 'ภาคต้น'
 const predictedTermLabel = `${predictedAcademicYearLabel} ${predictedSemesterLabel}`
-const currentAcademicTermLabel = 'ปีที่ 1 ภาคต้น'
+const currentAcademicTermLabel = 'ปีที่ 2 ภาคปลาย'
 
 const semesterLabels: Record<number, string> = {
     1: 'ภาคต้น',
