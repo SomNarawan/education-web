@@ -39,10 +39,53 @@ import type {
 
 const { Text } = Typography
 
+const predictedAcademicYearLabel = 'ปีที่ 1'
+const predictedSemesterLabel = 'ภาคปลาย'
+const predictedTermLabel = `${predictedAcademicYearLabel} ${predictedSemesterLabel}`
+const currentAcademicTermLabel = 'ปีที่ 1 ภาคต้น'
+
+const semesterLabels: Record<number, string> = {
+    1: 'ภาคต้น',
+    2: 'ภาคปลาย',
+    3: 'ภาคฤดูร้อน',
+}
+
 const sourceLabels: Record<CourseSource, { label: string; color: string }> = {
     backlog: { label: 'วิชาคงค้าง', color: 'error' },
     'next-semester': { label: 'วิชาที่ต้องลง', color: 'processing' },
     other: { label: 'วิชาอื่น', color: 'default' },
+}
+
+function getGpaChangePresentation(change: number) {
+    const roundedChange = Number(change.toFixed(2))
+
+    return {
+        text:
+            roundedChange > 0
+                ? `+${roundedChange.toFixed(2)}`
+                : roundedChange.toFixed(2),
+        color:
+            roundedChange > 0
+                ? '#52c41a'
+                : roundedChange < 0
+                  ? '#ff4d4f'
+                  : '#64748b',
+    }
+}
+
+function getStudyYear(academicYear: number, firstAcademicYear: number) {
+    return Math.max(1, academicYear - firstAcademicYear + 1)
+}
+
+function formatStudyTerm(
+    academicYear: number,
+    semester: number,
+    firstAcademicYear: number,
+) {
+    const semesterLabel =
+        semesterLabels[semester] ?? `ภาคการเรียนที่ ${semester}`
+
+    return `ปีที่ ${getStudyYear(academicYear, firstAcademicYear)} ${semesterLabel}`
 }
 
 interface SemesterResultRow extends SemesterAcademicResult {
@@ -99,8 +142,6 @@ export default function GradeCalculatorPage() {
     const [selectedStudentCode, setSelectedStudentCode] = useState(
         mockStudentProfiles[0].studentCode,
     )
-    const [academicYear, setAcademicYear] = useState(2568)
-    const [semester, setSemester] = useState(1)
     const [selectedCourseCodes, setSelectedCourseCodes] = useState<string[]>(
         mockPredictionCourses
             .filter((course) => course.source !== 'other')
@@ -127,6 +168,8 @@ export default function GradeCalculatorPage() {
         () => createSemesterRows(selectedProfile.semesterResults),
         [selectedProfile],
     )
+    const firstAcademicYear =
+        selectedProfile.semesterResults[0]?.academicYear ?? 0
     const selectedCourses = useMemo(
         () =>
             mockPredictionCourses.filter((course) =>
@@ -237,8 +280,19 @@ export default function GradeCalculatorPage() {
     }
 
     const semesterColumns: ColumnsType<SemesterResultRow> = [
-        { title: 'ปีการศึกษา', dataIndex: 'academicYear', align: 'center' },
-        { title: 'ภาคเรียน', dataIndex: 'semester', align: 'center' },
+        {
+            title: 'ชั้นปี',
+            dataIndex: 'academicYear',
+            align: 'center',
+            render: (value: number) => getStudyYear(value, firstAcademicYear),
+        },
+        {
+            title: 'ภาคการเรียน',
+            dataIndex: 'semester',
+            align: 'center',
+            render: (value: number) =>
+                semesterLabels[value] ?? `ภาคที่ ${value}`,
+        },
         { title: 'หน่วยกิต', dataIndex: 'credits', align: 'center' },
         {
             title: 'GPA',
@@ -341,12 +395,16 @@ export default function GradeCalculatorPage() {
             render: (value: string) => dayjs(value).format('DD/MM/YYYY HH:mm'),
         },
         {
-            title: 'ภาคเรียน',
+            title: 'ภาคการเรียน',
             key: 'semester',
             width: 110,
             align: 'center',
             render: (_, history) =>
-                `${history.semester}/${history.academicYear}`,
+                formatStudyTerm(
+                    history.academicYear,
+                    history.semester,
+                    firstAcademicYear,
+                ),
         },
         {
             title: 'จำนวนวิชา',
@@ -371,8 +429,17 @@ export default function GradeCalculatorPage() {
             render: (value: number) => value.toFixed(2),
         },
         {
-            title: 'คำนวณโดย',
-            dataIndex: 'calculatedBy',
+            title: 'GPAX เปลี่ยนแปลง',
+            key: 'gpaChange',
+            width: 125,
+            align: 'center',
+            render: (_, history) => {
+                const change = getGpaChangePresentation(
+                    history.predictedCumulativeGpa - history.previousGpa,
+                )
+
+                return <Text style={{ color: change.color }}>{change.text}</Text>
+            },
         },
         {
             title: 'รายละเอียด',
@@ -458,6 +525,11 @@ export default function GradeCalculatorPage() {
         selectedProfile.semesterResults[
             selectedProfile.semesterResults.length - 1
         ]
+    const calculatedGpaChange = getGpaChangePresentation(
+        calculationResult
+            ? calculationResult.cumulativeGpa - previousSummary.cumulativeGpa
+            : 0,
+    )
 
     return (
         <div className="student-page grade-calculator-page">
@@ -497,33 +569,16 @@ export default function GradeCalculatorPage() {
                         />
                     </label>
                     <label>
-                        <Text strong>ปีการศึกษาที่คาดการณ์</Text>
-                        <Select
-                            value={academicYear}
-                            options={[2568, 2569, 2570].map((year) => ({
-                                label: year,
-                                value: year,
-                            }))}
-                            onChange={(value) => {
-                                setAcademicYear(value)
-                                setCalculationResult(null)
-                            }}
-                        />
+                        <Text strong>ชั้นปีที่คาดการณ์</Text>
+                        <Text className="grade-calculator-readonly-value">
+                            {predictedAcademicYearLabel}
+                        </Text>
                     </label>
                     <label>
-                        <Text strong>ภาคเรียนที่คาดการณ์</Text>
-                        <Select
-                            value={semester}
-                            options={[
-                                { label: 'ภาคเรียนที่ 1', value: 1 },
-                                { label: 'ภาคเรียนที่ 2', value: 2 },
-                                { label: 'ภาคฤดูร้อน', value: 3 },
-                            ]}
-                            onChange={(value) => {
-                                setSemester(value)
-                                setCalculationResult(null)
-                            }}
-                        />
+                        <Text strong>ภาคการเรียนที่คาดการณ์</Text>
+                        <Text className="grade-calculator-readonly-value">
+                            {predictedSemesterLabel}
+                        </Text>
                     </label>
                 </div>
             </Card>
@@ -544,14 +599,13 @@ export default function GradeCalculatorPage() {
                         suffix="หน่วยกิต"
                     />
                     <Statistic
-                        title="GPA ภาคเรียนล่าสุด"
+                        title="GPA ภาคการเรียนล่าสุด"
                         value={latestSemester.gpa}
                         precision={2}
                     />
                     <Statistic
-                        title="จำนวนภาคเรียน"
-                        value={selectedProfile.semesterResults.length}
-                        suffix="ภาคเรียน"
+                        title="ชั้นปีปัจจุบัน"
+                        value={currentAcademicTermLabel}
                     />
                 </div>
                 <Table<SemesterResultRow>
@@ -566,7 +620,7 @@ export default function GradeCalculatorPage() {
 
             <Card
                 className="grade-calculator-card"
-                title={`วางแผนรายวิชา ภาคเรียนที่ ${semester}/${academicYear}`}
+                title={`วางแผนรายวิชา ${predictedTermLabel}`}
             >
                 <div className="grade-course-groups">
                     {renderCourseGroup(
@@ -633,10 +687,10 @@ export default function GradeCalculatorPage() {
             {calculationResult && (
                 <Card
                     className="grade-calculator-card grade-calculation-result"
-                    title={`ผลการคาดการณ์ ภาคเรียนที่ ${semester}/${academicYear}`}
+                    title={`ผลการคาดการณ์ ${predictedTermLabel}`}
                 >
                     <Row gutter={[16, 16]}>
-                        <Col xs={24} sm={12} lg={8}>
+                        <Col xs={24} sm={12} lg={6}>
                             <Statistic
                                 title="GPA เทอมที่คาดการณ์"
                                 value={calculationResult.termGpa}
@@ -644,7 +698,7 @@ export default function GradeCalculatorPage() {
                                 valueStyle={{ color: '#1677ff' }}
                             />
                         </Col>
-                        <Col xs={24} sm={12} lg={8}>
+                        <Col xs={24} sm={12} lg={6}>
                             <Statistic
                                 title="GPAX หลังจบเทอม"
                                 value={calculationResult.cumulativeGpa}
@@ -658,7 +712,16 @@ export default function GradeCalculatorPage() {
                                 }}
                             />
                         </Col>
-                        <Col xs={24} sm={12} lg={8}>
+                        <Col xs={24} sm={12} lg={6}>
+                            <Statistic
+                                title="GPAX เปลี่ยนแปลง"
+                                value={calculatedGpaChange.text}
+                                valueStyle={{
+                                    color: calculatedGpaChange.color,
+                                }}
+                            />
+                        </Col>
+                        <Col xs={24} sm={12} lg={6}>
                             <Statistic
                                 title="หน่วยกิตสะสมหลังจบเทอม"
                                 value={calculationResult.cumulativeCredits}
@@ -716,12 +779,17 @@ export default function GradeCalculatorPage() {
                         <Descriptions
                             bordered
                             size="small"
-                            column={{ xs: 1, sm: 2 }}
+                            column={{ xs: 1, sm: 12 }}
                             items={[
                                 {
                                     key: 'semester',
-                                    label: 'ภาคเรียน',
-                                    children: `${selectedHistory.semester}/${selectedHistory.academicYear}`,
+                                    label: 'ภาคการเรียน',
+                                    children: formatStudyTerm(
+                                        selectedHistory.academicYear,
+                                        selectedHistory.semester,
+                                        firstAcademicYear,
+                                    ),
+                                    span: { xs: 1, sm: 6 },
                                 },
                                 {
                                     key: 'calculatedAt',
@@ -729,12 +797,14 @@ export default function GradeCalculatorPage() {
                                     children: dayjs(
                                         selectedHistory.calculatedAt,
                                     ).format('DD/MM/YYYY HH:mm'),
+                                    span: { xs: 1, sm: 6 },
                                 },
                                 {
                                     key: 'previousGpa',
                                     label: 'GPAX ก่อนคำนวณ',
                                     children:
                                         selectedHistory.previousGpa.toFixed(2),
+                                    span: { xs: 1, sm: 3 },
                                 },
                                 {
                                     key: 'predictedTermGpa',
@@ -743,6 +813,7 @@ export default function GradeCalculatorPage() {
                                         selectedHistory.predictedTermGpa.toFixed(
                                             2,
                                         ),
+                                    span: { xs: 1, sm: 3 },
                                 },
                                 {
                                     key: 'predictedCumulativeGpa',
@@ -751,11 +822,27 @@ export default function GradeCalculatorPage() {
                                         selectedHistory.predictedCumulativeGpa.toFixed(
                                             2,
                                         ),
+                                    span: { xs: 1, sm: 3 },
                                 },
                                 {
-                                    key: 'calculatedBy',
-                                    label: 'คำนวณโดย',
-                                    children: selectedHistory.calculatedBy,
+                                    key: 'gpaChange',
+                                    label: 'GPAX เปลี่ยนแปลง',
+                                    children: (() => {
+                                        const change = getGpaChangePresentation(
+                                            selectedHistory.predictedCumulativeGpa -
+                                                selectedHistory.previousGpa,
+                                        )
+
+                                        return (
+                                            <Text
+                                                strong
+                                                style={{ color: change.color }}
+                                            >
+                                                {change.text}
+                                            </Text>
+                                        )
+                                    })(),
+                                    span: { xs: 1, sm: 3 },
                                 },
                             ]}
                         />
