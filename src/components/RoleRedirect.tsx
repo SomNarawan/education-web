@@ -1,13 +1,25 @@
-import { Navigate } from 'react-router-dom'
-import { Spin } from 'antd'
+import { Link, Navigate } from 'react-router-dom'
+import { Button, Spin, Typography } from 'antd'
 import { useAuth } from '../hooks/useAuth'
 
 export default function RoleRedirect() {
     const { token, currentRole } = useAuth()
 
-    // ยังไม่ login
+    // ยังไม่ login — แสดงข้อความแทนการ navigate วนไปมากับ /auth/callback
     if (!token) {
-        return <Navigate to="/auth/callback" replace />
+        return (
+            <div style={{ textAlign: 'center', padding: 60 }}>
+                <Typography.Paragraph>
+                    ยังไม่ได้เข้าสู่ระบบ กรุณาเข้าสู่ระบบผ่านระบบ SSO
+                </Typography.Paragraph>
+
+                {import.meta.env.VITE_MOCK_LOGIN_ENABLED === 'true' && (
+                    <Link to="/mock-login">
+                        <Button type="primary">Mock Login (Dev)</Button>
+                    </Link>
+                )}
+            </div>
+        )
     }
 
     // รอให้ /me โหลดข้อมูลและกำหนด role ก่อน redirect

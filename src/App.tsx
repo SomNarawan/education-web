@@ -13,6 +13,7 @@ const StudentDetail = lazy(
     () => import('./features/students/detail/StudentDetailPage'),
 )
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
+const MockLogin = lazy(() => import('./pages/MockLogin'))
 const SyncData = lazy(() => import('./pages/SyncData'))
 const StudentImport = lazy(() => import('./pages/StudentImport'))
 const AdvisorAssignment = lazy(
@@ -39,6 +40,7 @@ export default function App() {
             <Suspense fallback={<PageLoading />}>
                 <Routes>
                     <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route path="/mock-login" element={<MockLogin />} />
 
                     <Route path="/" element={<MainLayout />}>
                         <Route index element={<RoleRedirect />} />
