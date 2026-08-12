@@ -1142,6 +1142,13 @@ body {
     width: 100%;
 }
 
+.grade-calculator-readonly-value {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+}
+
 .grade-summary-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));

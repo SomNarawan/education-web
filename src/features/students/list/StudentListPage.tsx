@@ -1,4 +1,4 @@
-import { Button, Input, Select, message, Typography } from 'antd'
+import { Button, Input, Select, Spin, message, Typography } from 'antd'
 const { Text } = Typography
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -18,7 +18,7 @@ import type { StudentGroup } from '../../../types/StudentRoute'
 type NoteSearchType = string | undefined
 
 const OTHER_NOTE_VALUE = 'อื่นๆ'
-const DEFAULT_STUDENT_STATUS = 2
+const DEFAULT_STUDENT_STATUS = 1
 
 export default function StudentListPage() {
     const { studentGroup } = useParams()
@@ -43,6 +43,7 @@ function StudentList() {
     const [students, setStudents] = useState<StudentListResponse[]>([])
     const [loading, setLoading] = useState(false)
     const [dropdownLoading, setDropdownLoading] = useState(false)
+    const [searchDropdownLoading, setSearchDropdownLoading] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingStudent, setEditingStudent] =
         useState<StudentDetailResponse | null>(null)
@@ -215,6 +216,8 @@ function StudentList() {
 
         const loadSearchDropdowns = async () => {
             try {
+                setSearchDropdownLoading(true)
+
                 const [studentStatuses, systemDepartments] =
                     await Promise.all([
                         getStudentStatuses(),
@@ -242,6 +245,8 @@ function StudentList() {
             } catch (error) {
                 console.error(error)
                 message.error('โหลดข้อมูลตัวเลือกค้นหาไม่สำเร็จ')
+            } finally {
+                setSearchDropdownLoading(false)
             }
         }
 
@@ -276,7 +281,7 @@ function StudentList() {
     const handleClearNoteSearch = () => {
         setNoteSearchType(undefined)
         setNoteSearchText('')
-        setSelectedStudentStatusId(undefined)
+        setSelectedStudentStatusId(DEFAULT_STUDENT_STATUS)
 
         if (isAdmin && isDepartmentListPage) {
             setSelectedDepartmentId(undefined)
@@ -285,7 +290,7 @@ function StudentList() {
         }
 
         loadStudents({
-            studentStatusId: null,
+            studentStatusId: DEFAULT_STUDENT_STATUS,
         })
     }
 
@@ -420,6 +425,10 @@ function StudentList() {
 
     return (
         <div className="student-page">
+            <Spin
+                fullscreen
+                spinning={searchDropdownLoading}
+            />
             <div className="page-title-section">
                 <div>
                     <h1>{pageTitle}</h1>
@@ -536,6 +545,7 @@ function StudentList() {
                                 <Select
                                     allowClear
                                     showSearch
+                                    loading={searchDropdownLoading}
                                     placeholder="เลือกภาควิชา"
                                     value={selectedDepartmentId}
                                     options={departmentOptions}
@@ -551,6 +561,7 @@ function StudentList() {
                             <Select
                                 allowClear
                                 showSearch
+                                loading={searchDropdownLoading}
                                 placeholder="เลือกสถานะนิสิต"
                                 value={selectedStudentStatusId}
                                 options={studentStatusOptions}
