@@ -26,6 +26,22 @@ const GradeCalculator = lazy(
     () => import('./features/gradeCalculator/GradeCalculatorPage'),
 )
 
+function normalizeBasePath(value?: string): string | undefined {
+    if (!value) return undefined
+
+    const trimmed = value.trim()
+
+    if (!trimmed) return undefined
+
+    const withLeadingSlash = trimmed.startsWith('/')
+        ? trimmed
+        : `/${trimmed}`
+
+    return withLeadingSlash.replace(/\/+$/, '') || undefined
+}
+
+const basename = normalizeBasePath(import.meta.env.VITE_BASE_PATH)
+
 function PageLoading() {
     return (
         <div className="page-loading">
@@ -36,7 +52,7 @@ function PageLoading() {
 
 export default function App() {
     return (
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
             <Suspense fallback={<PageLoading />}>
                 <Routes>
                     <Route path="/auth/callback" element={<AuthCallback />} />
