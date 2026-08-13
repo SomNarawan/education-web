@@ -19,6 +19,8 @@ function normalizeBasePath(value?: string): string {
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '')
     const basePath = normalizeBasePath(env.VITE_BASE_PATH)
+    const apiProxyTarget = env.VITE_API_PROXY_TARGET
+    const apiProxyPath = env.VITE_API_PROXY_PATH
 
     return {
         base: basePath ? `${basePath}/` : '/',
@@ -26,5 +28,17 @@ export default defineConfig(({ mode }) => {
         optimizeDeps: {
             include: ['@ant-design/plots'],
         },
+        server:
+            apiProxyTarget && apiProxyPath
+                ? {
+                      proxy: {
+                          [apiProxyPath]: {
+                              target: apiProxyTarget,
+                              changeOrigin: true,
+                              secure: true,
+                          },
+                      },
+                  }
+                : undefined,
     }
 })
