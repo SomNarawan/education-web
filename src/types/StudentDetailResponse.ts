@@ -57,4 +57,5 @@ export interface StudentDetailResponse {
     overed_credits: number
 
     gpa: number
+    gpax: number
 }

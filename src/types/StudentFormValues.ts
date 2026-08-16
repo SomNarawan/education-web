@@ -27,6 +27,7 @@ export interface StudentFormValues {
     student_status_id: number
 
     gpa: number
+    gpax: number
     passed_credits: number
     not_passed_credits: number
     overed_credits: number

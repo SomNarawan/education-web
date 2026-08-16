@@ -89,7 +89,7 @@ return (
                         },
                     ]}
                 >
-                    <Input />
+                    <Input maxLength={150} showCount />
                 </Form.Item>
             </Card>
 
@@ -106,7 +106,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={13} />
+                            <Input maxLength={13} showCount />
                         </Form.Item>
                     </Col>
 
@@ -146,7 +146,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input />
+                            <Input maxLength={150} showCount />
                         </Form.Item>
                     </Col>
 
@@ -161,7 +161,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input />
+                            <Input maxLength={150} showCount />
                         </Form.Item>
                     </Col>
 
@@ -176,7 +176,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input />
+                            <Input maxLength={150} showCount />
                         </Form.Item>
                     </Col>
 
@@ -191,7 +191,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input />
+                            <Input maxLength={150} showCount />
                         </Form.Item>
                     </Col>
 
@@ -206,7 +206,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={10} />
+                            <Input maxLength={10} showCount />
                         </Form.Item>
                     </Col>
 
@@ -221,7 +221,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input />
+                            <Input maxLength={150} showCount />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -382,7 +382,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input />
+                            <Input maxLength={150} showCount />
                         </Form.Item>
                     </Col>
 
@@ -397,7 +397,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input />
+                            <Input maxLength={150} showCount />
                         </Form.Item>
                     </Col>
 
@@ -439,7 +439,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={10} />
+                            <Input maxLength={10} showCount />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -474,12 +474,32 @@ return (
                 <Row gutter={16}>
                     <Col xs={24} md={12}>
                         <Form.Item
-                            label="GPA / GPAX"
+                            label="GPA"
                             name="gpa"
                             rules={[
                                 {
                                     required: true,
-                                    message: 'กรุณากรอก GPA / GPAX',
+                                    message: 'กรุณากรอก GPA',
+                                },
+                            ]}
+                        >
+                            <InputNumber
+                                min={0}
+                                max={4}
+                                step={0.01}
+                                style={{ width: '100%' }}
+                            />
+                        </Form.Item>
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                        <Form.Item
+                            label="GPAX"
+                            name="gpax"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'กรุณากรอก GPAX',
                                 },
                             ]}
                         >

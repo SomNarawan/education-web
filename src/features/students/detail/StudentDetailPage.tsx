@@ -195,6 +195,10 @@ export default function StudentDetailPage() {
                                                 label="GPA"
                                                 value={student.gpa}
                                             />
+                                            <DetailItem
+                                                label="GPAX"
+                                                value={student.gpax}
+                                            />
                                         </Col>
 
                                         <Col xs={24} md={12}>

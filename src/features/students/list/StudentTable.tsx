@@ -122,10 +122,10 @@ export default function StudentTable({
         },
         {
             title: 'GPAX',
-            dataIndex: 'gpa',
+            dataIndex: 'gpax',
             align: 'center',
             width: 100,
-            render: (gpa) => gpa ?? '-',
+            render: (gpax) => gpax ?? '-',
         },
         {
             title: 'รายละเอียด',
