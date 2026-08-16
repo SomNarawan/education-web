@@ -380,22 +380,32 @@ export default function HighSchoolManagementPage() {
             ellipsis: true,
         },
         {
-            title: 'จังหวัด',
-            dataIndex: 'province_name',
-            key: 'province_name',
-            width: 160,
+            title: 'สร้างโดย',
+            dataIndex: 'created_by',
+            key: 'created_by',
+            width: 140,
+            ellipsis: true,
         },
         {
-            title: 'อำเภอ/เขต',
-            dataIndex: 'district_name',
-            key: 'district_name',
-            width: 170,
+            title: 'วันที่สร้าง',
+            dataIndex: 'created_at',
+            key: 'created_at',
+            width: 175,
+            render: formatThaiDateTime,
         },
         {
-            title: 'ตำบล/แขวง',
-            dataIndex: 'subdistrict_name',
-            key: 'subdistrict_name',
-            width: 170,
+            title: 'แก้ไขโดย',
+            dataIndex: 'updated_by',
+            key: 'updated_by',
+            width: 140,
+            ellipsis: true,
+        },
+        {
+            title: 'วันที่แก้ไข',
+            dataIndex: 'updated_at',
+            key: 'updated_at',
+            width: 175,
+            render: formatThaiDateTime,
         },
         {
             title: 'สถานะ',
@@ -513,7 +523,7 @@ export default function HighSchoolManagementPage() {
                     searchPlaceholder="ค้นหาชื่อโรงเรียน..."
                     tableLayout="fixed"
                     size="small"
-                    scroll={{ x: 950 }}
+                    scroll={{ x: 1100 }}
                 />
             </div>
 

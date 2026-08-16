@@ -7,6 +7,10 @@ import type {
     GuardianRelationship,
     HighSchool,
     HighSchoolPayload,
+    ManagedMasterDataPayload,
+    ManagedMasterDataRecord,
+    ManagedMasterDataResource,
+    MasterDataStatus,
     Province,
     StudentStatusOption,
     StudyPlan,
@@ -15,6 +19,60 @@ import type {
     Teacher,
     Title,
 } from '../types/MasterData'
+
+export async function getManagedMasterDataList(
+    resource: ManagedMasterDataResource,
+): Promise<ManagedMasterDataRecord[]> {
+    const response = await api.get<ApiResponse<ManagedMasterDataRecord[]>>(
+        `/${resource}`,
+    )
+    return response.data.data
+}
+
+export async function getManagedMasterData(
+    resource: ManagedMasterDataResource,
+    id: number,
+): Promise<ManagedMasterDataRecord> {
+    const response = await api.get<ApiResponse<ManagedMasterDataRecord>>(
+        `/${resource}/${id}`,
+    )
+    return response.data.data
+}
+
+export async function createManagedMasterData(
+    resource: ManagedMasterDataResource,
+    data: ManagedMasterDataPayload,
+): Promise<ManagedMasterDataRecord> {
+    const response = await api.post<ApiResponse<ManagedMasterDataRecord>>(
+        `/${resource}`,
+        data,
+    )
+    return response.data.data
+}
+
+export async function updateManagedMasterData(
+    resource: ManagedMasterDataResource,
+    id: number,
+    data: ManagedMasterDataPayload,
+): Promise<ManagedMasterDataRecord> {
+    const response = await api.put<ApiResponse<ManagedMasterDataRecord>>(
+        `/${resource}/${id}`,
+        data,
+    )
+    return response.data.data
+}
+
+export async function updateManagedMasterDataStatus(
+    resource: ManagedMasterDataResource,
+    id: number,
+    status: MasterDataStatus,
+): Promise<ManagedMasterDataRecord> {
+    const response = await api.patch<ApiResponse<ManagedMasterDataRecord>>(
+        `/${resource}/${id}/status`,
+        { status },
+    )
+    return response.data.data
+}
 
 export async function getTitles(): Promise<Title[]> {
     const response = await api.get<ApiResponse<Title[]>>('/titles')

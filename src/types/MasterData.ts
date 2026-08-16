@@ -2,7 +2,30 @@ export interface Title {
     id: number
     title_abbr_th: string
     title_abbr_en: string
+    title_name_th: string
+    title_name_en: string
 }
+
+export type MasterDataStatus = 'active' | 'inactive'
+
+export type ManagedMasterDataResource =
+    | 'titles'
+    | 'note-types'
+    | 'relationships'
+    | 'student-statuses'
+    | 'admission-channels'
+
+export interface ManagedMasterDataRecord {
+    id: number
+    status: MasterDataStatus
+    created_at: string | null
+    created_by: string | null
+    updated_at: string | null
+    updated_by: string | null
+    [key: string]: string | number | null
+}
+
+export type ManagedMasterDataPayload = Record<string, string>
 
 export interface Teacher {
     id: number
