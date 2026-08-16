@@ -21,6 +21,9 @@ const AdvisorAssignment = lazy(
 const MasterDataManagement = lazy(
     () => import('./features/masterData/MasterDataManagementPage'),
 )
+const HighSchoolManagement = lazy(
+    () => import('./features/masterData/HighSchoolManagementPage'),
+)
 const GradeCalculator = lazy(
     () => import('./features/gradeCalculator/GradeCalculatorPage'),
 )
@@ -104,6 +107,15 @@ export default function App() {
                                     allowedRoles={['teacher', 'admin']}
                                 >
                                     <GradeCalculator />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="master-data/high-schools"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <HighSchoolManagement />
                                 </ProtectedRoute>
                             }
                         />

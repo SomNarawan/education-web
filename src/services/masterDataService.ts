@@ -3,11 +3,15 @@ import type { ApiResponse } from '../types/ApiResponse'
 import type { CurriculumDivision } from '../types/CurriculumDetail'
 import type {
     AdmissionChannel,
+    District,
     GuardianRelationship,
     HighSchool,
+    HighSchoolPayload,
+    Province,
     StudentStatusOption,
     StudyPlan,
     SystemDepartment,
+    Subdistrict,
     Teacher,
     Title,
 } from '../types/MasterData'
@@ -42,6 +46,69 @@ export async function getHighSchools(): Promise<HighSchool[]> {
 
 export async function getStudyPlans(): Promise<StudyPlan[]> {
     const response = await api.get<ApiResponse<StudyPlan[]>>('/study-plans')
+    return response.data.data
+}
+
+export async function getHighSchool(id: number): Promise<HighSchool> {
+    const response = await api.get<ApiResponse<HighSchool>>(
+        `/high-schools/${id}`,
+    )
+    return response.data.data
+}
+
+export async function createHighSchool(
+    data: HighSchoolPayload,
+): Promise<HighSchool> {
+    const response = await api.post<ApiResponse<HighSchool>>(
+        '/high-schools',
+        data,
+    )
+    return response.data.data
+}
+
+export async function updateHighSchool(
+    id: number,
+    data: HighSchoolPayload,
+): Promise<HighSchool> {
+    const response = await api.put<ApiResponse<HighSchool>>(
+        `/high-schools/${id}`,
+        data,
+    )
+    return response.data.data
+}
+
+export async function updateHighSchoolStatus(
+    id: number,
+    status: HighSchool['status'],
+): Promise<HighSchool> {
+    const response = await api.patch<ApiResponse<HighSchool>>(
+        `/high-schools/${id}/status`,
+        { status },
+    )
+    return response.data.data
+}
+
+export async function getProvinces(): Promise<Province[]> {
+    const response = await api.get<ApiResponse<Province[]>>('/provinces')
+    return response.data.data
+}
+
+export async function getDistricts(provinceId: number): Promise<District[]> {
+    const response = await api.get<ApiResponse<District[]>>('/districts', {
+        params: { province_id: provinceId },
+    })
+    return response.data.data
+}
+
+export async function getSubdistricts(
+    districtId: number,
+): Promise<Subdistrict[]> {
+    const response = await api.get<ApiResponse<Subdistrict[]>>(
+        '/subdistricts',
+        {
+            params: { district_id: districtId },
+        },
+    )
     return response.data.data
 }
 
