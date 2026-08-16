@@ -1,23 +1,13 @@
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons'
 import { Button, Empty, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import dayjs from 'dayjs'
-import buddhistEra from 'dayjs/plugin/buddhistEra'
-import timezone from 'dayjs/plugin/timezone'
-import utc from 'dayjs/plugin/utc'
-import 'dayjs/locale/th'
 import { useMemo } from 'react'
 import CustomTable from '../../../components/custom/CustomTable'
 import type {
     StudentImportHistory,
     StudentImportStatus,
 } from '../../../types/StudentImport'
-
-dayjs.extend(utc)
-dayjs.extend(timezone)
-dayjs.extend(buddhistEra)
-
-const bangkokTimeZone = 'Asia/Bangkok'
+import { formatThaiDateTime } from '../../../utils/dateFormat'
 
 const statusDisplay: Record<
     StudentImportStatus,
@@ -34,17 +24,6 @@ interface StudentImportHistoryTableProps {
     loading: boolean
     downloadingId: number | null
     onDownload: (record: StudentImportHistory) => void
-}
-
-function formatImportDate(value: string): string {
-    const hasExplicitTimeZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
-    const date = hasExplicitTimeZone
-        ? dayjs(value).tz(bangkokTimeZone)
-        : dayjs.tz(value, bangkokTimeZone)
-
-    return date.isValid()
-        ? date.locale('th').format('D MMM BBBB เวลา HH:mm น.')
-        : '-'
 }
 
 function getDownloadButton(record: StudentImportHistory) {
@@ -103,7 +82,7 @@ export default function StudentImportHistoryTable({
                 dataIndex: 'started_at',
                 key: 'started_at',
                 width: 210,
-                render: (value: string) => formatImportDate(value),
+                render: (value: string) => formatThaiDateTime(value),
             },
             {
                 title: 'ผู้นำเข้า',

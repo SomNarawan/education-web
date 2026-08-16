@@ -1,5 +1,5 @@
 ﻿import { SearchOutlined } from '@ant-design/icons'
-import type { ColumnConfig } from '@ant-design/plots'
+import type { DualAxesConfig } from '@ant-design/plots'
 import {
     Button,
     Card,
@@ -28,14 +28,15 @@ import {
 import SemesterDetailModal from './SemesterDetailModal'
 
 const chartColors = {
+    gpaxLine: '#4b5563',
     grid: '#d9dce3',
     axis: '#8c8c8c',
     text: '#262626',
 }
 
-const Column = lazy(() =>
+const DualAxes = lazy(() =>
     import('@ant-design/plots').then((chartModule) => ({
-        default: chartModule.Column,
+        default: chartModule.DualAxes,
     })),
 )
 
@@ -54,9 +55,10 @@ function StudentSemesterChart({
     const chartData = rows.map((row) => ({
         semesterLabel: `ชั้นปี ${row.study_year} ${row.semester}`,
         gpa: row.gpa,
+        gpax: row.gpax,
         gradeRange: getGradeRange(row.gpa),
     }))
-    const chartConfig: ColumnConfig = {
+    const chartConfig: DualAxesConfig = {
         data: chartData,
         height: 440,
         autoFit: true,
@@ -118,19 +120,67 @@ function StudentSemesterChart({
             },
         },
         legend: false,
-        style: {
-            fillOpacity: 0.78,
+        interaction: {
+            tooltip: {
+                shared: false,
+                series: false,
+                mount: 'body',
+            },
         },
-        tooltip: {
-            title: 'semesterLabel',
-            items: [
-                {
-                    field: 'gpa',
-                    name: 'GPA',
-                    valueFormatter: (value: number) => formatDecimal(value),
+        children: [
+            {
+                type: 'interval',
+                yField: 'gpa',
+                colorField: 'gradeRange',
+                scale: {
+                    y: {
+                        domain: [0, 4],
+                        key: 'semesterGradeScale',
+                        independent: false,
+                    },
                 },
-            ],
-        },
+                style: {
+                    fillOpacity: 0.78,
+                },
+                tooltip: {
+                    title: 'semesterLabel',
+                    items: [
+                        {
+                            field: 'gpa',
+                            name: 'GPA',
+                            valueFormatter: (value: number) =>
+                                formatDecimal(value),
+                        },
+                    ],
+                },
+            },
+            {
+                type: 'line',
+                yField: 'gpax',
+                scale: {
+                    y: {
+                        domain: [0, 4],
+                        key: 'semesterGradeScale',
+                        independent: false,
+                    },
+                },
+                style: {
+                    stroke: chartColors.gpaxLine,
+                    lineWidth: 3,
+                },
+                tooltip: {
+                    title: 'semesterLabel',
+                    items: [
+                        {
+                            field: 'gpax',
+                            name: 'GPAX',
+                            valueFormatter: (value: number) =>
+                                formatDecimal(value),
+                        },
+                    ],
+                },
+            },
+        ],
     }
 
     return (
@@ -152,12 +202,19 @@ function StudentSemesterChart({
                             {gradeRange}
                         </span>
                     ))}
+                    <span
+                        className="grade-legend-item"
+                        style={{ color: chartColors.gpaxLine }}
+                    >
+                        <span className="grade-legend-line" />
+                        GPAX
+                    </span>
                 </div>
 
                 <div
                     className="semester-performance-chart"
                     role="img"
-                    aria-label="กราฟแท่ง GPA แนวตั้งรายภาคการศึกษา"
+                    aria-label="กราฟแท่ง GPA และกราฟเส้น GPAX รายภาคการศึกษา"
                 >
                     <Suspense
                         fallback={
@@ -166,7 +223,7 @@ function StudentSemesterChart({
                             </div>
                         }
                     >
-                        <Column {...chartConfig} />
+                        <DualAxes {...chartConfig} />
                     </Suspense>
                 </div>
             </div>

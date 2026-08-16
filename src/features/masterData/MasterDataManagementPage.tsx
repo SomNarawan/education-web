@@ -16,9 +16,6 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
-import dayjs from 'dayjs'
-import timezone from 'dayjs/plugin/timezone'
-import utc from 'dayjs/plugin/utc'
 import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import CustomTable from '../../components/custom/CustomTable'
@@ -37,15 +34,11 @@ import type {
     ManagedMasterDataRecord,
     ManagedMasterDataResource,
 } from '../../types/MasterData'
+import { formatThaiDateTime } from '../../utils/dateFormat'
 import {
     isMasterDataType,
     masterDataDefinitions,
 } from './masterDataConfig'
-
-dayjs.extend(utc)
-dayjs.extend(timezone)
-
-const bangkokTimezone = 'Asia/Bangkok'
 
 type MasterDataFormValues = Record<string, string>
 
@@ -61,19 +54,6 @@ interface EditState {
 
 interface MasterDataManagementContentProps {
     resource: ManagedMasterDataResource
-}
-
-function formatThaiDateTime(value: string | number | null) {
-    if (typeof value !== 'string' || !value) return '-'
-
-    const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
-    const date = hasExplicitTimezone
-        ? dayjs(value).tz(bangkokTimezone)
-        : dayjs.tz(value, bangkokTimezone)
-
-    if (!date.isValid()) return '-'
-
-    return `${date.format('DD/MM')}/${date.year() + 543} ${date.format('HH:mm')} น.`
 }
 
 function getRecordLabel(

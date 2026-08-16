@@ -21,8 +21,8 @@ import {
     message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
+import { formatThaiDateTime } from '../../utils/dateFormat'
 import {
     gradeOptions,
     mockCalculationHistories,
@@ -392,7 +392,7 @@ export default function GradeCalculatorPage() {
             title: 'วันที่คำนวณ',
             dataIndex: 'calculatedAt',
             width: 150,
-            render: (value: string) => dayjs(value).format('DD/MM/YYYY HH:mm'),
+            render: (value: string) => formatThaiDateTime(value),
         },
         {
             title: 'ภาคการเรียน',
@@ -794,9 +794,9 @@ export default function GradeCalculatorPage() {
                                 {
                                     key: 'calculatedAt',
                                     label: 'วันที่คำนวณ',
-                                    children: dayjs(
+                                    children: formatThaiDateTime(
                                         selectedHistory.calculatedAt,
-                                    ).format('DD/MM/YYYY HH:mm'),
+                                    ),
                                     span: { xs: 1, sm: 6 },
                                 },
                                 {

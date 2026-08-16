@@ -6,7 +6,6 @@ import {
 import { Button, Modal, Space, Tag, Tooltip, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
-import dayjs from 'dayjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import CustomTable from '../components/custom/CustomTable'
 import {
@@ -28,6 +27,7 @@ import type {
     SyncedSystemFaculty,
     SyncedTeacher,
 } from '../types/SyncData'
+import { formatThaiDateTime } from '../utils/dateFormat'
 
 const syncOptions: { label: string; value: SyncDataType }[] = [
     { label: 'คณะ', value: 'faculty' },
@@ -89,12 +89,7 @@ function getSyncStatus(status: string | null): SyncStatus {
 }
 
 function formatSyncDate(value: string | null | undefined): string | null {
-    if (!value) {
-        return null
-    }
-
-    const date = dayjs(value)
-    return date.isValid() ? date.format('DD/MM/YYYY HH:mm:ss') : null
+    return value ? formatThaiDateTime(value) : null
 }
 
 const auditDetailColumns: ColumnsType<SyncDetailTableRecord> = [

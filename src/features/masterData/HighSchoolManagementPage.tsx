@@ -15,9 +15,6 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
-import dayjs from 'dayjs'
-import timezone from 'dayjs/plugin/timezone'
-import utc from 'dayjs/plugin/utc'
 import { useCallback, useEffect, useState } from 'react'
 import CustomTable from '../../components/custom/CustomTable'
 import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark'
@@ -30,12 +27,8 @@ import {
 } from '../../services/masterDataService'
 import { useAddressMasterData } from '../../hooks/useAddressMasterData'
 import type { HighSchool, HighSchoolPayload } from '../../types/MasterData'
+import { formatThaiDateTime } from '../../utils/dateFormat'
 import SchoolLocationMap from './SchoolLocationMap'
-
-dayjs.extend(utc)
-dayjs.extend(timezone)
-
-const bangkokTimezone = 'Asia/Bangkok'
 
 interface HighSchoolFormValues {
     school_name: string
@@ -67,19 +60,6 @@ function isHighSchoolFormField(
     field: string,
 ): field is keyof HighSchoolFormValues {
     return highSchoolFormFields.has(field as keyof HighSchoolFormValues)
-}
-
-function formatThaiDateTime(value?: string | null) {
-    if (!value) return '-'
-
-    const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
-    const date = hasExplicitTimezone
-        ? dayjs(value).tz(bangkokTimezone)
-        : dayjs.tz(value, bangkokTimezone)
-
-    if (!date.isValid()) return '-'
-
-    return `${date.format('DD/MM')}/${date.year() + 543} ${date.format('HH:mm')} น.`
 }
 
 export default function HighSchoolManagementPage() {

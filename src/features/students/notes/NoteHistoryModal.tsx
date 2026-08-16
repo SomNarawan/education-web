@@ -1,8 +1,8 @@
 import { DeleteOutlined } from '@ant-design/icons'
 import { Button, Modal, Popconfirm, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import dayjs from 'dayjs'
 import type { NoteListResponse } from '../../../types/NoteListResponse'
+import { formatThaiDateTime } from '../../../utils/dateFormat'
 
 const { Text } = Typography
 
@@ -13,12 +13,6 @@ interface NoteHistoryModalProps {
     onClose: () => void
     onDelete?: (id: number) => void
     showDelete?: boolean
-}
-
-function formatDate(value?: string | null) {
-    if (!value) return '-'
-
-    return dayjs(value).format('DD/MM/YYYY HH:mm')
 }
 
 export default function NoteHistoryModal({
@@ -50,7 +44,7 @@ export default function NoteHistoryModal({
             width: 180,
             render: (value, record) => (
                 <Text delete={!!record.deleted_at}>
-                    {formatDate(value)}
+                    {formatThaiDateTime(value)}
                 </Text>
             ),
         },
@@ -68,7 +62,7 @@ export default function NoteHistoryModal({
             width: 180,
             render: (value, record) => (
                 <Text delete={!!record.deleted_at}>
-                    {formatDate(value)}
+                    {formatThaiDateTime(value)}
                 </Text>
             ),
         },
