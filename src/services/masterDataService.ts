@@ -74,6 +74,13 @@ export async function updateManagedMasterDataStatus(
     return response.data.data
 }
 
+export async function deleteManagedMasterData(
+    resource: ManagedMasterDataResource,
+    id: number,
+): Promise<void> {
+    await api.delete(`/${resource}/${id}`)
+}
+
 export async function getTitles(): Promise<Title[]> {
     const response = await api.get<ApiResponse<Title[]>>('/titles')
     return response.data.data

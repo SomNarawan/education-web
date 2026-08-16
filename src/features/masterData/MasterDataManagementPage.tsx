@@ -1,4 +1,8 @@
-import { EditOutlined, PlusOutlined } from '@ant-design/icons'
+import {
+    DeleteOutlined,
+    EditOutlined,
+    PlusOutlined,
+} from '@ant-design/icons'
 import {
     Button,
     Empty,
@@ -6,6 +10,7 @@ import {
     Input,
     Modal,
     Popconfirm,
+    Space,
     Switch,
     message,
 } from 'antd'
@@ -21,6 +26,7 @@ import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark
 import { useAuth } from '../../hooks/useAuth'
 import {
     createManagedMasterData,
+    deleteManagedMasterData,
     getManagedMasterData,
     getManagedMasterDataList,
     updateManagedMasterData,
@@ -90,6 +96,7 @@ function MasterDataManagementContent({
     const [saving, setSaving] = useState(false)
     const [loadingEditId, setLoadingEditId] = useState<number | null>(null)
     const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null)
+    const [deletingId, setDeletingId] = useState<number | null>(null)
     const [editState, setEditState] = useState<EditState | null>(null)
 
     const showRequestError = useCallback(
@@ -221,14 +228,22 @@ function MasterDataManagementContent({
                     editState.record.id,
                     payload,
                 )
-                replaceRecord(updatedRecord)
+                if (definition.refreshAfterMutation) {
+                    await loadRecords()
+                } else {
+                    replaceRecord(updatedRecord)
+                }
                 message.success(`แก้ไข${definition.itemLabel}เรียบร้อยแล้ว`)
             } else {
                 const createdRecord = await createManagedMasterData(
                     resource,
                     payload,
                 )
-                setRecords((current) => [...current, createdRecord])
+                if (definition.refreshAfterMutation) {
+                    await loadRecords()
+                } else {
+                    setRecords((current) => [...current, createdRecord])
+                }
                 message.success(`เพิ่ม${definition.itemLabel}เรียบร้อยแล้ว`)
             }
 
@@ -265,7 +280,11 @@ function MasterDataManagementContent({
                 record.id,
                 nextStatus,
             )
-            replaceRecord(updatedRecord)
+            if (definition.refreshAfterMutation) {
+                await loadRecords()
+            } else {
+                replaceRecord(updatedRecord)
+            }
             message.success(
                 `${nextStatus === 'active' ? 'เปิด' : 'ปิด'}ใช้งาน${definition.itemLabel}เรียบร้อยแล้ว`,
             )
@@ -280,7 +299,36 @@ function MasterDataManagementContent({
         }
     }
 
-    const columns: ColumnsType<ManagedMasterDataRecord> = [
+    async function handleDelete(record: ManagedMasterDataRecord) {
+        setDeletingId(record.id)
+
+        try {
+            await deleteManagedMasterData(resource, record.id)
+            message.success(`ลบ${definition.itemLabel}เรียบร้อยแล้ว`)
+            await loadRecords()
+        } catch (error) {
+            console.error(`Unable to delete ${resource}`, error)
+
+            if (
+                resource === 'import-types' &&
+                axios.isAxiosError(error) &&
+                error.response?.status === 409
+            ) {
+                message.error(
+                    'ไม่สามารถลบประเภทการนำเข้านี้ได้ เนื่องจากมีประวัติการนำเข้าใช้งานอยู่',
+                )
+            } else {
+                showRequestError(
+                    error,
+                    `ไม่สามารถลบ${definition.itemLabel}ได้`,
+                )
+            }
+        } finally {
+            setDeletingId(null)
+        }
+    }
+
+    const fieldColumns: ColumnsType<ManagedMasterDataRecord> = [
         ...definition.fields.map((field) => ({
             title: field.label,
             dataIndex: field.key,
@@ -288,6 +336,9 @@ function MasterDataManagementContent({
             width: definition.fields.length > 1 ? 180 : 260,
             ellipsis: true,
         })),
+    ]
+
+    const auditColumns: ColumnsType<ManagedMasterDataRecord> = [
         {
             title: 'สร้างโดย',
             dataIndex: 'created_by',
@@ -316,7 +367,9 @@ function MasterDataManagementContent({
             width: 175,
             render: formatThaiDateTime,
         },
-        {
+    ]
+
+    const statusColumn: ColumnsType<ManagedMasterDataRecord>[number] = {
             title: 'สถานะ',
             dataIndex: 'status',
             key: 'status',
@@ -363,11 +416,12 @@ function MasterDataManagementContent({
                     </Popconfirm>
                 )
             },
-        },
-        {
+        }
+
+    const actionColumn: ColumnsType<ManagedMasterDataRecord>[number] = {
             title: 'การจัดการ',
             key: 'actions',
-            width: 80,
+            width: definition.supportsDelete ? 120 : 80,
             align: 'center',
             fixed: 'right',
             render: (_, record) => {
@@ -377,26 +431,57 @@ function MasterDataManagementContent({
                     definition.itemLabel,
                 )
                 const actionInProgress =
-                    loadingEditId !== null || updatingStatusId !== null
+                    loadingEditId !== null ||
+                    updatingStatusId !== null ||
+                    deletingId !== null
 
                 return (
-                    <Button
-                        icon={<EditOutlined />}
-                        aria-label={`แก้ไข${recordLabel}`}
-                        loading={loadingEditId === record.id}
-                        disabled={
-                            actionInProgress &&
-                            loadingEditId !== record.id
-                        }
-                        style={{
-                            borderColor: '#faad14',
-                            color: '#faad14',
-                        }}
-                        onClick={() => void handleOpenEdit(record)}
-                    />
+                    <Space size="small">
+                        <Button
+                            icon={<EditOutlined />}
+                            aria-label={`แก้ไข${recordLabel}`}
+                            loading={loadingEditId === record.id}
+                            disabled={
+                                actionInProgress &&
+                                loadingEditId !== record.id
+                            }
+                            style={{
+                                borderColor: '#faad14',
+                                color: '#faad14',
+                            }}
+                            onClick={() => void handleOpenEdit(record)}
+                        />
+                        {definition.supportsDelete && (
+                            <Popconfirm
+                                title={`ยืนยันการลบ${definition.itemLabel}`}
+                                description={`ต้องการลบ ${recordLabel} ใช่หรือไม่`}
+                                okText="ลบ"
+                                okButtonProps={{ danger: true }}
+                                cancelText="ยกเลิก"
+                                onConfirm={() => handleDelete(record)}
+                            >
+                                <Button
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                    aria-label={`ลบ${recordLabel}`}
+                                    loading={deletingId === record.id}
+                                    disabled={
+                                        actionInProgress &&
+                                        deletingId !== record.id
+                                    }
+                                />
+                            </Popconfirm>
+                        )}
+                    </Space>
                 )
             },
-        },
+        }
+
+    const columns: ColumnsType<ManagedMasterDataRecord> = [
+        ...fieldColumns,
+        ...auditColumns,
+        statusColumn,
+        actionColumn,
     ]
 
     const tableScrollWidth =

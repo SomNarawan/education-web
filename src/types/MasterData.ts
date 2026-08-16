@@ -11,6 +11,7 @@ export type MasterDataStatus = 'active' | 'inactive'
 export type ManagedMasterDataResource =
     | 'titles'
     | 'note-types'
+    | 'import-types'
     | 'relationships'
     | 'student-statuses'
     | 'admission-channels'

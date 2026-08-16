@@ -14,6 +14,8 @@ export interface MasterDataDefinition {
     searchPlaceholder: string
     displayField: string
     fields: MasterDataFieldDefinition[]
+    supportsDelete?: boolean
+    refreshAfterMutation?: boolean
 }
 
 export const masterDataDefinitions: Record<
@@ -65,6 +67,23 @@ export const masterDataDefinitions: Record<
                 label: 'ชื่อประเภท Note',
                 placeholder: 'กรอกชื่อประเภท Note',
                 maxLength: 255,
+            },
+        ],
+    },
+    'import-types': {
+        title: 'จัดการประเภทการนำเข้าข้อมูล',
+        description: 'จัดการประเภทข้อมูลที่รองรับการนำเข้าสู่ระบบ',
+        itemLabel: 'ประเภทการนำเข้า',
+        searchPlaceholder: 'ค้นหาประเภทการนำเข้า...',
+        displayField: 'type',
+        supportsDelete: true,
+        refreshAfterMutation: true,
+        fields: [
+            {
+                key: 'type',
+                label: 'ประเภทการนำเข้า',
+                placeholder: 'เช่น student',
+                maxLength: 50,
             },
         ],
     },

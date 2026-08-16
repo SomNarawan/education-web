@@ -130,6 +130,12 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
                     label: 'ประเภท Note',
                     allowedRoles: ['admin'],
                 },
+                {
+                    key: '/master-data/import-types',
+                    icon: <FileExcelOutlined />,
+                    label: 'ประเภทการนำเข้าข้อมูล',
+                    allowedRoles: ['admin'],
+                },
             ],
         },
     ]
