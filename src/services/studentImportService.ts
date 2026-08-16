@@ -1,12 +1,22 @@
 import api from '../config/axios'
+import type { AxiosProgressEvent } from 'axios'
 import type { ApiResponse } from '../types/ApiResponse'
-import type { StudentImportHistory } from '../types/StudentImport'
+import type {
+    StudentImportDownload,
+    StudentImportHistory,
+    StudentImportResult,
+} from '../types/StudentImport'
+import {
+    getStudentImportFileName,
+    parseStudentImportSummary,
+} from '../features/students/import/studentImportUtils'
 
 export async function getStudentImportHistory(): Promise<
     StudentImportHistory[]
 > {
     const response = await api.get<ApiResponse<StudentImportHistory[]>>(
-        '/student-imports',
+        '/imports',
+        { params: { type: 'student' } },
     )
 
     return response.data.data
@@ -14,29 +24,37 @@ export async function getStudentImportHistory(): Promise<
 
 export async function importStudents(
     file: File,
-): Promise<StudentImportHistory> {
+    onUploadProgress?: (progressEvent: AxiosProgressEvent) => void,
+): Promise<StudentImportResult> {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await api.post<ApiResponse<StudentImportHistory>>(
-        '/student-imports',
+    const response = await api.post<Blob>(
+        '/students/import',
         formData,
         {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            responseType: 'blob',
+            onUploadProgress,
         },
     )
 
-    return response.data.data
+    return {
+        summary: parseStudentImportSummary(response.headers),
+    }
 }
 
-export async function downloadStudentImportErrors(
+export async function downloadStudentImportResult(
     importId: number,
-): Promise<Blob> {
-    const response = await api.get<Blob>(
-        `/student-imports/${importId}/errors`,
-        { responseType: 'blob' },
-    )
+): Promise<StudentImportDownload> {
+    const response = await api.get<Blob>(`/imports/${importId}/result`, {
+        responseType: 'blob',
+    })
 
-    return response.data
+    return {
+        blob: response.data,
+        fileName: getStudentImportFileName(
+            response.headers,
+            `student_import_result_${importId}.xlsx`,
+        ),
+    }
 }
-

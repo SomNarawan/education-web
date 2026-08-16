@@ -669,6 +669,16 @@ body {
     display: block;
 }
 
+.student-import-inline-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.student-import-compact-file-name {
+    max-width: 220px;
+}
+
 .student-import-card .ant-upload-drag {
     min-height: 190px;
     border-color: #b7c6dc;
@@ -723,8 +733,20 @@ body {
     min-width: 150px;
 }
 
-.student-import-history h4.ant-typography {
+.student-import-history-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.student-import-history-heading h4.ant-typography {
     margin-top: 0;
+    margin-bottom: 0;
+}
+
+.student-import-history-error {
     margin-bottom: 20px;
 }
 
@@ -732,6 +754,11 @@ body {
     .student-import-card .ant-card-body,
     .student-import-history {
         padding: 16px;
+    }
+
+    .student-import-page .page-title-section {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .student-import-actions .ant-btn {

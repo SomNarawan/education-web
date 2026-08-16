@@ -1,14 +1,43 @@
+export type StudentImportStatus =
+    | 'processing'
+    | 'completed'
+    | 'completed_with_errors'
+    | 'failed'
+
 export interface StudentImportHistory {
     id: number
-    imported_at: string
     file_name: string
-    total_records: number
-    success_count: number
-    updated_count: number
-    skipped_count: number
-    failed_count: number
-    status: string
+    started_at: string
     imported_by: string
-    error_message: string | null
+    total_count: number
+    success_count: number
+    failed_count: number
+    status: StudentImportStatus
 }
 
+export interface StudentImportSummary {
+    importId: number
+    total: number
+    success: number
+    failed: number
+}
+
+export interface StudentImportResult {
+    summary: StudentImportSummary
+}
+
+export interface StudentImportDownload {
+    blob: Blob
+    fileName: string
+}
+
+export interface StudentImportApiErrorBody {
+    message?: string
+    errors?: Record<string, string | string[]> | null
+}
+
+export interface StudentImportError {
+    message: string
+    validationErrors: string[]
+    status?: number
+}

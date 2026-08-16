@@ -1,6 +1,9 @@
-import { Button, Input, Select, Spin, message, Typography } from 'antd'
+import { Button, Input, Select, Space, Spin, message, Typography } from 'antd'
 const { Text } = Typography
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
+import {
+    PlusOutlined,
+    SearchOutlined,
+} from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import StudentTable from './StudentTable'
@@ -14,6 +17,7 @@ import { getStudentStatuses, getSystemDepartments } from '../../../services/mast
 import { useAuth } from '../../../hooks/useAuth'
 import type { SelectOption } from '../../../types/MasterData'
 import type { StudentGroup } from '../../../types/StudentRoute'
+import StudentImportPicker from '../import/StudentImportPicker'
 
 type NoteSearchType = string | undefined
 
@@ -423,6 +427,23 @@ function StudentList() {
         }
     }
 
+    const handleImportSuccess = async () => {
+        if (isFacultyListPage) {
+            if (!hasFacultySearched) return
+
+            await loadStudents({
+                searchText: studentSearchText.trim() || undefined,
+            })
+            return
+        }
+
+        await loadStudents({
+            noteText: getNoteSearchValue(),
+            studentStatusId: selectedStudentStatusId,
+            departmentId: selectedDepartmentId,
+        })
+    }
+
     return (
         <div className="student-page">
             <Spin
@@ -436,13 +457,18 @@ function StudentList() {
                 </div>
 
                 {isAdmin && (
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={openAddModal}
-                    >
-                        เพิ่มนิสิต
-                    </Button>
+                    <Space wrap>
+                        <StudentImportPicker
+                            onSuccess={handleImportSuccess}
+                        />
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={openAddModal}
+                        >
+                            เพิ่มนิสิต
+                        </Button>
+                    </Space>
                 )}
             </div>
 
