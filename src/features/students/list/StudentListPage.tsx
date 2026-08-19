@@ -1,4 +1,4 @@
-import { Button, Input, Select, Space, Spin, message, Typography } from 'antd'
+import { Button, Input, Select, Spin, message, Typography } from 'antd'
 const { Text } = Typography
 import {
     PlusOutlined,
@@ -17,7 +17,6 @@ import { getStudentStatuses, getSystemDepartments } from '../../../services/mast
 import { useAuth } from '../../../hooks/useAuth'
 import type { SelectOption } from '../../../types/MasterData'
 import type { StudentGroup } from '../../../types/StudentRoute'
-import StudentImportPicker from '../import/StudentImportPicker'
 
 type NoteSearchType = string | undefined
 
@@ -427,23 +426,6 @@ function StudentList() {
         }
     }
 
-    const handleImportSuccess = async () => {
-        if (isFacultyListPage) {
-            if (!hasFacultySearched) return
-
-            await loadStudents({
-                searchText: studentSearchText.trim() || undefined,
-            })
-            return
-        }
-
-        await loadStudents({
-            noteText: getNoteSearchValue(),
-            studentStatusId: selectedStudentStatusId,
-            departmentId: selectedDepartmentId,
-        })
-    }
-
     return (
         <div className="student-page">
             <Spin
@@ -457,18 +439,13 @@ function StudentList() {
                 </div>
 
                 {isAdmin && (
-                    <Space wrap>
-                        <StudentImportPicker
-                            onSuccess={handleImportSuccess}
-                        />
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={openAddModal}
-                        >
-                            เพิ่มนิสิต
-                        </Button>
-                    </Space>
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={openAddModal}
+                    >
+                        เพิ่มนิสิต
+                    </Button>
                 )}
             </div>
 
