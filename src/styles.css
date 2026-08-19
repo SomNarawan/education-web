@@ -675,10 +675,6 @@ body {
     gap: 16px;
 }
 
-.student-import-compact-file-name {
-    max-width: 220px;
-}
-
 .student-import-card .ant-upload-drag {
     min-height: 190px;
     border-color: #b7c6dc;

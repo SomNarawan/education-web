@@ -28,12 +28,10 @@ const excelMimeType =
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 interface StudentImportPickerProps {
-    display?: 'button' | 'dragger'
     onSuccess: () => void | Promise<void>
 }
 
 export default function StudentImportPicker({
-    display = 'button',
     onSuccess,
 }: StudentImportPickerProps) {
     const { logout } = useAuth()
@@ -120,38 +118,6 @@ export default function StudentImportPicker({
         maxCount: 1,
         multiple: false,
         showUploadList: false,
-    }
-
-    if (display === 'button') {
-        return (
-            <Space wrap>
-                <Upload {...uploadProps}>
-                    <Button
-                        icon={<FileExcelOutlined />}
-                        disabled={importing}
-                    >
-                        เลือกไฟล์
-                    </Button>
-                </Upload>
-                {selectedFile && (
-                    <Typography.Text
-                        ellipsis={{ tooltip: selectedFile.name }}
-                        className="student-import-compact-file-name"
-                    >
-                        {selectedFile.name}
-                    </Typography.Text>
-                )}
-                <Button
-                    type="primary"
-                    icon={<UploadOutlined />}
-                    loading={importing}
-                    disabled={!selectedFile || importing}
-                    onClick={() => void handleImport()}
-                >
-                    {importing ? 'กำลังประมวลผล' : 'Import นักศึกษา'}
-                </Button>
-            </Space>
-        )
     }
 
     return (

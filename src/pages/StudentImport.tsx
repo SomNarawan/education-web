@@ -101,7 +101,6 @@ export default function StudentImport() {
 
             <Card className="student-import-card">
                 <StudentImportPicker
-                    display="dragger"
                     onSuccess={loadHistory}
                 />
             </Card>
