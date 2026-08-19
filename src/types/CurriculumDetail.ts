@@ -1,8 +1,21 @@
-export interface CurriculumDivision {
+export type CurriculumCategoryType = 'category' | 'subcategory' | 'group'
+
+export type CurriculumCourseSourceType =
+    | 'manual'
+    | 'ku_subject_category'
+    | 'non_course_requirement'
+    | 'free_elective'
+
+export interface CurriculumCategory {
     id: number
-    name_th: string
-    division_type: 'category' | 'group' | 'requirement'
-    children: CurriculumDivision[]
+    curriculum_id: number
+    category_type: CurriculumCategoryType
+    code: string | null
+    name_th: string | null
+    name_en: string | null
+    course_source_type: CurriculumCourseSourceType | null
+    status: string
+    children: CurriculumCategory[]
 }
 
 export interface CurriculumEnrollment {

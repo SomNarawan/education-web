@@ -4,13 +4,13 @@ import {
     DoubleRightOutlined,
     FolderOutlined,
 } from '@ant-design/icons'
-import { Breadcrumb, Button, Card, Tooltip, Tree } from 'antd'
+import { Breadcrumb, Button, Card, Empty, Tooltip, Tree } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo, useState } from 'react'
 import CustomTable from '../../../components/custom/CustomTable'
 import type {
+    CurriculumCategory,
     CurriculumCourseRow,
-    CurriculumDivision,
     CurriculumEnrollmentRecord,
 } from '../../../types/CurriculumDetail'
 import type {
@@ -90,58 +90,78 @@ function CourseTable({
     )
 }
 
+function getCategoryName(category: CurriculumCategory) {
+    return (
+        category.name_th?.trim() ||
+        category.name_en?.trim() ||
+        category.code?.trim() ||
+        `#${category.id}`
+    )
+}
+
 function buildCurriculumTree(
-    divisions: CurriculumDivision[],
+    categories: CurriculumCategory[],
     rows: CurriculumCourseRow[],
 ): CurriculumTreeData {
-    const rowKeysByNode = new Map<string, Set<string>>()
-    const pathByNode = new Map<string, string[]>()
-    let generalEducationKey: string | undefined
-    const getDivisionRows = (
-        division: CurriculumDivision,
+    const rowKeysByNode = new Map<number, Set<string>>()
+    const pathByNode = new Map<number, string[]>()
+    let generalEducationId: number | undefined
+    const getCategoryRows = (
+        category: CurriculumCategory,
         candidateRows: CurriculumCourseRow[],
-    ) =>
-        candidateRows.filter((row) => {
-            if (division.division_type === 'group') {
-                return row.course_group === division.name_th
+    ) => {
+        const names = [category.name_th, category.name_en].filter(
+            (name): name is string => Boolean(name?.trim()),
+        )
+
+        return candidateRows.filter((row) => {
+            if (category.course_source_type === 'non_course_requirement') {
+                return names.includes(row.course_requirement ?? '')
             }
 
-            if (division.division_type === 'requirement') {
-                return row.course_requirement === division.name_th
+            if (category.category_type === 'group') {
+                return names.includes(row.course_group ?? '')
+            }
+
+            if (category.category_type === 'subcategory') {
+                return names.includes(row.course_sub_category ?? '')
             }
 
             return (
-                getCourseCategory(row) === division.name_th ||
-                row.course_sub_category === division.name_th
+                names.includes(getCourseCategory(row)) ||
+                names.includes(row.course_sub_category ?? '')
             )
         })
-    const buildDivisionNode = (
-        division: CurriculumDivision,
+    }
+    const buildCategoryNode = (
+        category: CurriculumCategory,
         candidateRows: CurriculumCourseRow[],
-        parentKey = 'root',
         parentPath: string[] = [],
     ): CurriculumTreeData['nodes'][number] => {
-        const nodeKey = `${parentKey}-division-${division.id}`
-        const nodePath = [...parentPath, division.name_th]
-        if (division.name_th === 'หมวดวิชาศึกษาทั่วไป') {
-            generalEducationKey = nodeKey
+        const categoryName = getCategoryName(category)
+        const nodePath = [...parentPath, categoryName]
+        if (
+            category.code === 'GE' ||
+            category.name_th === 'หมวดวิชาศึกษาทั่วไป'
+        ) {
+            generalEducationId = category.id
         }
-        const divisionRows = getDivisionRows(division, candidateRows)
-        const childNodes = division.children.map((child) =>
-            buildDivisionNode(child, divisionRows, nodeKey, nodePath),
+        const categoryRows = getCategoryRows(category, candidateRows)
+        const childNodes = category.children.map((child) =>
+            buildCategoryNode(child, categoryRows, nodePath),
         )
 
         rowKeysByNode.set(
-            nodeKey,
-            new Set(divisionRows.map((row) => row.key)),
+            category.id,
+            new Set(categoryRows.map((row) => row.key)),
         )
-        pathByNode.set(nodeKey, nodePath)
+        pathByNode.set(category.id, nodePath)
 
         return {
-            key: nodeKey,
-            title: division.name_th,
+            key: category.id,
+            title: categoryName,
             icon:
-                division.division_type === 'category' ? (
+                category.category_type === 'category' ? (
                     <BookOutlined />
                 ) : (
                     <FolderOutlined />
@@ -149,37 +169,39 @@ function buildCurriculumTree(
             children: childNodes,
         }
     }
-    const nodes = divisions.map((division) =>
-        buildDivisionNode(division, rows),
+    const nodes = categories.map((category) =>
+        buildCategoryNode(category, rows),
     )
 
-    return { nodes, rowKeysByNode, pathByNode, generalEducationKey }
+    return { nodes, rowKeysByNode, pathByNode, generalEducationId }
 }
 
 export default function StudentCurriculumDetailSection({
     studentCode,
+    studyPlanId,
 }: StudentCurriculumDetailSectionProps) {
-    const { divisions, rows, loadingCategories, loadingCourses } =
-        useStudentCurriculumDetail(studentCode)
+    const { categories, rows, loadingCategories, loadingCourses } =
+        useStudentCurriculumDetail(studentCode, studyPlanId)
     const [treeSelection, setTreeSelection] = useState<TreeSelection>()
     const [isStructureCollapsed, setIsStructureCollapsed] = useState(false)
 
     const curriculumTree = useMemo(
-        () => buildCurriculumTree(divisions, rows),
-        [divisions, rows],
+        () => buildCurriculumTree(categories, rows),
+        [categories, rows],
     )
-    const selectedTreeKey =
-        treeSelection?.studentCode === studentCode
-            ? treeSelection.key
-            : curriculumTree.generalEducationKey
+    const selectedCategoryId =
+        treeSelection?.studentCode === studentCode &&
+        curriculumTree.rowKeysByNode.has(treeSelection.categoryId)
+            ? treeSelection.categoryId
+            : curriculumTree.generalEducationId
 
     const displayedRows = useMemo(() => {
-        if (!selectedTreeKey) {
+        if (!selectedCategoryId) {
             return []
         }
 
         const selectedRowKeys =
-            curriculumTree.rowKeysByNode.get(selectedTreeKey)
+            curriculumTree.rowKeysByNode.get(selectedCategoryId)
 
         if (!selectedRowKeys) {
             return []
@@ -190,9 +212,9 @@ export default function StudentCurriculumDetailSection({
                 selectedRowKeys.has(row.key) &&
                 Boolean(row.grade_letter?.trim()),
         )
-    }, [curriculumTree, rows, selectedTreeKey])
-    const selectedTreePath = selectedTreeKey
-        ? (curriculumTree.pathByNode.get(selectedTreeKey) ?? [])
+    }, [curriculumTree, rows, selectedCategoryId])
+    const selectedTreePath = selectedCategoryId
+        ? (curriculumTree.pathByNode.get(selectedCategoryId) ?? [])
         : []
 
     return (
@@ -226,25 +248,35 @@ export default function StudentCurriculumDetailSection({
                     }
                     loading={loadingCategories || loadingCourses}
                 >
-                    <Tree
-                        key={`${studentCode}-${curriculumTree.nodes.length}`}
-                        className="curriculum-structure-tree"
-                        blockNode
-                        defaultExpandAll
-                        showIcon
-                        treeData={curriculumTree.nodes}
-                        selectedKeys={selectedTreeKey ? [selectedTreeKey] : []}
-                        onSelect={(selectedKeys) =>
-                            setTreeSelection(
-                                selectedKeys.length
-                                    ? {
-                                          studentCode,
-                                          key: String(selectedKeys[0]),
-                                      }
-                                    : undefined,
-                            )
-                        }
-                    />
+                    {curriculumTree.nodes.length > 0 ? (
+                        <Tree
+                            key={`${studentCode}-${studyPlanId}-${curriculumTree.nodes.length}`}
+                            className="curriculum-structure-tree"
+                            blockNode
+                            defaultExpandAll
+                            showIcon
+                            treeData={curriculumTree.nodes}
+                            selectedKeys={
+                                selectedCategoryId
+                                    ? [selectedCategoryId]
+                                    : []
+                            }
+                            onSelect={(selectedKeys) =>
+                                setTreeSelection(
+                                    selectedKeys.length
+                                        ? {
+                                              studentCode,
+                                              categoryId: Number(
+                                                  selectedKeys[0],
+                                              ),
+                                          }
+                                        : undefined,
+                                )
+                            }
+                        />
+                    ) : (
+                        <Empty description="ไม่พบหมวดหมู่ในหลักสูตร" />
+                    )}
                 </Card>
             )}
 

@@ -1,10 +1,10 @@
 import { message } from 'antd'
 import { useEffect, useState } from 'react'
-import { getCurriculumDivisions } from '../../../services/masterDataService'
+import { getCurriculumCategories } from '../../../services/masterDataService'
 import { getStudentEnrollment } from '../../../services/studentJsonDataService'
 import type {
+    CurriculumCategory,
     CurriculumCourseRow,
-    CurriculumDivision,
     CurriculumEnrollmentRecord,
 } from '../../../types/CurriculumDetail'
 
@@ -17,27 +17,71 @@ function buildRows(
     }))
 }
 
-export function useStudentCurriculumDetail(studentCode: string) {
-    const [divisions, setDivisions] = useState<CurriculumDivision[]>([])
+function filterActiveCategories(
+    categories: CurriculumCategory[],
+): CurriculumCategory[] {
+    return categories
+        .filter((category) => category.status === 'activate')
+        .map((category) => ({
+            ...category,
+            children: filterActiveCategories(category.children),
+        }))
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error && error.message ? error.message : fallback
+}
+
+export function useStudentCurriculumDetail(
+    studentCode: string,
+    studyPlanId: number,
+) {
+    const [categories, setCategories] = useState<CurriculumCategory[]>([])
     const [rows, setRows] = useState<CurriculumCourseRow[]>([])
     const [loadingCategories, setLoadingCategories] = useState(false)
     const [loadingCourses, setLoadingCourses] = useState(false)
 
     useEffect(() => {
+        let cancelled = false
+
         const loadCategories = async () => {
             try {
                 setLoadingCategories(true)
-                setDivisions(await getCurriculumDivisions())
+                if (!studyPlanId) {
+                    throw new Error(
+                        'แผนการเรียนไม่ถูกต้องหรือยังไม่ได้เลือก',
+                    )
+                }
+
+                const data = await getCurriculumCategories(studyPlanId)
+
+                if (!cancelled) {
+                    setCategories(filterActiveCategories(data))
+                }
             } catch (error) {
+                if (cancelled) return
+
                 console.error(error)
-                message.error('โหลดโครงสร้างหลักสูตรไม่สำเร็จ')
+                message.error(
+                    getErrorMessage(
+                        error,
+                        'โหลดหมวดหมู่หลักสูตรไม่สำเร็จ',
+                    ),
+                )
+                setCategories([])
             } finally {
-                setLoadingCategories(false)
+                if (!cancelled) {
+                    setLoadingCategories(false)
+                }
             }
         }
 
         loadCategories()
-    }, [])
+
+        return () => {
+            cancelled = true
+        }
+    }, [studyPlanId])
 
     useEffect(() => {
         const loadCourses = async () => {
@@ -58,7 +102,7 @@ export function useStudentCurriculumDetail(studentCode: string) {
     }, [studentCode])
 
     return {
-        divisions,
+        categories,
         rows,
         loadingCategories,
         loadingCourses,

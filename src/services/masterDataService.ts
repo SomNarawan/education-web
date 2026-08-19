@@ -1,6 +1,7 @@
+import axios from 'axios'
 import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
-import type { CurriculumDivision } from '../types/CurriculumDetail'
+import type { CurriculumCategory } from '../types/CurriculumDetail'
 import type {
     AdmissionChannel,
     District,
@@ -191,10 +192,39 @@ export async function getSystemDepartments(): Promise<SystemDepartment[]> {
     return response.data.data
 }
 
-export async function getCurriculumDivisions(): Promise<CurriculumDivision[]> {
-    const response = await api.get<ApiResponse<CurriculumDivision[]>>(
-        '/curriculum-divisions',
-    )
+export async function getCurriculumCategories(
+    studyPlanId: number,
+): Promise<CurriculumCategory[]> {
+    try {
+        const response = await api.get<ApiResponse<CurriculumCategory[]>>(
+            '/curriculum-categories',
+            {
+                params: { study_plan_id: studyPlanId },
+            },
+        )
 
-    return response.data.data
+        if (!response.data.success) {
+            throw new Error(response.data.message)
+        }
+
+        return response.data.data
+    } catch (error) {
+        if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
+            if (error.response?.status === 422) {
+                throw new Error(
+                    'แผนการเรียนไม่ถูกต้องหรือยังไม่ได้เลือก',
+                    { cause: error },
+                )
+            }
+
+            throw new Error(
+                error.response?.data.message ||
+                    error.message ||
+                    'โหลดหมวดหมู่หลักสูตรไม่สำเร็จ',
+                { cause: error },
+            )
+        }
+
+        throw error
+    }
 }

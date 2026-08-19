@@ -3,6 +3,7 @@ import type { CurriculumCourseRow } from '../../../types/CurriculumDetail'
 
 export interface StudentCurriculumDetailSectionProps {
     studentCode: string
+    studyPlanId: number
 }
 
 export interface CourseTableProps {
@@ -12,12 +13,12 @@ export interface CourseTableProps {
 
 export interface CurriculumTreeData {
     nodes: DataNode[]
-    rowKeysByNode: Map<string, Set<string>>
-    pathByNode: Map<string, string[]>
-    generalEducationKey?: string
+    rowKeysByNode: Map<number, Set<string>>
+    pathByNode: Map<number, string[]>
+    generalEducationId?: number
 }
 
 export interface TreeSelection {
     studentCode: string
-    key: string
+    categoryId: number
 }

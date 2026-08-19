@@ -381,6 +381,7 @@ export default function StudentDetailPage() {
                             <Col xs={24}>
                                 <StudentCurriculumDetailSection
                                     studentCode={student.student_code}
+                                    studyPlanId={student.study_plan_id}
                                 />
                             </Col>
                         </Row>
