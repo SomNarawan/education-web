@@ -359,7 +359,6 @@ export default function StudentDetailPage() {
                                                     onChange={(e) => setRemark(e.target.value)}
                                                     rows={4}
                                                     maxLength={255}
-                                                    showCount
                                                 />
                                             </Col>
                                         </Row>

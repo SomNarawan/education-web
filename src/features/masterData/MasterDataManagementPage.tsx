@@ -556,7 +556,6 @@ function MasterDataManagementContent({
                             <Input
                                 placeholder={field.placeholder}
                                 maxLength={field.maxLength}
-                                showCount
                                 disabled={saving}
                             />
                         </Form.Item>

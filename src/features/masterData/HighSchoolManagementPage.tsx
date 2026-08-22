@@ -649,7 +649,6 @@ export default function HighSchoolManagementPage() {
                         <Input
                             placeholder="กรอกชื่อโรงเรียน"
                             maxLength={150}
-                            showCount
                         />
                     </Form.Item>
 

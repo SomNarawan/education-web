@@ -94,7 +94,7 @@ return (
                         },
                     ]}
                 >
-                    <Input maxLength={150} showCount />
+                    <Input maxLength={150} />
                 </Form.Item>
             </Card>
 
@@ -111,7 +111,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={13} showCount />
+                            <Input maxLength={13} />
                         </Form.Item>
                     </Col>
 
@@ -151,7 +151,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} showCount />
+                            <Input maxLength={150} />
                         </Form.Item>
                     </Col>
 
@@ -166,7 +166,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} showCount />
+                            <Input maxLength={150} />
                         </Form.Item>
                     </Col>
 
@@ -181,7 +181,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} showCount />
+                            <Input maxLength={150} />
                         </Form.Item>
                     </Col>
 
@@ -196,7 +196,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} showCount />
+                            <Input maxLength={150} />
                         </Form.Item>
                     </Col>
 
@@ -211,7 +211,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={10} showCount />
+                            <Input maxLength={10} />
                         </Form.Item>
                     </Col>
 
@@ -226,7 +226,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} showCount />
+                            <Input maxLength={150} />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -385,7 +385,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} showCount />
+                            <Input maxLength={150} />
                         </Form.Item>
                     </Col>
 
@@ -400,7 +400,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} showCount />
+                            <Input maxLength={150} />
                         </Form.Item>
                     </Col>
 
@@ -440,7 +440,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={10} showCount />
+                            <Input maxLength={10} />
                         </Form.Item>
                     </Col>
                 </Row>
