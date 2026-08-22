@@ -1,8 +1,5 @@
-import api from '../config/axios'
-import type { ApiResponse } from '../types/ApiResponse'
-import type { NoteTypeListResponse } from '../types/NoteTypeListResponse'
+import { getNoteTypes as getListOfValueNoteTypes } from './listOfValueService'
 
 export async function getNoteTypes() {
-    const response = await api.get<ApiResponse<NoteTypeListResponse[]>>('/note-types')
-    return response.data.data
+    return getListOfValueNoteTypes()
 }

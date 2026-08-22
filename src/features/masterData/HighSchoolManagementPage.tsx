@@ -7,7 +7,6 @@ import {
     InputNumber,
     Modal,
     Popconfirm,
-    Select,
     Space,
     Switch,
     Tag,
@@ -29,6 +28,8 @@ import { useAddressMasterData } from '../../hooks/useAddressMasterData'
 import type { HighSchool, HighSchoolPayload } from '../../types/MasterData'
 import { formatThaiDateTime } from '../../utils/dateFormat'
 import SchoolLocationMap from './SchoolLocationMap'
+import ListOfValueSelect from '../../components/custom/ListOfValueSelect'
+import { toListOfValueOptions } from '../../utils/listOfValue'
 
 interface HighSchoolFormValues {
     school_name: string
@@ -82,6 +83,10 @@ export default function HighSchoolManagementPage() {
         subdistrictsByDistrict,
         loadingDistrictsByProvince,
         loadingSubdistrictsByDistrict,
+        loadingProvinces,
+        provincesError,
+        districtErrorsByProvince,
+        subdistrictErrorsByDistrict,
         loadProvinces,
         loadDistricts,
         loadSubdistricts,
@@ -98,6 +103,12 @@ export default function HighSchoolManagementPage() {
     const loadingSubdistricts = districtId
         ? (loadingSubdistrictsByDistrict[districtId] ?? false)
         : false
+    const districtsError = provinceId
+        ? (districtErrorsByProvince[provinceId] ?? null)
+        : null
+    const subdistrictsError = districtId
+        ? (subdistrictErrorsByDistrict[districtId] ?? null)
+        : null
 
     const loadSchools = useCallback(async () => {
         setLoading(true)
@@ -652,15 +663,14 @@ export default function HighSchoolManagementPage() {
                             },
                         ]}
                     >
-                        <Select
+                        <ListOfValueSelect
                             showSearch
                             allowClear
                             optionFilterProp="label"
                             placeholder="เลือกจังหวัด"
-                            options={provinces.map((province) => ({
-                                label: province.province_name,
-                                value: province.id,
-                            }))}
+                            loading={loadingProvinces}
+                            error={provincesError}
+                            options={toListOfValueOptions(provinces)}
                             onChange={(value) =>
                                 void handleProvinceChange(value)
                             }
@@ -677,22 +687,15 @@ export default function HighSchoolManagementPage() {
                             },
                         ]}
                     >
-                        <Select
+                        <ListOfValueSelect
                             showSearch
                             allowClear
                             optionFilterProp="label"
                             placeholder="เลือกอำเภอ/เขต"
                             disabled={!provinceId}
                             loading={loadingDistricts}
-                            options={districts
-                                .filter(
-                                    (district) =>
-                                        district.province_id === provinceId,
-                                )
-                                .map((district) => ({
-                                    label: district.district_name,
-                                    value: district.id,
-                                }))}
+                            error={districtsError}
+                            options={toListOfValueOptions(districts)}
                             onChange={(value) =>
                                 void handleDistrictChange(value)
                             }
@@ -709,24 +712,16 @@ export default function HighSchoolManagementPage() {
                             },
                         ]}
                     >
-                        <Select
+                        <ListOfValueSelect
                             showSearch
                             allowClear
                             optionFilterProp="label"
                             placeholder="เลือกตำบล/แขวง"
                             disabled={!districtId}
                             loading={loadingSubdistricts}
+                            error={subdistrictsError}
                             options={[
-                                ...subdistricts
-                                    .filter(
-                                        (subdistrict) =>
-                                            subdistrict.district_id ===
-                                            districtId,
-                                    )
-                                    .map((subdistrict) => ({
-                                        label: subdistrict.subdistrict_name,
-                                        value: subdistrict.id,
-                                    })),
+                                ...toListOfValueOptions(subdistricts),
                                 ...(editState?.school &&
                                 !subdistricts.some(
                                     (subdistrict) =>

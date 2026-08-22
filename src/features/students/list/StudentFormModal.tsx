@@ -15,6 +15,8 @@ import type { StudentFormValues } from '../../../types/StudentFormValues'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
 import { useStudentFormOptions } from './useStudentFormOptions'
 import { renderRequiredFormMark } from '../../../components/custom/RequiredFormMark'
+import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
+import { toListOfValueOptions } from '../../../utils/listOfValue'
 
 interface StudentFormModalProps {
     open: boolean
@@ -36,8 +38,11 @@ onCancel,
 onSave,
 }: StudentFormModalProps) {
 const [form] = Form.useForm<FormValues>()
-const { options: dropdownData, loading: optionsLoading } =
-    useStudentFormOptions(open)
+const {
+    options: dropdownData,
+    loading: optionsLoading,
+    error: optionsError,
+} = useStudentFormOptions(open)
 
 useEffect(() => {
     if (!open) return
@@ -121,16 +126,16 @@ return (
                                 },
                             ]}
                         >
-                            <Select
+                            <ListOfValueSelect
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={loading}
+                                loading={optionsLoading}
+                                error={optionsError}
                                 placeholder="เลือกคำนำหน้า"
-                                options={dropdownData.titles.map((item) => ({
-                                    label: item.title_abbr_th + ' / ' + item.title_abbr_en,
-                                    value: item.id,
-                                }))}
+                                options={toListOfValueOptions(
+                                    dropdownData.titles,
+                                )}
                             />
                         </Form.Item>
                     </Col>
@@ -249,7 +254,7 @@ return (
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={loading}
+                                loading={optionsLoading}
                                 placeholder="เลือกแผนการเรียน"
                                 options={dropdownData.studyPlans.map((item) => ({
                                     label: item.name_th,
@@ -280,16 +285,14 @@ return (
                     label="อาจารย์ที่ปรึกษา"
                     name="teacher_id"
                 >
-                    <Select
+                    <ListOfValueSelect
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={loading}
+                        loading={optionsLoading}
+                        error={optionsError}
                         placeholder="เลือกอาจารย์ที่ปรึกษา"
-                        options={dropdownData.teachers.map((item) => ({
-                            label: item.full_name_th,
-                            value: item.id,
-                        }))}
+                        options={toListOfValueOptions(dropdownData.teachers)}
                     />
                 </Form.Item>
             </Card>
@@ -305,16 +308,16 @@ return (
                         },
                     ]}
                 >
-                    <Select
+                    <ListOfValueSelect
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={loading}
+                        loading={optionsLoading}
+                        error={optionsError}
                         placeholder="เลือกช่องทางรับเข้า"
-                        options={dropdownData.admissionChannels.map((item) => ({
-                            label: item.channel_name,
-                            value: item.id,
-                        }))}
+                        options={toListOfValueOptions(
+                            dropdownData.admissionChannels,
+                        )}
                     />
                 </Form.Item>
             </Card>
@@ -330,16 +333,16 @@ return (
                         },
                     ]}
                 >
-                    <Select
+                    <ListOfValueSelect
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={loading}
+                        loading={optionsLoading}
+                        error={optionsError}
                         placeholder="เลือกโรงเรียน"
-                        options={dropdownData.highSchools.map((item) => ({
-                            label: item.school_name,
-                            value: item.id,
-                        }))}
+                        options={toListOfValueOptions(
+                            dropdownData.highSchools,
+                        )}
                     />
                 </Form.Item>
             </Card>
@@ -357,16 +360,16 @@ return (
                                 },
                             ]}
                         >
-                            <Select
+                            <ListOfValueSelect
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={loading}
+                                loading={optionsLoading}
+                                error={optionsError}
                                 placeholder="เลือกคำนำหน้า"
-                                options={dropdownData.titles.map((item) => ({
-                                    label: item.title_abbr_th,
-                                    value: item.id,
-                                }))}
+                                options={toListOfValueOptions(
+                                    dropdownData.titles,
+                                )}
                             />
                         </Form.Item>
                     </Col>
@@ -412,17 +415,15 @@ return (
                                 },
                             ]}
                         >
-                            <Select
+                            <ListOfValueSelect
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={loading}
+                                loading={optionsLoading}
+                                error={optionsError}
                                 placeholder="เลือกความสัมพันธ์"
-                                options={dropdownData.guardianRelationships.map(
-                                    (item) => ({
-                                        label: item.relationship_name,
-                                        value: item.id,
-                                    }),
+                                options={toListOfValueOptions(
+                                    dropdownData.guardianRelationships,
                                 )}
                             />
                         </Form.Item>
@@ -456,16 +457,16 @@ return (
                         },
                     ]}
                 >
-                    <Select
+                    <ListOfValueSelect
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={loading}
+                        loading={optionsLoading}
+                        error={optionsError}
                         placeholder="เลือกสถานะ"
-                        options={dropdownData.studentStatuses.map((item) => ({
-                            label: item.status_name,
-                            value: item.id,
-                        }))}
+                        options={toListOfValueOptions(
+                            dropdownData.studentStatuses,
+                        )}
                     />
                 </Form.Item>
             </Card>

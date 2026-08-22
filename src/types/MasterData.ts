@@ -1,10 +1,6 @@
-export interface Title {
-    id: number
-    title_abbr_th: string
-    title_abbr_en: string
-    title_name_th: string
-    title_name_en: string
-}
+import type { ListOfValue } from './ListOfValue'
+
+export type Title = ListOfValue
 
 export type MasterDataStatus = 'active' | 'inactive'
 
@@ -28,20 +24,9 @@ export interface ManagedMasterDataRecord {
 
 export type ManagedMasterDataPayload = Record<string, string>
 
-export interface Teacher {
-    id: number
-    full_name_th: string
-}
-
-export interface StudentStatusOption {
-    id: number
-    status_name: string
-}
-
-export interface AdmissionChannel {
-    id: number
-    channel_name: string
-}
+export type Teacher = ListOfValue
+export type StudentStatusOption = ListOfValue
+export type AdmissionChannel = ListOfValue
 
 export interface HighSchool {
     id: number
@@ -68,38 +53,17 @@ export interface HighSchoolPayload {
     longitude: number
 }
 
-export interface Province {
-    id: number
-    province_name: string
-}
-
-export interface District {
-    id: number
-    province_id: number
-    district_name: string
-}
-
-export interface Subdistrict {
-    id: number
-    district_id: number
-    subdistrict_name: string
-    postal_code?: string
-}
-
-export interface GuardianRelationship {
-    id: number
-    relationship_name: string
-}
+export type Province = ListOfValue
+export type District = ListOfValue
+export type Subdistrict = ListOfValue
+export type GuardianRelationship = ListOfValue
 
 export interface StudyPlan {
     id: number
     name_th: string
 }
 
-export interface SystemDepartment {
-    id: number
-    th_name: string
-}
+export type SystemDepartment = ListOfValue
 
 export interface SelectOption<T extends string | number = number> {
     label: string

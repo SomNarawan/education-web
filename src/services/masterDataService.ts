@@ -2,23 +2,15 @@ import axios from 'axios'
 import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
 import type { CurriculumCategory } from '../types/CurriculumDetail'
+import { invalidateListOfValueCache } from './listOfValueService'
 import type {
-    AdmissionChannel,
-    District,
-    GuardianRelationship,
     HighSchool,
     HighSchoolPayload,
     ManagedMasterDataPayload,
     ManagedMasterDataRecord,
     ManagedMasterDataResource,
     MasterDataStatus,
-    Province,
-    StudentStatusOption,
     StudyPlan,
-    SystemDepartment,
-    Subdistrict,
-    Teacher,
-    Title,
 } from '../types/MasterData'
 
 export async function getManagedMasterDataList(
@@ -48,6 +40,7 @@ export async function createManagedMasterData(
         `/${resource}`,
         data,
     )
+    invalidateListOfValueCache(resource)
     return response.data.data
 }
 
@@ -60,6 +53,7 @@ export async function updateManagedMasterData(
         `/${resource}/${id}`,
         data,
     )
+    invalidateListOfValueCache(resource)
     return response.data.data
 }
 
@@ -72,6 +66,7 @@ export async function updateManagedMasterDataStatus(
         `/${resource}/${id}/status`,
         { status },
     )
+    invalidateListOfValueCache(resource)
     return response.data.data
 }
 
@@ -80,28 +75,7 @@ export async function deleteManagedMasterData(
     id: number,
 ): Promise<void> {
     await api.delete(`/${resource}/${id}`)
-}
-
-export async function getTitles(): Promise<Title[]> {
-    const response = await api.get<ApiResponse<Title[]>>('/titles')
-    return response.data.data
-}
-
-export async function getTeachers(): Promise<Teacher[]> {
-    const response = await api.get<ApiResponse<Teacher[]>>('/teachers')
-    return response.data.data
-}
-
-export async function getStudentStatuses(): Promise<StudentStatusOption[]> {
-    const response =
-        await api.get<ApiResponse<StudentStatusOption[]>>('/student-statuses')
-    return response.data.data
-}
-
-export async function getAdmissionChannels(): Promise<AdmissionChannel[]> {
-    const response =
-        await api.get<ApiResponse<AdmissionChannel[]>>('/admission-channels')
-    return response.data.data
+    invalidateListOfValueCache(resource)
 }
 
 export async function getHighSchools(): Promise<HighSchool[]> {
@@ -129,6 +103,7 @@ export async function createHighSchool(
         '/high-schools',
         data,
     )
+    invalidateListOfValueCache('high-schools')
     return response.data.data
 }
 
@@ -140,6 +115,7 @@ export async function updateHighSchool(
         `/high-schools/${id}`,
         data,
     )
+    invalidateListOfValueCache('high-schools')
     return response.data.data
 }
 
@@ -151,44 +127,7 @@ export async function updateHighSchoolStatus(
         `/high-schools/${id}/status`,
         { status },
     )
-    return response.data.data
-}
-
-export async function getProvinces(): Promise<Province[]> {
-    const response = await api.get<ApiResponse<Province[]>>('/provinces')
-    return response.data.data
-}
-
-export async function getDistricts(provinceId: number): Promise<District[]> {
-    const response = await api.get<ApiResponse<District[]>>('/districts', {
-        params: { province_id: provinceId },
-    })
-    return response.data.data
-}
-
-export async function getSubdistricts(
-    districtId: number,
-): Promise<Subdistrict[]> {
-    const response = await api.get<ApiResponse<Subdistrict[]>>(
-        '/subdistricts',
-        {
-            params: { district_id: districtId },
-        },
-    )
-    return response.data.data
-}
-
-export async function getGuardianRelationships(): Promise<
-    GuardianRelationship[]
-> {
-    const response =
-        await api.get<ApiResponse<GuardianRelationship[]>>('/relationships')
-    return response.data.data
-}
-
-export async function getSystemDepartments(): Promise<SystemDepartment[]> {
-    const response =
-        await api.get<ApiResponse<SystemDepartment[]>>('/system-departments')
+    invalidateListOfValueCache('high-schools')
     return response.data.data
 }
 

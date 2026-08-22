@@ -2,7 +2,6 @@ import {
     Button,
     Card,
     Col,
-    Select,
     Row,
     Skeleton,
     message,
@@ -14,7 +13,7 @@ import { useParams } from 'react-router-dom'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
 import { getStudentDetail } from '../../../services/studentService'
 import { createNote } from '../../../services/noteService'
-import { getNoteTypes } from '../../../services/noteTypeService'
+import { getNoteTypes } from '../../../services/listOfValueService'
 import NoteHistoryModal from '../notes/NoteHistoryModal'
 import StudentSemesterPerformanceSection from '../performance/StudentSemesterPerformanceSection'
 import StudentCourseGroupPerformanceSection from '../performance/StudentCourseGroupPerformanceSection'
@@ -23,7 +22,9 @@ import StudentCurriculumDetailSection from '../curriculum/StudentCurriculumDetai
 import { useStudentPerformance } from '../performance/useStudentPerformance'
 import { useStudentNotes } from '../notes/useStudentNotes'
 import DetailItem from '../../../components/custom/DetailItem'
-import type { NoteTypeListResponse } from '../../../types/NoteTypeListResponse'
+import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
+import type { ListOfValue } from '../../../types/ListOfValue'
+import { toListOfValueOptions } from '../../../utils/listOfValue'
 
 export default function StudentDetailPage() {
     const { id } = useParams()
@@ -33,7 +34,9 @@ export default function StudentDetailPage() {
 
     const [noteTypeId, setNoteTypeId] = useState<number>()
     const [remark, setRemark] = useState('')
-    const [noteTypes, setNoteTypes] = useState<NoteTypeListResponse[]>([])
+    const [noteTypes, setNoteTypes] = useState<ListOfValue[]>([])
+    const [noteTypesLoading, setNoteTypesLoading] = useState(false)
+    const [noteTypesError, setNoteTypesError] = useState<string | null>(null)
     const [savingNote, setSavingNote] = useState(false)
 
     const [noteHistoryOpen, setNoteHistoryOpen] = useState(false)
@@ -54,15 +57,21 @@ export default function StudentDetailPage() {
         (noteType) => noteType.id === noteTypeId
     )
 
-    const isOtherNoteType = selectedNoteType?.note === 'อื่นๆ'
+    const isOtherNoteType = selectedNoteType?.name_th === 'อื่นๆ'
 
     const loadNoteTypes = useCallback(async () => {
         try {
+            setNoteTypesLoading(true)
+            setNoteTypesError(null)
             const data = await getNoteTypes()
             setNoteTypes(data)
         } catch (error) {
             console.error(error)
-            message.error('โหลดประเภท Note ไม่สำเร็จ')
+            const errorMessage = 'โหลดประเภท Note ไม่สำเร็จ'
+            setNoteTypesError(errorMessage)
+            message.error(errorMessage)
+        } finally {
+            setNoteTypesLoading(false)
         }
     }, [])
 
@@ -313,18 +322,19 @@ export default function StudentDetailPage() {
                                 >
                                     <Row gutter={12} align="middle">
                                         <Col flex="320px">
-                                            <Select
+                                            <ListOfValueSelect
                                                 placeholder="เลือก Note"
                                                 value={noteTypeId}
+                                                loading={noteTypesLoading}
+                                                error={noteTypesError}
                                                 onChange={(value) => {
                                                     setNoteTypeId(value)
                                                     setRemark('')
                                                 }}
                                                 style={{ width: '100%' }}
-                                                options={noteTypes.map((item) => ({
-                                                    value: item.id,
-                                                    label: item.note,
-                                                }))}
+                                                options={toListOfValueOptions(
+                                                    noteTypes,
+                                                )}
                                             />
                                         </Col>
 

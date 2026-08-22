@@ -3,29 +3,22 @@ import { useEffect, useState } from 'react'
 import {
     getAdmissionChannels,
     getGuardianRelationships,
-    getHighSchools,
+    getHighSchoolOptions,
     getStudentStatuses,
-    getStudyPlans,
     getTeachers,
     getTitles,
-} from '../../../services/masterDataService'
-import type {
-    AdmissionChannel,
-    GuardianRelationship,
-    HighSchool,
-    StudentStatusOption,
-    StudyPlan,
-    Teacher,
-    Title,
-} from '../../../types/MasterData'
+} from '../../../services/listOfValueService'
+import { getStudyPlans } from '../../../services/masterDataService'
+import type { ListOfValue } from '../../../types/ListOfValue'
+import type { StudyPlan } from '../../../types/MasterData'
 
 interface StudentFormOptions {
-    titles: Title[]
-    teachers: Teacher[]
-    studentStatuses: StudentStatusOption[]
-    admissionChannels: AdmissionChannel[]
-    highSchools: HighSchool[]
-    guardianRelationships: GuardianRelationship[]
+    titles: ListOfValue[]
+    teachers: ListOfValue[]
+    studentStatuses: ListOfValue[]
+    admissionChannels: ListOfValue[]
+    highSchools: ListOfValue[]
+    guardianRelationships: ListOfValue[]
     studyPlans: StudyPlan[]
 }
 
@@ -42,6 +35,7 @@ const emptyOptions: StudentFormOptions = {
 export function useStudentFormOptions(enabled: boolean) {
     const [options, setOptions] = useState<StudentFormOptions>(emptyOptions)
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         if (!enabled) {
@@ -53,6 +47,7 @@ export function useStudentFormOptions(enabled: boolean) {
         const loadOptions = async () => {
             try {
                 setLoading(true)
+                setError(null)
                 const [
                     titles,
                     teachers,
@@ -66,7 +61,7 @@ export function useStudentFormOptions(enabled: boolean) {
                     getTeachers(),
                     getStudentStatuses(),
                     getAdmissionChannels(),
-                    getHighSchools(),
+                    getHighSchoolOptions(),
                     getGuardianRelationships(),
                     getStudyPlans(),
                 ])
@@ -85,7 +80,10 @@ export function useStudentFormOptions(enabled: boolean) {
             } catch (error) {
                 if (!cancelled) {
                     console.error(error)
-                    message.error('โหลดข้อมูลตัวเลือกสำหรับแบบฟอร์มไม่สำเร็จ')
+                    const errorMessage =
+                        'โหลดข้อมูลตัวเลือกสำหรับแบบฟอร์มไม่สำเร็จ'
+                    setError(errorMessage)
+                    message.error(errorMessage)
                 }
             } finally {
                 if (!cancelled) {
@@ -101,5 +99,5 @@ export function useStudentFormOptions(enabled: boolean) {
         }
     }, [enabled])
 
-    return { options, loading }
+    return { options, loading, error }
 }

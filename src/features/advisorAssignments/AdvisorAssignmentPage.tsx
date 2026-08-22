@@ -7,7 +7,7 @@ import {
     SaveOutlined,
     SearchOutlined,
 } from '@ant-design/icons'
-import { Button, Card, Input, Select, Table, Typography, message } from 'antd'
+import { Button, Card, Input, Table, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import type { DragEvent } from 'react'
@@ -16,10 +16,14 @@ import {
     getStudyingStudentsWithoutAdvisor,
     updateStudentAdvisors,
 } from '../../services/advisorAssignmentService'
-import { getSystemDepartments } from '../../services/masterDataService'
-import { getTeachersByDepartment } from '../../services/teacherService'
+import {
+    getSystemDepartments,
+    getTeachers,
+} from '../../services/listOfValueService'
 import type { AdvisorAssignmentStudent } from '../../types/AdvisorAssignment'
 import type { SelectOption } from '../../types/MasterData'
+import ListOfValueSelect from '../../components/custom/ListOfValueSelect'
+import { toListOfValueOptions } from '../../utils/listOfValue'
 
 const { Text } = Typography
 
@@ -93,6 +97,10 @@ export default function AdvisorAssignmentPage() {
     const [assignedSearchText, setAssignedSearchText] = useState('')
     const [loadingDepartments, setLoadingDepartments] = useState(false)
     const [loadingTeachers, setLoadingTeachers] = useState(false)
+    const [departmentsError, setDepartmentsError] = useState<string | null>(
+        null,
+    )
+    const [teachersError, setTeachersError] = useState<string | null>(null)
     const [loadingUnassigned, setLoadingUnassigned] = useState(false)
     const [loadingAssigned, setLoadingAssigned] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -105,19 +113,17 @@ export default function AdvisorAssignmentPage() {
         const loadDepartments = async () => {
             try {
                 setLoadingDepartments(true)
+                setDepartmentsError(null)
                 const departments = await getSystemDepartments()
 
                 if (!active) return
 
-                setDepartmentOptions(
-                    departments.map((department) => ({
-                        label: department.th_name,
-                        value: department.id,
-                    })),
-                )
+                setDepartmentOptions(toListOfValueOptions(departments))
             } catch (error) {
                 console.error(error)
-                message.error('โหลดข้อมูลภาควิชาไม่สำเร็จ')
+                const errorMessage = 'โหลดข้อมูลภาควิชาไม่สำเร็จ'
+                setDepartmentsError(errorMessage)
+                message.error(errorMessage)
             } finally {
                 if (active) setLoadingDepartments(false)
             }
@@ -138,20 +144,17 @@ export default function AdvisorAssignmentPage() {
         const loadDepartmentTeachers = async () => {
             try {
                 setLoadingTeachers(true)
-                const teachers =
-                    await getTeachersByDepartment(selectedDepartmentId)
+                setTeachersError(null)
+                const teachers = await getTeachers(selectedDepartmentId)
 
                 if (!active) return
 
-                setTeacherOptions(
-                    teachers.map((teacher) => ({
-                        label: teacher.full_name_th,
-                        value: teacher.id,
-                    })),
-                )
+                setTeacherOptions(toListOfValueOptions(teachers))
             } catch (error) {
                 console.error(error)
-                message.error('โหลดข้อมูลอาจารย์ไม่สำเร็จ')
+                const errorMessage = 'โหลดข้อมูลอาจารย์ไม่สำเร็จ'
+                setTeachersError(errorMessage)
+                message.error(errorMessage)
             } finally {
                 if (active) setLoadingTeachers(false)
             }
@@ -315,6 +318,7 @@ export default function AdvisorAssignmentPage() {
         setSelectedDepartmentId(departmentId)
         setSelectedTeacherId(undefined)
         setTeacherOptions([])
+        setTeachersError(null)
         setUnassignedStudents([])
         setAssignedStudents([])
         setInitialAssignedStudentIds([])
@@ -338,6 +342,7 @@ export default function AdvisorAssignmentPage() {
         setSelectedDepartmentId(undefined)
         setSelectedTeacherId(undefined)
         setTeacherOptions([])
+        setTeachersError(null)
         setUnassignedStudents([])
         setAssignedStudents([])
         setInitialAssignedStudentIds([])
@@ -444,12 +449,13 @@ export default function AdvisorAssignmentPage() {
                 <div className="advisor-search-fields">
                     <label>
                         <Text strong>ภาควิชา</Text>
-                        <Select<number>
+                        <ListOfValueSelect
                             aria-label="ภาควิชา"
                             placeholder="เลือกภาควิชา"
                             options={departmentOptions}
                             value={selectedDepartmentId}
                             loading={loadingDepartments}
+                            error={departmentsError}
                             showSearch
                             optionFilterProp="label"
                             onChange={handleDepartmentChange}
@@ -457,7 +463,7 @@ export default function AdvisorAssignmentPage() {
                     </label>
                     <label>
                         <Text strong>อาจารย์ที่ปรึกษา</Text>
-                        <Select<number>
+                        <ListOfValueSelect
                             aria-label="อาจารย์ที่ปรึกษา"
                             placeholder={
                                 selectedDepartmentId
@@ -467,6 +473,7 @@ export default function AdvisorAssignmentPage() {
                             options={teacherOptions}
                             value={selectedTeacherId}
                             loading={loadingTeachers}
+                            error={teachersError}
                             disabled={!selectedDepartmentId}
                             showSearch
                             optionFilterProp="label"

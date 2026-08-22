@@ -1,4 +1,4 @@
-import { Button, Input, Select, Spin, message, Typography } from 'antd'
+import { Button, Input, Spin, message, Typography } from 'antd'
 const { Text } = Typography
 import {
     PlusOutlined,
@@ -12,15 +12,21 @@ import type { StudentFormValues } from '../../../types/StudentFormValues'
 import type { StudentListResponse } from '../../../types/StudentListResponse'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
 import { getStudentDetail, getStudentsByPage, createStudent, updateStudent, deleteStudent } from '../../../services/studentService'
-import { getNoteTypes } from '../../../services/noteTypeService'
-import { getStudentStatuses, getSystemDepartments } from '../../../services/masterDataService'
+import {
+    getNoteTypes,
+    getStudentStatuses,
+    getSystemDepartments,
+} from '../../../services/listOfValueService'
 import { useAuth } from '../../../hooks/useAuth'
 import type { SelectOption } from '../../../types/MasterData'
 import type { StudentGroup } from '../../../types/StudentRoute'
+import type { ListOfValue } from '../../../types/ListOfValue'
+import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
+import { toListOfValueOptions } from '../../../utils/listOfValue'
 
-type NoteSearchType = string | undefined
+type NoteSearchType = number | undefined
 
-const OTHER_NOTE_VALUE = 'อื่นๆ'
+const OTHER_NOTE_NAME = 'อื่นๆ'
 const DEFAULT_STUDENT_STATUS = 1
 
 export default function StudentListPage() {
@@ -47,6 +53,11 @@ function StudentList() {
     const [loading, setLoading] = useState(false)
     const [dropdownLoading, setDropdownLoading] = useState(false)
     const [searchDropdownLoading, setSearchDropdownLoading] = useState(false)
+    const [searchDropdownError, setSearchDropdownError] = useState<
+        string | null
+    >(null)
+    const [noteTypesLoading, setNoteTypesLoading] = useState(false)
+    const [noteTypesError, setNoteTypesError] = useState<string | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingStudent, setEditingStudent] =
         useState<StudentDetailResponse | null>(null)
@@ -54,9 +65,7 @@ function StudentList() {
     const [noteSearchType, setNoteSearchType] =
         useState<NoteSearchType>(undefined)
     const [noteSearchText, setNoteSearchText] = useState('')
-    const [noteTypeOptions, setNoteTypeOptions] = useState<
-        { label: string; value: string }[]
-    >([])
+    const [noteTypes, setNoteTypes] = useState<ListOfValue[]>([])
 
     const [departmentOptions, setDepartmentOptions] = useState<SelectOption[]>(
         [],
@@ -73,6 +82,10 @@ function StudentList() {
 
     const [studentSearchText, setStudentSearchText] = useState('')
     const [hasFacultySearched, setHasFacultySearched] = useState(false)
+    const selectedNoteType = noteTypes.find(
+        (noteType) => noteType.id === noteSearchType,
+    )
+    const isOtherNoteType = selectedNoteType?.name_th === OTHER_NOTE_NAME
 
     const currentStudentGroup: StudentGroup = studentGroup ?? 'department'
 
@@ -195,17 +208,17 @@ function StudentList() {
 
         const loadNoteTypes = async () => {
             try {
+                setNoteTypesLoading(true)
+                setNoteTypesError(null)
                 const data = await getNoteTypes()
-
-                setNoteTypeOptions([
-                    ...data.map((item) => ({
-                        label: item.note,
-                        value: item.note,
-                    })),
-                ])
+                setNoteTypes(data)
             } catch (error) {
                 console.error(error)
-                message.error('โหลดประเภท Note ไม่สำเร็จ')
+                const errorMessage = 'โหลดประเภท Note ไม่สำเร็จ'
+                setNoteTypesError(errorMessage)
+                message.error(errorMessage)
+            } finally {
+                setNoteTypesLoading(false)
             }
         }
 
@@ -220,6 +233,7 @@ function StudentList() {
         const loadSearchDropdowns = async () => {
             try {
                 setSearchDropdownLoading(true)
+                setSearchDropdownError(null)
 
                 const [studentStatuses, systemDepartments] =
                     await Promise.all([
@@ -230,24 +244,20 @@ function StudentList() {
                     ])
 
                 setStudentStatusOptions(
-                    studentStatuses.map((item) => ({
-                        label: item.status_name ?? '-',
-                        value: item.id,
-                    })),
+                    toListOfValueOptions(studentStatuses),
                 )
                 setSelectedStudentStatusId(DEFAULT_STUDENT_STATUS)
 
                 if (isAdmin && isDepartmentListPage) {
                     setDepartmentOptions(
-                        systemDepartments.map((item) => ({
-                            label: item.th_name ?? '-',
-                            value: item.id,
-                        })),
+                        toListOfValueOptions(systemDepartments),
                     )
                 }
             } catch (error) {
                 console.error(error)
-                message.error('โหลดข้อมูลตัวเลือกค้นหาไม่สำเร็จ')
+                const errorMessage = 'โหลดข้อมูลตัวเลือกค้นหาไม่สำเร็จ'
+                setSearchDropdownError(errorMessage)
+                message.error(errorMessage)
             } finally {
                 setSearchDropdownLoading(false)
             }
@@ -261,11 +271,11 @@ function StudentList() {
             return undefined
         }
 
-        if (noteSearchType === OTHER_NOTE_VALUE) {
+        if (isOtherNoteType) {
             return noteSearchText.trim() || undefined
         }
 
-        return noteSearchType
+        return selectedNoteType?.name_th
     }
 
     const handleSearchNote = () => {
@@ -545,10 +555,11 @@ function StudentList() {
                         {isAdmin && isDepartmentListPage && (
                             <div>
                                 <Text strong>ภาควิชา</Text>
-                                <Select
+                                <ListOfValueSelect
                                     allowClear
                                     showSearch
                                     loading={searchDropdownLoading}
+                                    error={searchDropdownError}
                                     placeholder="เลือกภาควิชา"
                                     value={selectedDepartmentId}
                                     options={departmentOptions}
@@ -561,10 +572,11 @@ function StudentList() {
 
                         <div>
                             <Text strong>สถานะนิสิต</Text>
-                            <Select
+                            <ListOfValueSelect
                                 allowClear
                                 showSearch
                                 loading={searchDropdownLoading}
+                                error={searchDropdownError}
                                 placeholder="เลือกสถานะนิสิต"
                                 value={selectedStudentStatusId}
                                 options={studentStatusOptions}
@@ -576,24 +588,33 @@ function StudentList() {
 
                         <div>
                             <Text strong>ประเภท Note</Text>
-                            <Select
+                            <ListOfValueSelect
                                 allowClear
                                 showSearch
+                                loading={noteTypesLoading}
+                                error={noteTypesError}
                                 placeholder="เลือกประเภท Note"
                                 value={noteSearchType}
-                                options={noteTypeOptions}
+                                options={toListOfValueOptions(noteTypes)}
                                 style={{ width: '100%', marginTop: 6 }}
                                 onChange={(value) => {
                                     setNoteSearchType(value)
 
-                                    if (value !== OTHER_NOTE_VALUE) {
+                                    const isOther = noteTypes.some(
+                                        (noteType) =>
+                                            noteType.id === value &&
+                                            noteType.name_th ===
+                                                OTHER_NOTE_NAME,
+                                    )
+
+                                    if (!isOther) {
                                         setNoteSearchText('')
                                     }
                                 }}
                             />
                         </div>
 
-                        {noteSearchType === OTHER_NOTE_VALUE && (
+                        {isOtherNoteType && (
                             <div>
                                 <Text strong>รายละเอียด Note</Text>
                                 <Input

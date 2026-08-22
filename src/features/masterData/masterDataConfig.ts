@@ -76,7 +76,6 @@ export const masterDataDefinitions: Record<
         itemLabel: 'ประเภทการนำเข้า',
         searchPlaceholder: 'ค้นหาประเภทการนำเข้า...',
         displayField: 'type',
-        supportsDelete: true,
         refreshAfterMutation: true,
         fields: [
             {
