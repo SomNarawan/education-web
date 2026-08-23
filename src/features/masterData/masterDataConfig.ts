@@ -14,6 +14,8 @@ export interface MasterDataDefinition {
     searchPlaceholder: string
     displayField: string
     fields: MasterDataFieldDefinition[]
+    listFieldKeys?: string[]
+    supportsDetail?: boolean
     supportsDelete?: boolean
     refreshAfterMutation?: boolean
 }
@@ -27,7 +29,9 @@ export const masterDataDefinitions: Record<
         description: 'จัดการคำนำหน้าชื่อภาษาไทยและภาษาอังกฤษ',
         itemLabel: 'คำนำหน้าชื่อ',
         searchPlaceholder: 'ค้นหาคำนำหน้าชื่อ...',
-        displayField: 'title_name_th',
+        displayField: 'title_abbr_th',
+        listFieldKeys: ['title_abbr_th'],
+        supportsDetail: true,
         fields: [
             {
                 key: 'title_abbr_th',

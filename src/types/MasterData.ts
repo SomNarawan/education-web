@@ -28,9 +28,17 @@ export type Teacher = ListOfValue
 export type StudentStatusOption = ListOfValue
 export type AdmissionChannel = ListOfValue
 
-export interface HighSchool {
+export interface HighSchoolListItem {
     id: number
     school_name: string
+    status: 'active' | 'inactive'
+    created_at: string
+    created_by: string
+    updated_at: string
+    updated_by: string
+}
+
+export interface HighSchool extends HighSchoolListItem {
     province_id: number
     province_name: string
     district_id: number
@@ -39,11 +47,6 @@ export interface HighSchool {
     subdistrict_name: string
     latitude: string
     longitude: string
-    status: 'active' | 'inactive'
-    created_at: string
-    created_by: string
-    updated_at: string
-    updated_by: string
 }
 
 export interface HighSchoolPayload {

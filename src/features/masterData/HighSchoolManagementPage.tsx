@@ -25,7 +25,11 @@ import {
     updateHighSchoolStatus,
 } from '../../services/masterDataService'
 import { useAddressMasterData } from '../../hooks/useAddressMasterData'
-import type { HighSchool, HighSchoolPayload } from '../../types/MasterData'
+import type {
+    HighSchool,
+    HighSchoolListItem,
+    HighSchoolPayload,
+} from '../../types/MasterData'
 import { formatThaiDateTime } from '../../utils/dateFormat'
 import SchoolLocationMap from './SchoolLocationMap'
 import ListOfValueSelect from '../../components/custom/ListOfValueSelect'
@@ -69,7 +73,7 @@ export default function HighSchoolManagementPage() {
     const longitude = Form.useWatch('longitude', form)
     const provinceId = Form.useWatch('province_id', form)
     const districtId = Form.useWatch('district_id', form)
-    const [schools, setSchools] = useState<HighSchool[]>([])
+    const [schools, setSchools] = useState<HighSchoolListItem[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null)
@@ -138,7 +142,7 @@ export default function HighSchoolManagementPage() {
         setEditState({ mode: 'create' })
     }
 
-    function replaceSchool(updatedSchool: HighSchool) {
+    function replaceSchool(updatedSchool: HighSchoolListItem) {
         setSchools((current) =>
             current.map((school) =>
                 school.id === updatedSchool.id ? updatedSchool : school,
@@ -166,7 +170,7 @@ export default function HighSchoolManagementPage() {
         }
     }
 
-    async function handleOpenView(school: HighSchool) {
+    async function handleOpenView(school: HighSchoolListItem) {
         setLoadingViewId(school.id)
 
         try {
@@ -189,7 +193,7 @@ export default function HighSchoolManagementPage() {
         }
     }
 
-    async function handleOpenEdit(school: HighSchool) {
+    async function handleOpenEdit(school: HighSchoolListItem) {
         setLoadingEditId(school.id)
 
         try {
@@ -316,7 +320,7 @@ export default function HighSchoolManagementPage() {
         }
     }
 
-    async function handleStatusChange(school: HighSchool) {
+    async function handleStatusChange(school: HighSchoolListItem) {
         const nextStatus =
             school.status === 'active' ? 'inactive' : 'active'
         setUpdatingStatusId(school.id)
@@ -362,7 +366,7 @@ export default function HighSchoolManagementPage() {
         return `${school.subdistrict_name} ${school.district_name} ${school.province_name}`
     }
 
-    const columns: ColumnsType<HighSchool> = [
+    const columns: ColumnsType<HighSchoolListItem> = [
         {
             title: 'ชื่อโรงเรียน',
             dataIndex: 'school_name',
@@ -409,7 +413,7 @@ export default function HighSchoolManagementPage() {
                 { text: 'ไม่ใช้งาน', value: 'inactive' },
             ],
             onFilter: (value, record) => record.status === value,
-            render: (status: HighSchool['status'], school) => {
+            render: (status: HighSchoolListItem['status'], school) => {
                 const isUpdating = updatingStatusId === school.id
                 const nextStatusLabel =
                     status === 'active' ? 'ปิดใช้งาน' : 'เปิดใช้งาน'
@@ -505,7 +509,7 @@ export default function HighSchoolManagementPage() {
                     </div>
                 </div>
 
-                <CustomTable<HighSchool>
+                <CustomTable<HighSchoolListItem>
                     rowKey="id"
                     showNo={false}
                     columns={columns}

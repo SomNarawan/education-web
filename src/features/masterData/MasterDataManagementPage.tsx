@@ -1,10 +1,12 @@
 import {
     DeleteOutlined,
     EditOutlined,
+    EyeOutlined,
     PlusOutlined,
 } from '@ant-design/icons'
 import {
     Button,
+    Descriptions,
     Empty,
     Form,
     Input,
@@ -12,6 +14,7 @@ import {
     Popconfirm,
     Space,
     Switch,
+    Tag,
     message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -74,10 +77,13 @@ function MasterDataManagementContent({
     const [records, setRecords] = useState<ManagedMasterDataRecord[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [loadingViewId, setLoadingViewId] = useState<number | null>(null)
     const [loadingEditId, setLoadingEditId] = useState<number | null>(null)
     const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null)
     const [deletingId, setDeletingId] = useState<number | null>(null)
     const [editState, setEditState] = useState<EditState | null>(null)
+    const [viewingRecord, setViewingRecord] =
+        useState<ManagedMasterDataRecord | null>(null)
 
     const showRequestError = useCallback(
         (error: unknown, fallbackMessage: string) => {
@@ -165,6 +171,24 @@ function MasterDataManagementContent({
             )
         } finally {
             setLoadingEditId(null)
+        }
+    }
+
+    async function handleOpenDetail(record: ManagedMasterDataRecord) {
+        setLoadingViewId(record.id)
+
+        try {
+            const detail = await getManagedMasterData(resource, record.id)
+            replaceRecord(detail)
+            setViewingRecord(detail)
+        } catch (error) {
+            console.error(`Unable to load ${resource} detail`, error)
+            showRequestError(
+                error,
+                `ไม่สามารถโหลดรายละเอียด${definition.itemLabel}ได้`,
+            )
+        } finally {
+            setLoadingViewId(null)
         }
     }
 
@@ -308,12 +332,18 @@ function MasterDataManagementContent({
         }
     }
 
+    const tableFields = definition.listFieldKeys
+        ? definition.fields.filter((field) =>
+              definition.listFieldKeys?.includes(field.key),
+          )
+        : definition.fields
+
     const fieldColumns: ColumnsType<ManagedMasterDataRecord> = [
-        ...definition.fields.map((field) => ({
+        ...tableFields.map((field) => ({
             title: field.label,
             dataIndex: field.key,
             key: field.key,
-            width: definition.fields.length > 1 ? 180 : 260,
+            width: tableFields.length > 1 ? 180 : 260,
             ellipsis: true,
         })),
     ]
@@ -327,7 +357,7 @@ function MasterDataManagementContent({
             ellipsis: true,
         },
         {
-            title: 'วันที่สร้าง',
+            title: resource === 'titles' ? 'วันเวลาสร้าง' : 'วันที่สร้าง',
             dataIndex: 'created_at',
             key: 'created_at',
             width: 175,
@@ -401,7 +431,10 @@ function MasterDataManagementContent({
     const actionColumn: ColumnsType<ManagedMasterDataRecord>[number] = {
             title: 'การจัดการ',
             key: 'actions',
-            width: definition.supportsDelete ? 120 : 80,
+            width:
+                80 +
+                (definition.supportsDetail ? 40 : 0) +
+                (definition.supportsDelete ? 40 : 0),
             align: 'center',
             fixed: 'right',
             render: (_, record) => {
@@ -411,12 +444,29 @@ function MasterDataManagementContent({
                     definition.itemLabel,
                 )
                 const actionInProgress =
+                    loadingViewId !== null ||
                     loadingEditId !== null ||
                     updatingStatusId !== null ||
                     deletingId !== null
 
                 return (
                     <Space size="small">
+                        {definition.supportsDetail && (
+                            <Button
+                                icon={<EyeOutlined />}
+                                aria-label={`ดูรายละเอียด${recordLabel}`}
+                                loading={loadingViewId === record.id}
+                                disabled={
+                                    actionInProgress &&
+                                    loadingViewId !== record.id
+                                }
+                                style={{
+                                    borderColor: '#1677ff',
+                                    color: '#1677ff',
+                                }}
+                                onClick={() => void handleOpenDetail(record)}
+                            />
+                        )}
                         <Button
                             icon={<EditOutlined />}
                             aria-label={`แก้ไข${recordLabel}`}
@@ -465,7 +515,7 @@ function MasterDataManagementContent({
     ]
 
     const tableScrollWidth =
-        definition.fields.length > 1 ? 1450 : 1050
+        tableFields.length > 1 ? 1250 : 1050
 
     return (
         <div className="student-page master-data-page">
@@ -512,6 +562,72 @@ function MasterDataManagementContent({
                     scroll={{ x: tableScrollWidth }}
                 />
             </div>
+
+            <Modal
+                title={`รายละเอียด${definition.itemLabel}`}
+                open={Boolean(viewingRecord)}
+                width={680}
+                footer={
+                    <Button onClick={() => setViewingRecord(null)}>ปิด</Button>
+                }
+                onCancel={() => setViewingRecord(null)}
+            >
+                {viewingRecord && (
+                    <Descriptions
+                        bordered
+                        size="small"
+                        column={1}
+                        items={[
+                            ...definition.fields.map((field) => ({
+                                key: field.key,
+                                label: field.label,
+                                children: viewingRecord[field.key] || '-',
+                            })),
+                            {
+                                key: 'created_by',
+                                label: 'สร้างโดย',
+                                children: viewingRecord.created_by || '-',
+                            },
+                            {
+                                key: 'created_at',
+                                label: 'วันเวลาสร้าง',
+                                children: formatThaiDateTime(
+                                    viewingRecord.created_at,
+                                ),
+                            },
+                            {
+                                key: 'updated_by',
+                                label: 'แก้ไขโดย',
+                                children: viewingRecord.updated_by || '-',
+                            },
+                            {
+                                key: 'updated_at',
+                                label: 'วันที่แก้ไข',
+                                children: formatThaiDateTime(
+                                    viewingRecord.updated_at,
+                                ),
+                            },
+                            {
+                                key: 'status',
+                                label: 'สถานะ',
+                                children: (
+                                    <Tag
+                                        color={
+                                            viewingRecord.status === 'active'
+                                                ? 'success'
+                                                : undefined
+                                        }
+                                    >
+                                        {viewingRecord.status === 'active'
+                                            ? 'ใช้งาน'
+                                            : 'ไม่ใช้งาน'}
+                                    </Tag>
+                                ),
+                            },
+                        ]}
+                    />
+                )}
+            </Modal>
 
             <Modal
                 title={

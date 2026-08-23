@@ -5,6 +5,7 @@ import type { CurriculumCategory } from '../types/CurriculumDetail'
 import { invalidateListOfValueCache } from './listOfValueService'
 import type {
     HighSchool,
+    HighSchoolListItem,
     HighSchoolPayload,
     ManagedMasterDataPayload,
     ManagedMasterDataRecord,
@@ -78,9 +79,9 @@ export async function deleteManagedMasterData(
     invalidateListOfValueCache(resource)
 }
 
-export async function getHighSchools(): Promise<HighSchool[]> {
+export async function getHighSchools(): Promise<HighSchoolListItem[]> {
     const response =
-        await api.get<ApiResponse<HighSchool[]>>('/high-schools')
+        await api.get<ApiResponse<HighSchoolListItem[]>>('/high-schools')
     return response.data.data
 }
 
