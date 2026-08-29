@@ -12,13 +12,13 @@ import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import type { DragEvent } from 'react'
 import {
-    getStudyingStudentsByTeacher,
+    getStudyingStudentsBySystemTeacher,
     getStudyingStudentsWithoutAdvisor,
     updateStudentAdvisors,
 } from '../../services/advisorAssignmentService'
 import {
     getSystemDepartments,
-    getTeachers,
+    getSystemTeachers,
 } from '../../services/listOfValueService'
 import type { AdvisorAssignmentStudent } from '../../types/AdvisorAssignment'
 import type { SelectOption } from '../../types/MasterData'
@@ -71,11 +71,13 @@ function filterStudents(
 
 export default function AdvisorAssignmentPage() {
     const [departmentOptions, setDepartmentOptions] = useState<SelectOption[]>([])
-    const [teacherOptions, setTeacherOptions] = useState<SelectOption[]>([])
+    const [systemTeacherOptions, setSystemTeacherOptions] = useState<
+        SelectOption[]
+    >([])
     const [selectedDepartmentId, setSelectedDepartmentId] = useState<
         number | undefined
     >()
-    const [selectedTeacherId, setSelectedTeacherId] = useState<
+    const [selectedSystemTeacherId, setSelectedSystemTeacherId] = useState<
         number | undefined
     >()
     const [unassignedStudents, setUnassignedStudents] = useState<
@@ -96,11 +98,13 @@ export default function AdvisorAssignmentPage() {
     const [unassignedSearchText, setUnassignedSearchText] = useState('')
     const [assignedSearchText, setAssignedSearchText] = useState('')
     const [loadingDepartments, setLoadingDepartments] = useState(false)
-    const [loadingTeachers, setLoadingTeachers] = useState(false)
+    const [loadingSystemTeachers, setLoadingSystemTeachers] = useState(false)
     const [departmentsError, setDepartmentsError] = useState<string | null>(
         null,
     )
-    const [teachersError, setTeachersError] = useState<string | null>(null)
+    const [systemTeachersError, setSystemTeachersError] = useState<
+        string | null
+    >(null)
     const [loadingUnassigned, setLoadingUnassigned] = useState(false)
     const [loadingAssigned, setLoadingAssigned] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -141,26 +145,27 @@ export default function AdvisorAssignmentPage() {
 
         let active = true
 
-        const loadDepartmentTeachers = async () => {
+        const loadDepartmentSystemTeachers = async () => {
             try {
-                setLoadingTeachers(true)
-                setTeachersError(null)
-                const teachers = await getTeachers(selectedDepartmentId)
+                setLoadingSystemTeachers(true)
+                setSystemTeachersError(null)
+                const systemTeachers =
+                    await getSystemTeachers(selectedDepartmentId)
 
                 if (!active) return
 
-                setTeacherOptions(toListOfValueOptions(teachers))
+                setSystemTeacherOptions(toListOfValueOptions(systemTeachers))
             } catch (error) {
                 console.error(error)
                 const errorMessage = 'โหลดข้อมูลอาจารย์ไม่สำเร็จ'
-                setTeachersError(errorMessage)
+                setSystemTeachersError(errorMessage)
                 message.error(errorMessage)
             } finally {
-                if (active) setLoadingTeachers(false)
+                if (active) setLoadingSystemTeachers(false)
             }
         }
 
-        loadDepartmentTeachers()
+        loadDepartmentSystemTeachers()
 
         return () => {
             active = false
@@ -168,7 +173,7 @@ export default function AdvisorAssignmentPage() {
     }, [selectedDepartmentId])
 
     useEffect(() => {
-        if (!selectedDepartmentId || !selectedTeacherId) return
+        if (!selectedDepartmentId || !selectedSystemTeacherId) return
 
         let active = true
 
@@ -179,7 +184,9 @@ export default function AdvisorAssignmentPage() {
 
                 const [unassigned, assigned] = await Promise.all([
                     getStudyingStudentsWithoutAdvisor(selectedDepartmentId),
-                    getStudyingStudentsByTeacher(selectedTeacherId),
+                    getStudyingStudentsBySystemTeacher(
+                        selectedSystemTeacherId,
+                    ),
                 ])
 
                 if (!active) return
@@ -207,7 +214,7 @@ export default function AdvisorAssignmentPage() {
         return () => {
             active = false
         }
-    }, [reloadKey, selectedDepartmentId, selectedTeacherId])
+    }, [reloadKey, selectedDepartmentId, selectedSystemTeacherId])
 
     const filteredUnassignedStudents = useMemo(
         () => filterStudents(unassignedStudents, unassignedSearchText),
@@ -242,7 +249,7 @@ export default function AdvisorAssignmentPage() {
         sourceSide: StudentListSide,
         studentCodes: string[],
     ) => {
-        if (!selectedTeacherId || studentCodes.length === 0) return
+        if (!selectedSystemTeacherId || studentCodes.length === 0) return
 
         const codeSet = new Set(studentCodes)
 
@@ -316,9 +323,9 @@ export default function AdvisorAssignmentPage() {
 
     const handleDepartmentChange = (departmentId: number) => {
         setSelectedDepartmentId(departmentId)
-        setSelectedTeacherId(undefined)
-        setTeacherOptions([])
-        setTeachersError(null)
+        setSelectedSystemTeacherId(undefined)
+        setSystemTeacherOptions([])
+        setSystemTeachersError(null)
         setUnassignedStudents([])
         setAssignedStudents([])
         setInitialAssignedStudentIds([])
@@ -330,8 +337,8 @@ export default function AdvisorAssignmentPage() {
         setLoadingAssigned(false)
     }
 
-    const handleTeacherChange = (teacherId: number) => {
-        setSelectedTeacherId(teacherId)
+    const handleSystemTeacherChange = (systemTeacherId: number) => {
+        setSelectedSystemTeacherId(systemTeacherId)
         setAssignedStudents([])
         setInitialAssignedStudentIds([])
         setSelectedUnassignedCodes([])
@@ -340,9 +347,9 @@ export default function AdvisorAssignmentPage() {
 
     const handleClearSearch = () => {
         setSelectedDepartmentId(undefined)
-        setSelectedTeacherId(undefined)
-        setTeacherOptions([])
-        setTeachersError(null)
+        setSelectedSystemTeacherId(undefined)
+        setSystemTeacherOptions([])
+        setSystemTeachersError(null)
         setUnassignedStudents([])
         setAssignedStudents([])
         setInitialAssignedStudentIds([])
@@ -350,14 +357,14 @@ export default function AdvisorAssignmentPage() {
         setSelectedAssignedCodes([])
         setUnassignedSearchText('')
         setAssignedSearchText('')
-        setLoadingTeachers(false)
+        setLoadingSystemTeachers(false)
         setLoadingUnassigned(false)
         setLoadingAssigned(false)
         setDragPayload(null)
     }
 
     const handleSave = async () => {
-        if (!selectedTeacherId || !hasAssignmentChanges) return
+        if (!selectedSystemTeacherId || !hasAssignmentChanges) return
 
         if (
             assignmentChanges.currentAssignedIds.length !==
@@ -370,7 +377,7 @@ export default function AdvisorAssignmentPage() {
         try {
             setSaving(true)
             const result = await updateStudentAdvisors(
-                selectedTeacherId,
+                selectedSystemTeacherId,
                 assignmentChanges.assignStudentIds,
                 assignmentChanges.removeStudentIds,
             )
@@ -412,7 +419,7 @@ export default function AdvisorAssignmentPage() {
             size="small"
             scroll={{ x: 440, y: 585 }}
             locale={{
-                emptyText: !selectedTeacherId
+                emptyText: !selectedSystemTeacherId
                     ? 'กรุณาเลือกอาจารย์ที่ปรึกษา'
                     : 'ไม่พบข้อมูลนิสิต',
             }}
@@ -428,7 +435,7 @@ export default function AdvisorAssignmentPage() {
                 onChange: (keys) => setSelectedCodes(keys.map(String)),
             }}
             onRow={(student) => ({
-                draggable: Boolean(selectedTeacherId),
+                draggable: Boolean(selectedSystemTeacherId),
                 onDragStart: (event) =>
                     handleDragStart(event, side, student.student_code),
                 onDragEnd: () => setDragPayload(null),
@@ -470,14 +477,14 @@ export default function AdvisorAssignmentPage() {
                                     ? 'เลือกอาจารย์ที่ปรึกษา'
                                     : 'กรุณาเลือกภาควิชาก่อน'
                             }
-                            options={teacherOptions}
-                            value={selectedTeacherId}
-                            loading={loadingTeachers}
-                            error={teachersError}
+                            options={systemTeacherOptions}
+                            value={selectedSystemTeacherId}
+                            loading={loadingSystemTeachers}
+                            error={systemTeachersError}
                             disabled={!selectedDepartmentId}
                             showSearch
                             optionFilterProp="label"
-                            onChange={handleTeacherChange}
+                            onChange={handleSystemTeacherChange}
                         />
                     </label>
                     <div className="advisor-search-actions">
@@ -485,7 +492,7 @@ export default function AdvisorAssignmentPage() {
                             icon={<ClearOutlined />}
                             disabled={
                                 !selectedDepartmentId &&
-                                !selectedTeacherId &&
+                                !selectedSystemTeacherId &&
                                 unassignedStudents.length === 0 &&
                                 assignedStudents.length === 0
                             }
@@ -540,7 +547,7 @@ export default function AdvisorAssignmentPage() {
                             type="primary"
                             icon={<ArrowRightOutlined />}
                             disabled={
-                                !selectedTeacherId ||
+                                !selectedSystemTeacherId ||
                                 selectedUnassignedCodes.length === 0
                             }
                             onClick={() =>
@@ -555,7 +562,7 @@ export default function AdvisorAssignmentPage() {
                         <Button
                             icon={<DoubleRightOutlined />}
                             disabled={
-                                !selectedTeacherId ||
+                                !selectedSystemTeacherId ||
                                 unassignedStudents.length === 0
                             }
                             onClick={() =>
@@ -572,7 +579,7 @@ export default function AdvisorAssignmentPage() {
                         <Button
                             icon={<ArrowLeftOutlined />}
                             disabled={
-                                !selectedTeacherId ||
+                                !selectedSystemTeacherId ||
                                 selectedAssignedCodes.length === 0
                             }
                             onClick={() =>
@@ -584,7 +591,8 @@ export default function AdvisorAssignmentPage() {
                         <Button
                             icon={<DoubleLeftOutlined />}
                             disabled={
-                                !selectedTeacherId || assignedStudents.length === 0
+                                !selectedSystemTeacherId ||
+                                assignedStudents.length === 0
                             }
                             onClick={() =>
                                 moveStudents(
@@ -604,7 +612,7 @@ export default function AdvisorAssignmentPage() {
                             <div>
                                 <h2>นิสิตในที่ปรึกษา</h2>
                                 <Text type="secondary">
-                                    {selectedTeacherId
+                                    {selectedSystemTeacherId
                                         ? `พบ ${assignedStudents.length} คน`
                                         : 'กรุณาเลือกอาจารย์ที่ปรึกษา'}
                                 </Text>
@@ -615,7 +623,7 @@ export default function AdvisorAssignmentPage() {
                             prefix={<SearchOutlined />}
                             placeholder="ค้นหารหัสนิสิต หรือชื่อ-สกุล"
                             value={assignedSearchText}
-                            disabled={!selectedTeacherId}
+                            disabled={!selectedSystemTeacherId}
                             onChange={(event) =>
                                 setAssignedSearchText(event.target.value)
                             }
@@ -643,7 +651,7 @@ export default function AdvisorAssignmentPage() {
                         icon={<SaveOutlined />}
                         loading={saving}
                         disabled={
-                            !selectedTeacherId ||
+                            !selectedSystemTeacherId ||
                             !hasAssignmentChanges ||
                             loadingUnassigned ||
                             loadingAssigned

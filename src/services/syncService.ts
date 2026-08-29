@@ -6,13 +6,13 @@ import type {
     SyncResult,
     SyncedSystemDepartment,
     SyncedSystemFaculty,
-    SyncedTeacher,
+    SyncedSystemTeacher,
 } from '../types/SyncData'
 
 const syncEndpoints: Record<SyncDataType, string> = {
     faculty: '/system-faculties/sync',
     department: '/system-departments/sync',
-    teacher: '/teachers/sync',
+    systemTeacher: '/system-teachers/sync',
 }
 
 export async function syncMasterData(
@@ -51,10 +51,15 @@ export async function getSyncedSystemDepartments(): Promise<
     return response.data.data
 }
 
-export async function getSyncedTeachers(): Promise<SyncedTeacher[]> {
-    const response = await api.get<ApiResponse<SyncedTeacher[]>>('/teachers', {
-        params: { include_deleted: true },
-    })
+export async function getSyncedSystemTeachers(): Promise<
+    SyncedSystemTeacher[]
+> {
+    const response = await api.get<ApiResponse<SyncedSystemTeacher[]>>(
+        '/system-teachers',
+        {
+            params: { include_deleted: true },
+        },
+    )
 
     return response.data.data
 }

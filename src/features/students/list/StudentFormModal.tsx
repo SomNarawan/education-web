@@ -292,7 +292,9 @@ return (
                         loading={optionsLoading}
                         error={optionsError}
                         placeholder="เลือกอาจารย์ที่ปรึกษา"
-                        options={toListOfValueOptions(dropdownData.teachers)}
+                        options={toListOfValueOptions(
+                            dropdownData.systemTeachers,
+                        )}
                     />
                 </Form.Item>
             </Card>

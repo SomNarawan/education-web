@@ -6,7 +6,7 @@ import type { StudentFormValues } from '../types/StudentFormValues'
 
 export async function getStudentsByPage(
     studentGroup?: string,
-    teacherId?: number,
+    systemTeacherId?: number,
     departmentId?: number,
     facultyId?: number,
     searchNote?: string,
@@ -15,8 +15,8 @@ export async function getStudentsByPage(
 ): Promise<StudentListResponse[]> {
     const params: Record<string, string | number> = {}
 
-    if (studentGroup === 'advisor' && teacherId) {
-        params.teacher_id = teacherId
+    if (studentGroup === 'advisor' && systemTeacherId) {
+        params.teacher_id = systemTeacherId
     }
 
     if (studentGroup === 'department' && departmentId) {

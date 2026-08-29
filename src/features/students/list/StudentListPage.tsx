@@ -42,7 +42,7 @@ function StudentList() {
 
     const { currentRole, user } = useAuth()
 
-    const authTeacherId = user?.teacherId ?? undefined
+    const authSystemTeacherId = user?.systemTeacherId ?? undefined
     const authDepartmentId = user?.departmentId ?? undefined
     const authFacultyId = user?.facultyId ?? undefined
 
@@ -120,9 +120,9 @@ function StudentList() {
             try {
                 setLoading(true)
 
-                const teacherIdForSearch =
+                const systemTeacherIdForSearch =
                     currentStudentGroup === 'advisor'
-                        ? authTeacherId
+                        ? authSystemTeacherId
                         : undefined
 
                 const departmentId = isDepartmentListPage
@@ -137,7 +137,8 @@ function StudentList() {
                         : undefined
 
                 if (
-                    (currentStudentGroup === 'advisor' && !teacherIdForSearch) ||
+                    (currentStudentGroup === 'advisor' &&
+                        !systemTeacherIdForSearch) ||
                     (currentStudentGroup === 'department' &&
                         isTeacher &&
                         !departmentId) ||
@@ -154,7 +155,7 @@ function StudentList() {
 
                 const data = await getStudentsByPage(
                     currentStudentGroup,
-                    teacherIdForSearch,
+                    systemTeacherIdForSearch,
                     departmentId,
                     facultyId,
                     noteText,
@@ -173,7 +174,7 @@ function StudentList() {
         [
             currentStudentGroup,
             authFacultyId,
-            authTeacherId,
+            authSystemTeacherId,
             authDepartmentId,
             isDepartmentListPage,
             isTeacher,

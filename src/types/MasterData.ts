@@ -24,7 +24,7 @@ export interface ManagedMasterDataRecord {
 
 export type ManagedMasterDataPayload = Record<string, string>
 
-export type Teacher = ListOfValue
+export type SystemTeacher = ListOfValue
 export type StudentStatusOption = ListOfValue
 export type AdmissionChannel = ListOfValue
 

@@ -5,7 +5,7 @@ import {
     getGuardianRelationships,
     getHighSchoolOptions,
     getStudentStatuses,
-    getTeachers,
+    getSystemTeachers,
     getTitles,
 } from '../../../services/listOfValueService'
 import { getStudyPlans } from '../../../services/masterDataService'
@@ -14,7 +14,7 @@ import type { StudyPlan } from '../../../types/MasterData'
 
 interface StudentFormOptions {
     titles: ListOfValue[]
-    teachers: ListOfValue[]
+    systemTeachers: ListOfValue[]
     studentStatuses: ListOfValue[]
     admissionChannels: ListOfValue[]
     highSchools: ListOfValue[]
@@ -24,7 +24,7 @@ interface StudentFormOptions {
 
 const emptyOptions: StudentFormOptions = {
     titles: [],
-    teachers: [],
+    systemTeachers: [],
     studentStatuses: [],
     admissionChannels: [],
     highSchools: [],
@@ -50,7 +50,7 @@ export function useStudentFormOptions(enabled: boolean) {
                 setError(null)
                 const [
                     titles,
-                    teachers,
+                    systemTeachers,
                     studentStatuses,
                     admissionChannels,
                     highSchools,
@@ -58,7 +58,7 @@ export function useStudentFormOptions(enabled: boolean) {
                     studyPlans,
                 ] = await Promise.all([
                     getTitles(),
-                    getTeachers(),
+                    getSystemTeachers(),
                     getStudentStatuses(),
                     getAdmissionChannels(),
                     getHighSchoolOptions(),
@@ -69,7 +69,7 @@ export function useStudentFormOptions(enabled: boolean) {
                 if (!cancelled) {
                     setOptions({
                         titles,
-                        teachers,
+                        systemTeachers,
                         studentStatuses,
                         admissionChannels,
                         highSchools,

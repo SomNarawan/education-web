@@ -11,7 +11,7 @@ import CustomTable from '../components/custom/CustomTable'
 import {
     getSyncedSystemDepartments,
     getSyncedSystemFaculties,
-    getSyncedTeachers,
+    getSyncedSystemTeachers,
     getSyncHistory,
     syncMasterData,
 } from '../services/syncService'
@@ -25,14 +25,14 @@ import type {
     SyncType,
     SyncedSystemDepartment,
     SyncedSystemFaculty,
-    SyncedTeacher,
+    SyncedSystemTeacher,
 } from '../types/SyncData'
 import { formatThaiDateTime } from '../utils/dateFormat'
 
 const syncOptions: { label: string; value: SyncDataType }[] = [
     { label: 'คณะ', value: 'faculty' },
     { label: 'ภาควิชา', value: 'department' },
-    { label: 'อาจารย์ที่ปรึกษา', value: 'teacher' },
+    { label: 'อาจารย์ที่ปรึกษา', value: 'systemTeacher' },
 ]
 
 const initialRecords: SyncTableRecord[] = syncOptions.map((option) => ({
@@ -73,7 +73,7 @@ interface SyncDetailTableRecord {
 const syncTypeByDataType: Record<SyncDataType, SyncType> = {
     faculty: 1,
     department: 2,
-    teacher: 3,
+    systemTeacher: 3,
 }
 
 function getSyncStatus(status: string | null): SyncStatus {
@@ -182,7 +182,7 @@ const detailColumnsByType: Record<
         },
         ...auditDetailColumns,
     ],
-    teacher: [
+    systemTeacher: [
         { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
         {
             title: 'Nontri ID',
@@ -237,17 +237,17 @@ function mapDepartmentDetails(
     }))
 }
 
-function mapTeacherDetails(
-    teachers: SyncedTeacher[],
+function mapSystemTeacherDetails(
+    systemTeachers: SyncedSystemTeacher[],
 ): SyncDetailTableRecord[] {
-    return teachers.map((teacher) => ({
-        id: teacher.id,
-        nontriId: teacher.nontri_id,
-        fullNameTh: teacher.full_name_th,
-        departmentId: teacher.department_id,
-        deletedAt: teacher.deleted_at,
-        createdAt: teacher.created_at,
-        updatedAt: teacher.updated_at,
+    return systemTeachers.map((systemTeacher) => ({
+        id: systemTeacher.id,
+        nontriId: systemTeacher.nontri_id,
+        fullNameTh: systemTeacher.full_name_th,
+        departmentId: systemTeacher.department_id,
+        deletedAt: systemTeacher.deleted_at,
+        createdAt: systemTeacher.created_at,
+        updatedAt: systemTeacher.updated_at,
     }))
 }
 
@@ -259,8 +259,8 @@ async function loadSyncDetails(
             return mapFacultyDetails(await getSyncedSystemFaculties())
         case 'department':
             return mapDepartmentDetails(await getSyncedSystemDepartments())
-        case 'teacher':
-            return mapTeacherDetails(await getSyncedTeachers())
+        case 'systemTeacher':
+            return mapSystemTeacherDetails(await getSyncedSystemTeachers())
     }
 }
 

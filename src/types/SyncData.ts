@@ -1,4 +1,4 @@
-export type SyncDataType = 'faculty' | 'department' | 'teacher'
+export type SyncDataType = 'faculty' | 'department' | 'systemTeacher'
 
 export type SyncType = 1 | 2 | 3
 
@@ -49,7 +49,7 @@ export interface SyncedSystemDepartment extends SyncedDataBase {
     system_faculty_id: number
 }
 
-export interface SyncedTeacher extends SyncedDataBase {
+export interface SyncedSystemTeacher extends SyncedDataBase {
     nontri_id: string
     full_name_th: string
     department_id: number

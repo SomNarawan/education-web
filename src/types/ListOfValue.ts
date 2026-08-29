@@ -9,7 +9,7 @@ export type ListOfValueType =
     | 'provinces'
     | 'districts'
     | 'subdistricts'
-    | 'teachers'
+    | 'system-teachers'
     | 'system-departments'
     | 'system-faculties'
 

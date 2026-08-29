@@ -18,13 +18,13 @@ export async function getStudyingStudentsWithoutAdvisor(
     return response.data.data
 }
 
-export async function getStudyingStudentsByTeacher(
-    teacherId: number,
+export async function getStudyingStudentsBySystemTeacher(
+    systemTeacherId: number,
 ): Promise<AdvisorAssignmentStudent[]> {
     const response = await api.get<ApiResponse<AdvisorAssignmentStudent[]>>(
         '/students/studying',
         {
-            params: { teacher_id: teacherId },
+            params: { teacher_id: systemTeacherId },
         },
     )
 
@@ -32,14 +32,14 @@ export async function getStudyingStudentsByTeacher(
 }
 
 export async function updateStudentAdvisors(
-    teacherId: number,
+    systemTeacherId: number,
     assignStudentIds: number[],
     removeStudentIds: number[],
 ): Promise<AdvisorUpdateResult> {
     const response = await api.patch<ApiResponse<AdvisorUpdateResult>>(
         '/students/advisor',
         {
-            teacher_id: teacherId,
+            teacher_id: systemTeacherId,
             assign_student_ids: assignStudentIds,
             remove_student_ids: removeStudentIds,
         },
