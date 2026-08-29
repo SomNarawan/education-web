@@ -15,6 +15,9 @@ const StudentDetail = lazy(
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const MockLogin = lazy(() => import('./pages/MockLogin'))
 const SyncData = lazy(() => import('./pages/SyncData'))
+const SystemMasterDataDetail = lazy(
+    () => import('./pages/SystemMasterDataDetail'),
+)
 const StudentImport = lazy(() => import('./pages/StudentImport'))
 const AdvisorAssignment = lazy(
     () => import('./features/advisorAssignments/AdvisorAssignmentPage'),
@@ -114,6 +117,15 @@ export default function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <SyncData />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="sync/details/:dataType"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <SystemMasterDataDetail />
                                 </ProtectedRoute>
                             }
                         />

@@ -15,13 +15,11 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import CustomTable from '../components/custom/CustomTable'
 import { useAuth } from '../hooks/useAuth'
 import {
-    getSyncedSystemDepartments,
-    getSyncedSystemFaculties,
-    getSyncedSystemTeachers,
     getSyncHistory,
     syncMasterData,
 } from '../services/syncService'
@@ -34,9 +32,6 @@ import type {
     SyncStatus,
     SyncTableRecord,
     SyncType,
-    SyncedSystemDepartment,
-    SyncedSystemFaculty,
-    SyncedSystemTeacher,
 } from '../types/SyncData'
 import { formatThaiDateTime } from '../utils/dateFormat'
 
@@ -65,21 +60,6 @@ interface ApiErrorResponse {
 interface SyncHistoryError {
     message: string
     unauthorized: boolean
-}
-
-interface SyncDetailTableRecord {
-    id: number
-    thName?: string
-    enName?: string
-    thShortName?: string
-    enShortName?: string
-    systemFacultyId?: number
-    nontriId?: string
-    fullNameTh?: string
-    departmentId?: number
-    deletedAt: string | null
-    createdAt: string
-    updatedAt: string
 }
 
 const syncTypeByDataType: Record<SyncDataType, SyncType> = {
@@ -151,178 +131,6 @@ function getSyncHistoryError(error: unknown): SyncHistoryError {
     return {
         message: responseMessage ?? 'โหลดสถานะ Sync ล่าสุดไม่สำเร็จ',
         unauthorized: false,
-    }
-}
-
-const auditDetailColumns: ColumnsType<SyncDetailTableRecord> = [
-    {
-        title: 'ลบเมื่อ',
-        dataIndex: 'deletedAt',
-        key: 'deletedAt',
-        width: 160,
-        render: (value: string | null) => formatSyncDate(value) ?? '-',
-    },
-    {
-        title: 'สร้างเมื่อ',
-        dataIndex: 'createdAt',
-        key: 'createdAt',
-        width: 160,
-        render: (value: string) => formatSyncDate(value) ?? '-',
-    },
-    {
-        title: 'แก้ไขเมื่อ',
-        dataIndex: 'updatedAt',
-        key: 'updatedAt',
-        width: 160,
-        render: (value: string) => formatSyncDate(value) ?? '-',
-    },
-]
-
-const detailColumnsByType: Record<
-    SyncDataType,
-    ColumnsType<SyncDetailTableRecord>
-> = {
-    faculty: [
-        { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
-        {
-            title: 'ชื่อคณะ (ไทย)',
-            dataIndex: 'thName',
-            key: 'thName',
-            width: 220,
-        },
-        {
-            title: 'ชื่อคณะ (อังกฤษ)',
-            dataIndex: 'enName',
-            key: 'enName',
-            width: 260,
-        },
-        {
-            title: 'ชื่อย่อ (ไทย)',
-            dataIndex: 'thShortName',
-            key: 'thShortName',
-            width: 120,
-        },
-        {
-            title: 'ชื่อย่อ (อังกฤษ)',
-            dataIndex: 'enShortName',
-            key: 'enShortName',
-            width: 130,
-        },
-        ...auditDetailColumns,
-    ],
-    department: [
-        { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
-        {
-            title: 'ชื่อภาควิชา (ไทย)',
-            dataIndex: 'thName',
-            key: 'thName',
-            width: 240,
-        },
-        {
-            title: 'ชื่อภาควิชา (อังกฤษ)',
-            dataIndex: 'enName',
-            key: 'enName',
-            width: 280,
-        },
-        {
-            title: 'ชื่อย่อ (ไทย)',
-            dataIndex: 'thShortName',
-            key: 'thShortName',
-            width: 120,
-        },
-        {
-            title: 'ชื่อย่อ (อังกฤษ)',
-            dataIndex: 'enShortName',
-            key: 'enShortName',
-            width: 130,
-        },
-        {
-            title: 'รหัสคณะ',
-            dataIndex: 'systemFacultyId',
-            key: 'systemFacultyId',
-            width: 110,
-        },
-        ...auditDetailColumns,
-    ],
-    systemTeacher: [
-        { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
-        {
-            title: 'Nontri ID',
-            dataIndex: 'nontriId',
-            key: 'nontriId',
-            width: 140,
-        },
-        {
-            title: 'ชื่ออาจารย์',
-            dataIndex: 'fullNameTh',
-            key: 'fullNameTh',
-            width: 220,
-        },
-        {
-            title: 'รหัสภาควิชา',
-            dataIndex: 'departmentId',
-            key: 'departmentId',
-            width: 130,
-        },
-        ...auditDetailColumns,
-    ],
-}
-
-function mapFacultyDetails(
-    faculties: SyncedSystemFaculty[],
-): SyncDetailTableRecord[] {
-    return faculties.map((faculty) => ({
-        id: faculty.id,
-        thName: faculty.th_name,
-        enName: faculty.en_name,
-        thShortName: faculty.th_short_name,
-        enShortName: faculty.en_short_name,
-        deletedAt: faculty.deleted_at,
-        createdAt: faculty.created_at,
-        updatedAt: faculty.updated_at,
-    }))
-}
-
-function mapDepartmentDetails(
-    departments: SyncedSystemDepartment[],
-): SyncDetailTableRecord[] {
-    return departments.map((department) => ({
-        id: department.id,
-        thName: department.th_name,
-        enName: department.en_name,
-        thShortName: department.th_short_name,
-        enShortName: department.en_short_name,
-        systemFacultyId: department.system_faculty_id,
-        deletedAt: department.deleted_at,
-        createdAt: department.created_at,
-        updatedAt: department.updated_at,
-    }))
-}
-
-function mapSystemTeacherDetails(
-    systemTeachers: SyncedSystemTeacher[],
-): SyncDetailTableRecord[] {
-    return systemTeachers.map((systemTeacher) => ({
-        id: systemTeacher.id,
-        nontriId: systemTeacher.nontri_id,
-        fullNameTh: systemTeacher.full_name_th,
-        departmentId: systemTeacher.department_id,
-        deletedAt: systemTeacher.deleted_at,
-        createdAt: systemTeacher.created_at,
-        updatedAt: systemTeacher.updated_at,
-    }))
-}
-
-async function loadSyncDetails(
-    dataType: SyncDataType,
-): Promise<SyncDetailTableRecord[]> {
-    switch (dataType) {
-        case 'faculty':
-            return mapFacultyDetails(await getSyncedSystemFaculties())
-        case 'department':
-            return mapDepartmentDetails(await getSyncedSystemDepartments())
-        case 'systemTeacher':
-            return mapSystemTeacherDetails(await getSyncedSystemTeachers())
     }
 }
 
@@ -461,17 +269,13 @@ function createResultColumns(
 
 export default function SyncData() {
     const { logout } = useAuth()
+    const navigate = useNavigate()
     const [syncingType, setSyncingType] = useState<SyncDataType | null>(null)
-    const [detailRecord, setDetailRecord] =
-        useState<SyncTableRecord | null>(null)
-    const [detailData, setDetailData] = useState<SyncDetailTableRecord[]>([])
-    const [detailLoading, setDetailLoading] = useState(false)
     const [errorRecord, setErrorRecord] =
         useState<SyncTableRecord | null>(null)
     const [records, setRecords] = useState<SyncTableRecord[]>([])
     const [historyLoading, setHistoryLoading] = useState(true)
     const [historyError, setHistoryError] = useState<string | null>(null)
-    const detailRequestId = useRef(0)
 
     const loadSyncHistory = useCallback(async (
         showError = true,
@@ -558,38 +362,6 @@ export default function SyncData() {
         }
     }
 
-    const handleViewDetail = async (record: SyncTableRecord) => {
-        const requestId = detailRequestId.current + 1
-        detailRequestId.current = requestId
-        setDetailRecord(record)
-        setDetailData([])
-        setDetailLoading(true)
-
-        try {
-            const data = await loadSyncDetails(record.key)
-
-            if (detailRequestId.current === requestId) {
-                setDetailData(data)
-            }
-        } catch (error) {
-            console.error(error)
-            if (detailRequestId.current === requestId) {
-                message.error('โหลดรายละเอียดข้อมูลไม่สำเร็จ')
-            }
-        } finally {
-            if (detailRequestId.current === requestId) {
-                setDetailLoading(false)
-            }
-        }
-    }
-
-    const handleCloseDetail = () => {
-        detailRequestId.current += 1
-        setDetailRecord(null)
-        setDetailData([])
-        setDetailLoading(false)
-    }
-
     const columns: ColumnsType<SyncTableRecord> = [
         ...createResultColumns(setErrorRecord),
         {
@@ -622,7 +394,9 @@ export default function SyncData() {
                             borderColor: '#1677ff',
                             color: '#1677ff',
                         }}
-                        onClick={() => void handleViewDetail(record)}
+                        onClick={() =>
+                            navigate(`/sync/details/${record.key}`)
+                        }
                     />
                 </Space>
             ),
@@ -665,33 +439,6 @@ export default function SyncData() {
                     locale={{ emptyText: 'ไม่พบข้อมูลสถานะ Sync' }}
                 />
             </div>
-
-            <Modal
-                open={detailRecord !== null}
-                title={`ข้อมูล${detailRecord?.label ?? ''}`}
-                width={900}
-                footer={null}
-                destroyOnHidden
-                onCancel={handleCloseDetail}
-            >
-                <CustomTable<SyncDetailTableRecord>
-                    columns={
-                        detailRecord
-                            ? detailColumnsByType[detailRecord.key]
-                            : []
-                    }
-                    dataSource={detailData}
-                    loading={detailLoading}
-                    rowKey={'id'}
-                    showNo={false}
-                    searchPlaceholder="ค้นหาข้อมูล..."
-                    pagination={false}
-                    scroll={{ x: 'max-content' }}
-                    locale={{
-                        emptyText: 'ไม่พบข้อมูลที่ Sync',
-                    }}
-                />
-            </Modal>
 
             <Modal
                 open={errorRecord !== null}

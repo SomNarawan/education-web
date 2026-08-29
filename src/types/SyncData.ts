@@ -38,11 +38,16 @@ export interface SyncHistoryRecord {
     updated_by: string | null
 }
 
+export type SystemMasterDataStatus = 'active' | 'inactive'
+
 interface SyncedDataBase {
     id: number
-    deleted_at: string | null
-    created_at: string
-    updated_at: string
+    created_at: string | null
+    created_by: string | null
+    updated_at: string | null
+    updated_by: string | null
+    status: SystemMasterDataStatus
+    sync_id: number | null
 }
 
 export interface SyncedSystemFaculty extends SyncedDataBase {
@@ -58,6 +63,7 @@ export interface SyncedSystemDepartment extends SyncedDataBase {
     th_short_name: string
     en_short_name: string
     system_faculty_id: number
+    faculty_name: string | null
 }
 
 export interface SyncedSystemTeacher extends SyncedDataBase {

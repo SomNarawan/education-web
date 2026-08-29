@@ -50,7 +50,7 @@ export async function getSyncedSystemFaculties(): Promise<
     SyncedSystemFaculty[]
 > {
     const response = await api.get<ApiResponse<SyncedSystemFaculty[]>>(
-        '/system-faculties',
+        '/system-faculties/all',
     )
 
     return response.data.data
@@ -60,7 +60,7 @@ export async function getSyncedSystemDepartments(): Promise<
     SyncedSystemDepartment[]
 > {
     const response = await api.get<ApiResponse<SyncedSystemDepartment[]>>(
-        '/system-departments',
+        '/system-departments/all',
     )
 
     return response.data.data
@@ -70,10 +70,7 @@ export async function getSyncedSystemTeachers(): Promise<
     SyncedSystemTeacher[]
 > {
     const response = await api.get<ApiResponse<SyncedSystemTeacher[]>>(
-        '/system-teachers',
-        {
-            params: { include_deleted: true },
-        },
+        '/system-teachers/all',
     )
 
     return response.data.data
