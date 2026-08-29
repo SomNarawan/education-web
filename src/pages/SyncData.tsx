@@ -3,11 +3,21 @@ import {
     EyeOutlined,
     SyncOutlined,
 } from '@ant-design/icons'
-import { Button, Modal, Space, Tag, Tooltip, Typography, message } from 'antd'
+import {
+    Alert,
+    Button,
+    Modal,
+    Space,
+    Tag,
+    Tooltip,
+    Typography,
+    message,
+} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import CustomTable from '../components/custom/CustomTable'
+import { useAuth } from '../hooks/useAuth'
 import {
     getSyncedSystemDepartments,
     getSyncedSystemFaculties,
@@ -18,6 +28,7 @@ import {
 import type { ApiResponse } from '../types/ApiResponse'
 import type {
     SyncDataType,
+    SyncExecutionStatus,
     SyncHistoryRecord,
     SyncResult,
     SyncStatus,
@@ -35,24 +46,25 @@ const syncOptions: { label: string; value: SyncDataType }[] = [
     { label: 'อาจารย์ที่ปรึกษา', value: 'systemTeacher' },
 ]
 
-const initialRecords: SyncTableRecord[] = syncOptions.map((option) => ({
-    key: option.value,
-    label: option.label,
-    synced: null,
-    deleted: null,
-    skipped: null,
-    status: 'waiting',
-    syncedAt: null,
-    errorMessage: null,
-}))
-
 const statusDisplay: Record<
     SyncStatus,
     { color: string; label: string }
 > = {
     waiting: { color: 'default', label: 'ยังไม่ Sync' },
+    running: { color: 'processing', label: 'กำลัง Sync' },
     success: { color: 'success', label: 'สำเร็จ' },
-    error: { color: 'error', label: 'ไม่สำเร็จ' },
+    failed: { color: 'error', label: 'ไม่สำเร็จ' },
+}
+
+interface ApiErrorResponse {
+    success?: boolean
+    message?: string
+    errors?: Record<string, string[]> | null
+}
+
+interface SyncHistoryError {
+    message: string
+    unauthorized: boolean
 }
 
 interface SyncDetailTableRecord {
@@ -76,13 +88,17 @@ const syncTypeByDataType: Record<SyncDataType, SyncType> = {
     systemTeacher: 3,
 }
 
-function getSyncStatus(status: string | null): SyncStatus {
+function getSyncStatus(status: SyncExecutionStatus | null): SyncStatus {
+    if (status === 'running') {
+        return 'running'
+    }
+
     if (status === 'success') {
         return 'success'
     }
 
     if (status === 'failed') {
-        return 'error'
+        return 'failed'
     }
 
     return 'waiting'
@@ -90,6 +106,52 @@ function getSyncStatus(status: string | null): SyncStatus {
 
 function formatSyncDate(value: string | null | undefined): string | null {
     return value ? formatThaiDateTime(value) : null
+}
+
+function getSyncHistoryError(error: unknown): SyncHistoryError {
+    if (!axios.isAxiosError<ApiErrorResponse>(error)) {
+        return {
+            message: 'เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง',
+            unauthorized: false,
+        }
+    }
+
+    if (!error.response) {
+        return {
+            message:
+                'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบเครือข่ายแล้วลองใหม่อีกครั้ง',
+            unauthorized: false,
+        }
+    }
+
+    const responseMessage = error.response.data?.message
+
+    if (error.response.status === 401) {
+        return {
+            message:
+                responseMessage ?? 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
+            unauthorized: true,
+        }
+    }
+
+    if (error.response.status === 422) {
+        const validationMessages = Object.values(
+            error.response.data?.errors ?? {},
+        ).flat()
+
+        return {
+            message:
+                validationMessages.join(' ') ||
+                responseMessage ||
+                'ตัวกรองสถานะ Sync ไม่ถูกต้อง',
+            unauthorized: false,
+        }
+    }
+
+    return {
+        message: responseMessage ?? 'โหลดสถานะ Sync ล่าสุดไม่สำเร็จ',
+        unauthorized: false,
+    }
 }
 
 const auditDetailColumns: ColumnsType<SyncDetailTableRecord> = [
@@ -265,6 +327,10 @@ async function loadSyncDetails(
 }
 
 function mapHistoryToRecords(history: SyncHistoryRecord[]): SyncTableRecord[] {
+    if (history.length === 0) {
+        return []
+    }
+
     return syncOptions.map((option) => {
         const sync = history.find(
             (item) => item.sync_type === syncTypeByDataType[option.value],
@@ -274,8 +340,9 @@ function mapHistoryToRecords(history: SyncHistoryRecord[]): SyncTableRecord[] {
             return {
                 key: option.value,
                 label: option.label,
-                synced: null,
-                deleted: null,
+                inserted: null,
+                updated: null,
+                inactivated: null,
                 skipped: null,
                 status: 'waiting',
                 syncedAt: null,
@@ -286,8 +353,9 @@ function mapHistoryToRecords(history: SyncHistoryRecord[]): SyncTableRecord[] {
         return {
             key: option.value,
             label: sync.sync_type_name || option.label,
-            synced: sync.synced_count,
-            deleted: sync.deleted_count,
+            inserted: sync.inserted_count,
+            updated: sync.updated_count,
+            inactivated: sync.inactivated_count,
             skipped: sync.skipped_count,
             status: getSyncStatus(sync.status),
             syncedAt: formatSyncDate(sync.updated_at ?? sync.created_at),
@@ -298,8 +366,9 @@ function mapHistoryToRecords(history: SyncHistoryRecord[]): SyncTableRecord[] {
 
 function mapSyncResult(result: SyncResult): Partial<SyncTableRecord> {
     return {
-        synced: result.synced_count,
-        deleted: result.deleted_count,
+        inserted: result.inserted_count,
+        updated: result.updated_count,
+        inactivated: result.inactivated_count,
         skipped: result.skipped_count,
         status: getSyncStatus(result.status),
         syncedAt: formatSyncDate(result.updated_at ?? result.created_at),
@@ -325,16 +394,23 @@ function createResultColumns(
         key: 'label',
     },
     {
-        title: 'จำนวนที่ Sync',
-        dataIndex: 'synced',
-        key: 'synced',
+        title: 'จำนวนที่เพิ่ม',
+        dataIndex: 'inserted',
+        key: 'inserted',
         align: 'center',
         render: (value: number | null) => value ?? '-',
     },
     {
-        title: 'จำนวนที่ลบ',
-        dataIndex: 'deleted',
-        key: 'deleted',
+        title: 'จำนวนที่แก้ไข',
+        dataIndex: 'updated',
+        key: 'updated',
+        align: 'center',
+        render: (value: number | null) => value ?? '-',
+    },
+    {
+        title: 'จำนวนที่ปิดใช้งาน',
+        dataIndex: 'inactivated',
+        key: 'inactivated',
         align: 'center',
         render: (value: number | null) => value ?? '-',
     },
@@ -355,7 +431,7 @@ function createResultColumns(
             return (
                 <Space size={4}>
                     <Tag color={display.color}>{display.label}</Tag>
-                    {status === 'error' && (
+                    {status === 'failed' && (
                         <Tooltip title={'ดูรายละเอียดข้อผิดพลาด'}>
                             <Button
                                 type={'text'}
@@ -384,6 +460,7 @@ function createResultColumns(
 }
 
 export default function SyncData() {
+    const { logout } = useAuth()
     const [syncingType, setSyncingType] = useState<SyncDataType | null>(null)
     const [detailRecord, setDetailRecord] =
         useState<SyncTableRecord | null>(null)
@@ -391,11 +468,18 @@ export default function SyncData() {
     const [detailLoading, setDetailLoading] = useState(false)
     const [errorRecord, setErrorRecord] =
         useState<SyncTableRecord | null>(null)
-    const [records, setRecords] = useState(initialRecords)
+    const [records, setRecords] = useState<SyncTableRecord[]>([])
     const [historyLoading, setHistoryLoading] = useState(true)
+    const [historyError, setHistoryError] = useState<string | null>(null)
     const detailRequestId = useRef(0)
 
-    const loadSyncHistory = useCallback(async (showError = true) => {
+    const loadSyncHistory = useCallback(async (
+        showError = true,
+        clearRecordsOnError = true,
+    ) => {
+        setHistoryLoading(true)
+        setHistoryError(null)
+
         try {
             const history = await getSyncHistory()
             const historyRecords = mapHistoryToRecords(history)
@@ -403,14 +487,25 @@ export default function SyncData() {
             return historyRecords
         } catch (error) {
             console.error(error)
-            if (showError) {
-                message.error('โหลดประวัติ Sync ไม่สำเร็จ')
+            const requestError = getSyncHistoryError(error)
+            if (clearRecordsOnError) {
+                setRecords([])
             }
+            setHistoryError(requestError.message)
+
+            if (showError) {
+                message.error(requestError.message)
+            }
+
+            if (requestError.unauthorized) {
+                logout()
+            }
+
             return null
         } finally {
             setHistoryLoading(false)
         }
-    }, [])
+    }, [logout])
 
     useEffect(() => {
         // Initial API synchronization is intentionally triggered when the page mounts.
@@ -445,15 +540,15 @@ export default function SyncData() {
             }
         } catch (error) {
             console.error(error)
-            const latestRecords = await loadSyncHistory(false)
+            const latestRecords = await loadSyncHistory(false, false)
             const failedRecord = latestRecords?.find(
                 (record) =>
-                    record.key === dataType && record.status === 'error',
+                    record.key === dataType && record.status === 'failed',
             )
 
             if (!failedRecord) {
                 updateRecord(dataType, {
-                    status: 'error',
+                    status: 'failed',
                     errorMessage: getRequestErrorMessage(error),
                 })
             }
@@ -507,10 +602,14 @@ export default function SyncData() {
                     <Button
                         type="primary"
                         icon={<SyncOutlined />}
-                        loading={syncingType === record.key}
+                        loading={
+                            syncingType === record.key ||
+                            record.status === 'running'
+                        }
                         disabled={
-                            syncingType !== null &&
-                            syncingType !== record.key
+                            record.status === 'running' ||
+                            (syncingType !== null &&
+                                syncingType !== record.key)
                         }
                         onClick={() => handleSync(record.key)}
                     >
@@ -540,12 +639,30 @@ export default function SyncData() {
             </div>
 
             <div className="table-card">
+                {historyError && (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="โหลดสถานะ Sync ล่าสุดไม่สำเร็จ"
+                        description={historyError}
+                        action={
+                            <Button
+                                size="small"
+                                onClick={() => void loadSyncHistory()}
+                            >
+                                ลองใหม่
+                            </Button>
+                        }
+                        style={{ marginBottom: 16 }}
+                    />
+                )}
                 <CustomTable<SyncTableRecord>
                     columns={columns}
                     dataSource={records}
                     loading={historyLoading}
                     searchPlaceholder="ค้นหาประเภทข้อมูล..."
                     pagination={false}
+                    locale={{ emptyText: 'ไม่พบข้อมูลสถานะ Sync' }}
                 />
             </div>
 

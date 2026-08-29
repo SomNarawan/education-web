@@ -1,6 +1,7 @@
 import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
 import type {
+    GetSyncsParams,
     SyncDataType,
     SyncHistoryRecord,
     SyncResult,
@@ -25,8 +26,22 @@ export async function syncMasterData(
     return response.data.data
 }
 
-export async function getSyncHistory(): Promise<SyncHistoryRecord[]> {
-    const response = await api.get<ApiResponse<SyncHistoryRecord[]>>('/syncs')
+export async function getSyncHistory(
+    filters: GetSyncsParams = {},
+): Promise<SyncHistoryRecord[]> {
+    const params: GetSyncsParams = {}
+
+    if (filters.sync_type !== undefined) {
+        params.sync_type = filters.sync_type
+    }
+
+    if (filters.status !== undefined) {
+        params.status = filters.status
+    }
+
+    const response = await api.get<ApiResponse<SyncHistoryRecord[]>>('/syncs', {
+        params,
+    })
 
     return response.data.data
 }
