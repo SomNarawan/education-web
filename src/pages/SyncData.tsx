@@ -1,6 +1,7 @@
 import {
     ExclamationCircleOutlined,
     EyeOutlined,
+    ReloadOutlined,
     SyncOutlined,
 } from '@ant-design/icons'
 import {
@@ -234,28 +235,35 @@ function createResultColumns(
         dataIndex: 'status',
         key: 'status',
         align: 'center',
-        render: (status: SyncStatus, record) => {
+        render: (status: SyncStatus) => {
             const display = statusDisplay[status]
-            return (
-                <Space size={4}>
-                    <Tag color={display.color}>{display.label}</Tag>
-                    {status === 'failed' && (
-                        <Tooltip title={'ดูรายละเอียดข้อผิดพลาด'}>
-                            <Button
-                                type={'text'}
-                                danger
-                                size={'small'}
-                                aria-label={
-                                    'ดูรายละเอียดข้อผิดพลาด ' + record.label
-                                }
-                                icon={<ExclamationCircleOutlined />}
-                                onClick={() => onViewError(record)}
-                            />
-                        </Tooltip>
-                    )}
-                </Space>
-            )
+            return <Tag color={display.color}>{display.label}</Tag>
         },
+    },
+    {
+        title: 'สาเหตุ',
+        dataIndex: 'errorMessage',
+        key: 'errorMessage',
+        width: 90,
+        align: 'center',
+        render: (value: string | null, record) =>
+            value ? (
+                <Tooltip title={'ดูรายละเอียดข้อผิดพลาด'}>
+                    <Button
+                        className={'student-import-reason-button'}
+                        type={'text'}
+                        danger
+                        size={'small'}
+                        aria-label={
+                            'ดูรายละเอียดข้อผิดพลาด ' + record.label
+                        }
+                        icon={<ExclamationCircleOutlined />}
+                        onClick={() => onViewError(record)}
+                    />
+                </Tooltip>
+            ) : (
+                '-'
+            ),
     },
     {
         title: 'Sync ล่าสุด',
@@ -422,9 +430,10 @@ export default function SyncData() {
                         action={
                             <Button
                                 size="small"
+                                icon={<ReloadOutlined />}
                                 onClick={() => void loadSyncHistory()}
                             >
-                                ลองใหม่
+                                รีเฟรช
                             </Button>
                         }
                         style={{ marginBottom: 16 }}

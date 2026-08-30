@@ -101,7 +101,7 @@ export default function StudentImport() {
 
             <Card className="student-import-card">
                 <StudentImportPicker
-                    onSuccess={loadHistory}
+                    onImportComplete={loadHistory}
                 />
             </Card>
 
@@ -133,7 +133,7 @@ export default function StudentImport() {
                                 icon={<ReloadOutlined />}
                                 onClick={() => void loadHistory()}
                             >
-                                ลองใหม่
+                                รีเฟรช
                             </Button>
                         }
                     />

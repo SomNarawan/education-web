@@ -28,11 +28,11 @@ const excelMimeType =
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 interface StudentImportPickerProps {
-    onSuccess: () => void | Promise<void>
+    onImportComplete: () => void | Promise<void>
 }
 
 export default function StudentImportPicker({
-    onSuccess,
+    onImportComplete,
 }: StudentImportPickerProps) {
     const { logout } = useAuth()
     const importLock = useRef(false)
@@ -51,23 +51,26 @@ export default function StudentImportPicker({
         if (!selectedFile) return
 
         await runStudentImportOnce(importLock, async () => {
+            let refreshHistory = false
+
             try {
                 setImporting(true)
                 setUploadPercent(0)
                 const result = await importStudents(
                     selectedFile,
                     (progressEvent) => {
-                    if (!progressEvent.total) return
+                        if (!progressEvent.total) return
 
-                    setUploadPercent(
-                        Math.min(
-                            99,
-                            Math.round(
-                                (progressEvent.loaded / progressEvent.total) *
-                                    100,
+                        setUploadPercent(
+                            Math.min(
+                                99,
+                                Math.round(
+                                    (progressEvent.loaded /
+                                        progressEvent.total) *
+                                        100,
+                                ),
                             ),
-                        ),
-                    )
+                        )
                     },
                 )
 
@@ -82,16 +85,21 @@ export default function StudentImportPicker({
                 }
 
                 setSelectedFile(null)
-                await onSuccess()
+                refreshHistory = true
             } catch (error) {
                 console.error('Unable to import students', error)
                 const parsedError = await parseStudentImportError(error)
                 message.error(parsedError.message)
+                refreshHistory = parsedError.status !== 401
 
                 if (parsedError.status === 401) {
                     logout()
                 }
             } finally {
+                if (refreshHistory) {
+                    await onImportComplete()
+                }
+
                 setImporting(false)
             }
         })

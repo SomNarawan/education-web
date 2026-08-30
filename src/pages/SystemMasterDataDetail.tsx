@@ -1,3 +1,4 @@
+import { ReloadOutlined } from '@ant-design/icons'
 import {
     Alert,
     Button,
@@ -310,8 +311,12 @@ export default function SystemMasterDataDetail() {
                         message="โหลดรายละเอียดข้อมูลไม่สำเร็จ"
                         description={error}
                         action={
-                            <Button size="small" onClick={() => void loadRecords()}>
-                                ลองใหม่
+                            <Button
+                                size="small"
+                                icon={<ReloadOutlined />}
+                                onClick={() => void loadRecords()}
+                            >
+                                รีเฟรช
                             </Button>
                         }
                         style={{ marginBottom: 16 }}

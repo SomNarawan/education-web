@@ -13,6 +13,7 @@ export interface StudentImportHistory {
     success_count: number
     failed_count: number
     status: StudentImportStatus
+    error_message: string | null
 }
 
 export interface StudentImportSummary {

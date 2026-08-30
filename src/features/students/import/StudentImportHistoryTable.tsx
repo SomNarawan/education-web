@@ -1,7 +1,11 @@
-import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons'
-import { Button, Empty, Tag } from 'antd'
+import {
+    DownloadOutlined,
+    ExclamationCircleOutlined,
+    LoadingOutlined,
+} from '@ant-design/icons'
+import { Button, Empty, Modal, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import CustomTable from '../../../components/custom/CustomTable'
 import type {
     StudentImportHistory,
@@ -61,6 +65,9 @@ export default function StudentImportHistoryTable({
     downloadingId,
     onDownload,
 }: StudentImportHistoryTableProps) {
+    const [errorRecord, setErrorRecord] = useState<StudentImportHistory | null>(
+        null,
+    )
     const columns = useMemo<ColumnsType<StudentImportHistory>>(
         () => [
             {
@@ -132,6 +139,26 @@ export default function StudentImportHistoryTable({
                 },
             },
             {
+                title: 'สาเหตุ',
+                dataIndex: 'error_message',
+                key: 'error_message',
+                width: 90,
+                align: 'center',
+                render: (value: string | null, record) =>
+                    value ? (
+                        <Button
+                            className={'student-import-reason-button'}
+                            type="text"
+                            danger
+                            icon={<ExclamationCircleOutlined />}
+                            aria-label={`ดูสาเหตุที่ Import ไฟล์ ${record.file_name} ไม่สำเร็จ`}
+                            onClick={() => setErrorRecord(record)}
+                        />
+                    ) : (
+                        '-'
+                    ),
+            },
+            {
                 title: 'ผลลัพธ์',
                 key: 'action',
                 width: 190,
@@ -158,22 +185,41 @@ export default function StudentImportHistoryTable({
     )
 
     return (
-        <CustomTable<StudentImportHistory>
-            rowKey="id"
-            showNo={false}
-            columns={columns}
-            dataSource={data}
-            loading={loading}
-            searchPlaceholder="ค้นหาประวัติจากชื่อไฟล์หรือผู้นำเข้า"
-            scroll={{ x: 1325 }}
-            locale={{
-                emptyText: (
-                    <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description="ยังไม่มีประวัติการ Import นักศึกษา"
-                    />
-                ),
-            }}
-        />
+        <>
+            <CustomTable<StudentImportHistory>
+                rowKey="id"
+                showNo={false}
+                columns={columns}
+                dataSource={data}
+                loading={loading}
+                searchPlaceholder="ค้นหาประวัติจากชื่อไฟล์หรือผู้นำเข้า"
+                scroll={{ x: 1415 }}
+                locale={{
+                    emptyText: (
+                        <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description="ยังไม่มีประวัติการ Import นักศึกษา"
+                        />
+                    ),
+                }}
+            />
+
+            <Modal
+                open={errorRecord !== null}
+                title="รายละเอียดข้อผิดพลาด"
+                footer={null}
+                onCancel={() => setErrorRecord(null)}
+            >
+                <Typography.Paragraph
+                    style={{
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'anywhere',
+                    }}
+                >
+                    {errorRecord?.error_message ||
+                        'ไม่มีรายละเอียดข้อผิดพลาด'}
+                </Typography.Paragraph>
+            </Modal>
+        </>
     )
 }

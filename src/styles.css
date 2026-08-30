@@ -746,6 +746,26 @@ body {
     margin-bottom: 20px;
 }
 
+.student-import-reason-button.ant-btn {
+    display: inline-flex;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    overflow: visible;
+    line-height: 1;
+}
+
+.student-import-reason-button.ant-btn .anticon,
+.student-import-reason-button.ant-btn .anticon svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    overflow: visible;
+}
+
 @media (max-width: 768px) {
     .student-import-card .ant-card-body,
     .student-import-history {
