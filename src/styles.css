@@ -744,6 +744,13 @@ body {
     margin-bottom: 0;
 }
 
+.student-import-history .ant-table-cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.45;
+}
+
 .student-import-history-error {
     margin-bottom: 20px;
 }

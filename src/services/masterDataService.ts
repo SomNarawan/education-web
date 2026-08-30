@@ -11,6 +11,7 @@ import type {
     ManagedMasterDataRecord,
     ManagedMasterDataResource,
     MasterDataStatus,
+    Curriculum,
     StudyPlan,
 } from '../types/MasterData'
 
@@ -85,8 +86,17 @@ export async function getHighSchools(): Promise<HighSchoolListItem[]> {
     return response.data.data
 }
 
-export async function getStudyPlans(): Promise<StudyPlan[]> {
-    const response = await api.get<ApiResponse<StudyPlan[]>>('/study-plans')
+export async function getCurriculums(): Promise<Curriculum[]> {
+    const response = await api.get<ApiResponse<Curriculum[]>>('/curriculums')
+    return response.data.data
+}
+
+export async function getStudyPlans(
+    curriculumId?: number,
+): Promise<StudyPlan[]> {
+    const response = await api.get<ApiResponse<StudyPlan[]>>('/study-plans', {
+        params: curriculumId ? { curriculum_id: curriculumId } : undefined,
+    })
     return response.data.data
 }
 

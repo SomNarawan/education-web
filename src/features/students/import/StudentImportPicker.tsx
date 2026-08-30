@@ -9,19 +9,29 @@ import {
 import {
     Alert,
     Button,
+    Col,
+    Form,
     Progress,
+    Row,
     Space,
     Typography,
     Upload,
     message,
 } from 'antd'
 import type { UploadProps } from 'antd'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
+import { renderRequiredFormMark } from '../../../components/custom/RequiredFormMark'
 import { useAuth } from '../../../hooks/useAuth'
+import {
+    getCurriculums,
+    getStudyPlans,
+} from '../../../services/masterDataService'
 import {
     downloadStudentImportTemplate,
     importStudents,
 } from '../../../services/studentImportService'
+import type { Curriculum, StudyPlan } from '../../../types/MasterData'
 import {
     downloadStudentImportBlob,
     parseStudentImportError,
@@ -42,9 +52,90 @@ export default function StudentImportPicker({
     const { logout } = useAuth()
     const importLock = useRef(false)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [curriculums, setCurriculums] = useState<Curriculum[]>([])
+    const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([])
+    const [selectedCurriculumId, setSelectedCurriculumId] = useState<
+        number | undefined
+    >()
+    const [selectedStudyPlanId, setSelectedStudyPlanId] = useState<
+        number | undefined
+    >()
+    const [curriculumsLoading, setCurriculumsLoading] = useState(false)
+    const [studyPlansLoading, setStudyPlansLoading] = useState(false)
     const [importing, setImporting] = useState(false)
     const [templateDownloading, setTemplateDownloading] = useState(false)
     const [uploadPercent, setUploadPercent] = useState(0)
+
+    useEffect(() => {
+        let cancelled = false
+
+        const loadCurriculums = async () => {
+            try {
+                setCurriculumsLoading(true)
+                const data = await getCurriculums()
+
+                if (!cancelled) {
+                    setCurriculums(data)
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error('Unable to load curriculums', error)
+                    message.error('โหลดข้อมูลหลักสูตรไม่สำเร็จ')
+                }
+            } finally {
+                if (!cancelled) {
+                    setCurriculumsLoading(false)
+                }
+            }
+        }
+
+        void loadCurriculums()
+
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!selectedCurriculumId) {
+            return
+        }
+
+        let cancelled = false
+
+        const loadStudyPlans = async () => {
+            try {
+                setStudyPlansLoading(true)
+                const data = await getStudyPlans(selectedCurriculumId)
+
+                if (!cancelled) {
+                    setStudyPlans(data)
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error('Unable to load study plans', error)
+                    message.error('โหลดข้อมูลแผนการเรียนไม่สำเร็จ')
+                }
+            } finally {
+                if (!cancelled) {
+                    setStudyPlansLoading(false)
+                }
+            }
+        }
+
+        void loadStudyPlans()
+
+        return () => {
+            cancelled = true
+        }
+    }, [selectedCurriculumId])
+
+    const handleCurriculumChange = (curriculumId?: number) => {
+        setSelectedCurriculumId(curriculumId)
+        setSelectedStudyPlanId(undefined)
+        setStudyPlans([])
+        setStudyPlansLoading(false)
+    }
 
     const handleDownloadTemplate = async () => {
         try {
@@ -75,6 +166,11 @@ export default function StudentImportPicker({
 
         if (!selectedFile) return
 
+        if (!selectedCurriculumId || !selectedStudyPlanId) {
+            message.error('กรุณาเลือกหลักสูตรและแผนการเรียน')
+            return
+        }
+
         await runStudentImportOnce(importLock, async () => {
             let refreshHistory = false
 
@@ -83,6 +179,8 @@ export default function StudentImportPicker({
                 setUploadPercent(0)
                 const result = await importStudents(
                     selectedFile,
+                    selectedCurriculumId,
+                    selectedStudyPlanId,
                     (progressEvent) => {
                         if (!progressEvent.total) return
 
@@ -155,6 +253,54 @@ export default function StudentImportPicker({
 
     return (
         <div className="student-import-inline-picker">
+            <Form
+                layout={'vertical'}
+                requiredMark={renderRequiredFormMark}
+            >
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} md={12}>
+                        <Form.Item label={'หลักสูตร'} required>
+                            <ListOfValueSelect
+                                allowClear
+                                showSearch
+                                optionFilterProp={'label'}
+                                loading={curriculumsLoading}
+                                disabled={importing}
+                                placeholder={'เลือกหลักสูตร'}
+                                value={selectedCurriculumId}
+                                options={curriculums.map((curriculum) => ({
+                                    label: curriculum.name_th,
+                                    value: curriculum.id,
+                                }))}
+                                onChange={handleCurriculumChange}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <Form.Item label={'แผนการเรียน'} required>
+                            <ListOfValueSelect
+                                allowClear
+                                showSearch
+                                optionFilterProp={'label'}
+                                loading={studyPlansLoading}
+                                disabled={!selectedCurriculumId || importing}
+                                placeholder={
+                                    selectedCurriculumId
+                                        ? 'เลือกแผนการเรียน'
+                                        : 'กรุณาเลือกหลักสูตรก่อน'
+                                }
+                                value={selectedStudyPlanId}
+                                options={studyPlans.map((studyPlan) => ({
+                                    label: studyPlan.name_th,
+                                    value: studyPlan.id,
+                                }))}
+                                onChange={setSelectedStudyPlanId}
+                            />
+                        </Form.Item>
+                    </Col>
+                </Row>
+            </Form>
+
             <Upload.Dragger {...uploadProps}>
                 <p className="ant-upload-drag-icon">
                     <InboxOutlined />
@@ -214,7 +360,12 @@ export default function StudentImportPicker({
                     size="large"
                     icon={<UploadOutlined />}
                     loading={importing}
-                    disabled={!selectedFile || importing}
+                    disabled={
+                        !selectedFile ||
+                        !selectedCurriculumId ||
+                        !selectedStudyPlanId ||
+                        importing
+                    }
                     onClick={() => void handleImport()}
                 >
                     {importing ? 'กำลังประมวลผล' : 'Import นักศึกษา'}

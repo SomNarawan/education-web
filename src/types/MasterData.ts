@@ -63,6 +63,13 @@ export type GuardianRelationship = ListOfValue
 
 export interface StudyPlan {
     id: number
+    curriculum_id: number
+    name_th: string
+}
+
+export interface Curriculum {
+    id: number
+    code: string
     name_th: string
 }
 

@@ -73,7 +73,7 @@ export default function StudentImportHistoryTable({
             {
                 title: 'ลำดับ',
                 key: 'sequence',
-                width: 80,
+                width: 60,
                 align: 'center',
                 render: (_, __, index) => index + 1,
             },
@@ -81,28 +81,34 @@ export default function StudentImportHistoryTable({
                 title: 'ชื่อไฟล์',
                 dataIndex: 'file_name',
                 key: 'file_name',
-                width: 220,
-                ellipsis: true,
+            },
+            {
+                title: 'หลักสูตร',
+                dataIndex: 'curriculum_name_th',
+                key: 'curriculum_name_th',
+            },
+            {
+                title: 'แผนการเรียน',
+                dataIndex: 'curriculum_plan_name_th',
+                key: 'curriculum_plan_name_th',
             },
             {
                 title: 'วันที่นำเข้า',
                 dataIndex: 'started_at',
                 key: 'started_at',
-                width: 210,
                 render: (value: string) => formatThaiDateTime(value),
             },
             {
                 title: 'ผู้นำเข้า',
                 dataIndex: 'imported_by',
                 key: 'imported_by',
-                width: 160,
-                ellipsis: true,
+                width: 90,
             },
             {
                 title: 'จำนวนทั้งหมด',
                 dataIndex: 'total_count',
                 key: 'total_count',
-                width: 125,
+                width: 90,
                 align: 'center',
                 render: (value: number) => value.toLocaleString('th-TH'),
             },
@@ -110,7 +116,7 @@ export default function StudentImportHistoryTable({
                 title: 'สำเร็จ',
                 dataIndex: 'success_count',
                 key: 'success_count',
-                width: 100,
+                width: 75,
                 align: 'center',
                 render: (value: number) => value.toLocaleString('th-TH'),
             },
@@ -118,7 +124,7 @@ export default function StudentImportHistoryTable({
                 title: 'ไม่สำเร็จ',
                 dataIndex: 'failed_count',
                 key: 'failed_count',
-                width: 105,
+                width: 80,
                 align: 'center',
                 render: (value: number) => value.toLocaleString('th-TH'),
             },
@@ -126,7 +132,7 @@ export default function StudentImportHistoryTable({
                 title: 'สถานะ',
                 dataIndex: 'status',
                 key: 'status',
-                width: 135,
+                width: 110,
                 align: 'center',
                 render: (status: StudentImportStatus) => {
                     const display = statusDisplay[status]
@@ -142,7 +148,7 @@ export default function StudentImportHistoryTable({
                 title: 'สาเหตุ',
                 dataIndex: 'error_message',
                 key: 'error_message',
-                width: 90,
+                width: 60,
                 align: 'center',
                 render: (value: string | null, record) =>
                     value ? (
@@ -161,9 +167,8 @@ export default function StudentImportHistoryTable({
             {
                 title: 'ผลลัพธ์',
                 key: 'action',
-                width: 190,
+                width: 220,
                 align: 'center',
-                fixed: 'right',
                 render: (_, record) => {
                     const downloadButton = getDownloadButton(record)
 
@@ -192,8 +197,8 @@ export default function StudentImportHistoryTable({
                 columns={columns}
                 dataSource={data}
                 loading={loading}
+                tableLayout={'fixed'}
                 searchPlaceholder="ค้นหาประวัติจากชื่อไฟล์หรือผู้นำเข้า"
-                scroll={{ x: 1415 }}
                 locale={{
                     emptyText: (
                         <Empty
