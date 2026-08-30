@@ -4,7 +4,6 @@ Col,
 DatePicker,
 Form,
 Input,
-InputNumber,
 Modal,
 Row,
 Select,
@@ -27,7 +26,7 @@ interface StudentFormModalProps {
 }
 
 interface FormValues extends Omit<StudentFormValues, 'entry_year'> {
-    entry_year?: Dayjs
+    entry_year: Dayjs
 }
 
 export default function StudentFormModal({
@@ -49,8 +48,26 @@ useEffect(() => {
 
     if (editingStudent) {
         form.setFieldsValue({
-            ...editingStudent,
-            entry_year: editingStudent.entry_year ? dayjs().year(editingStudent.entry_year) : undefined,
+            student_code: editingStudent.student_code,
+            student_id_card: editingStudent.student_id_card,
+            title_id: editingStudent.title_id,
+            first_name_th: editingStudent.first_name_th,
+            last_name_th: editingStudent.last_name_th,
+            first_name_en: editingStudent.first_name_en,
+            last_name_en: editingStudent.last_name_en,
+            phone: editingStudent.phone,
+            email: editingStudent.email,
+            study_plan_id: editingStudent.study_plan_id,
+            entry_year: dayjs().year(editingStudent.entry_year),
+            teacher_id: editingStudent.teacher_id,
+            admission_channel_id: editingStudent.admission_channel_id,
+            high_school_id: editingStudent.high_school_id,
+            guardian_title_id: editingStudent.guardian_title_id,
+            guardian_first_name_th: editingStudent.guardian_first_name_th,
+            guardian_last_name_th: editingStudent.guardian_last_name_th,
+            guardian_relationship_id: editingStudent.guardian_relationship_id,
+            guardian_phone: editingStudent.guardian_phone,
+            student_status_id: editingStudent.student_status_id,
         })
     } else {
         form.resetFields()
@@ -59,12 +76,12 @@ useEffect(() => {
 
 const handleOk = async () => {
     const values = await form.validateFields()
-    const formattedValues = {
+    const formattedValues: StudentFormValues = {
         ...values,
-        entry_year: values.entry_year?.year?.() ?? undefined,
-    } as StudentFormValues
+        entry_year: values.entry_year.year(),
+        teacher_id: values.teacher_id ?? null,
+    }
     await onSave(formattedValues)
-    form.resetFields()
 }
 
 return (
@@ -92,9 +109,13 @@ return (
                             required: true,
                             message: 'กรุณากรอกรหัสนิสิต',
                         },
+                        {
+                            pattern: /^\d+$/,
+                            message: 'รหัสนิสิตต้องเป็นตัวเลขเท่านั้น',
+                        },
                     ]}
                 >
-                    <Input maxLength={150} />
+                    <Input maxLength={10} inputMode="numeric" />
                 </Form.Item>
             </Card>
 
@@ -151,7 +172,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} />
+                            <Input maxLength={50} />
                         </Form.Item>
                     </Col>
 
@@ -166,7 +187,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} />
+                            <Input maxLength={50} />
                         </Form.Item>
                     </Col>
 
@@ -181,7 +202,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} />
+                            <Input maxLength={50} />
                         </Form.Item>
                     </Col>
 
@@ -196,7 +217,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} />
+                            <Input maxLength={50} />
                         </Form.Item>
                     </Col>
 
@@ -224,9 +245,13 @@ return (
                                     required: true,
                                     message: 'กรุณากรอกอีเมล',
                                 },
+                                {
+                                    type: 'email',
+                                    message: 'รูปแบบอีเมลไม่ถูกต้อง',
+                                },
                             ]}
                         >
-                            <Input maxLength={150} />
+                            <Input maxLength={50} />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -274,7 +299,11 @@ return (
                                 },
                             ]}
                         >
-                            <DatePicker picker="year" />
+                            <DatePicker
+                                picker="year"
+                                minDate={dayjs('1901-01-01')}
+                                maxDate={dayjs('2155-12-31')}
+                            />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -387,7 +416,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} />
+                            <Input maxLength={50} />
                         </Form.Item>
                     </Col>
 
@@ -402,7 +431,7 @@ return (
                                 },
                             ]}
                         >
-                            <Input maxLength={150} />
+                            <Input maxLength={50} />
                         </Form.Item>
                     </Col>
 
@@ -473,76 +502,6 @@ return (
                 </Form.Item>
             </Card>
 
-            <Card title="9. ผลการเรียนล่าสุด" size="small">
-                <Row gutter={16}>
-                    <Col xs={24} md={12}>
-                        <Form.Item
-                            label="GPA"
-                            name="gpa"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอก GPA',
-                                },
-                            ]}
-                        >
-                            <InputNumber
-                                min={0}
-                                max={4}
-                                step={0.01}
-                                style={{ width: '100%' }}
-                            />
-                        </Form.Item>
-                    </Col>
-
-                    <Col xs={24} md={12}>
-                        <Form.Item
-                            label="GPAX"
-                            name="gpax"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอก GPAX',
-                                },
-                            ]}
-                        >
-                            <InputNumber
-                                min={0}
-                                max={4}
-                                step={0.01}
-                                style={{ width: '100%' }}
-                            />
-                        </Form.Item>
-                    </Col>
-
-                    <Col xs={24} md={12}>
-                        <Form.Item
-                            label="จำนวนหน่วยกิตที่ผ่าน"
-                            name="passed_credits"
-                        >
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                        </Form.Item>
-                    </Col>
-
-                    <Col xs={24} md={12}>
-                        <Form.Item
-                            label="จำนวนหน่วยกิตที่ไม่ผ่าน"
-                            name="not_passed_credits"
-                        >
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                        </Form.Item>
-                    </Col>
-
-                    <Col xs={24} md={12}>
-                        <Form.Item
-                            label="จำนวนหน่วยกิตที่เกิน"
-                            name="overed_credits"
-                        >
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                        </Form.Item>
-                    </Col>
-                </Row>
-            </Card>
         </Form>
     </Modal>
 )

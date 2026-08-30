@@ -19,43 +19,46 @@ export interface StudentDetailResponse {
     entry_year_be: number
     study_year: number
     study_semester: number
-    study_period: string
+    study_period: string | null
 
     current_year: number
     current_semester: number
 
-    teacher_id: number
-    teacher_full_name_th: string
+    teacher_id: number | null
+    teacher_full_name_th: string | null
 
     student_status_id: number
-    student_status_name: string
+    student_status_name: string | null
 
     admission_channel_id: number
-    admission_channel_name: string
+    admission_channel_name: string | null
 
     guardian_title_id: number
     guardian_first_name_th: string
     guardian_last_name_th: string
     guardian_full_name: string
     guardian_relationship_id: number
-    guardian_relationship_name: string
+    guardian_relationship_name: string | null
     guardian_phone: string
 
     high_school_id: number
-    high_school_name: string
+    high_school_name: string | null
     high_school_address: string
 
     study_plan_id: number
-    curriculum_type: string
-    curriculum_plan_name: string
-    department_name: string
-    faculty_name: string
+    curriculum_type: string | null
+    study_plan_name: string | null
+    curriculum_plan_name: string | null
+    department_id: number | null
+    department_name: string | null
+    faculty_id: number | null
+    faculty_name: string | null
 
-    required_credits: number
-    passed_credits: number
-    not_passed_credits: number
-    overed_credits: number
+    required_credits: number | null
+    passed_credits: number | null
+    not_passed_credits: number | null
+    overed_credits: number | null
 
-    gpa: number
-    gpax: number
+    gpa: number | null
+    gpax: number | null
 }

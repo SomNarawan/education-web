@@ -9,6 +9,7 @@ import {
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { StudentListResponse } from '../../../types/StudentListResponse'
+import type { StudentGroup } from '../../../types/StudentRoute'
 import NoteHistoryModal from '../notes/NoteHistoryModal'
 import CustomTable from '../../../components/custom/CustomTable'
 import { useStudentNotes } from '../notes/useStudentNotes'
@@ -18,7 +19,7 @@ interface StudentTableProps {
     loading?: boolean
     onEdit: (id: number) => void
     onDelete: (id: number) => void
-    studentGroup?: string
+    studentGroup: StudentGroup
     canManage?: boolean
 }
 
@@ -90,7 +91,7 @@ export default function StudentTable({
             width: 260,
             render: (_, record) => {
                 const degree = record.curriculum_type || '-'
-                const planName = record.curriculum_plan_name || '-'
+                const planName = record.study_plan_name ?? '-'
 
                 return (
                     <div>
@@ -105,10 +106,10 @@ export default function StudentTable({
             align: 'center',
             width: 260,
             render: (_, record) => {
-                const requiredCredits = Number(record.required_credits ?? 0)
-                const passedCredits = Number(record.passed_credits ?? 0)
-                const notPassedCredits = Number(record.not_passed_credits ?? 0)
-                const overedCredits = Number(record.overed_credits ?? 0)
+                const requiredCredits = record.required_credits ?? '-'
+                const passedCredits = record.passed_credits ?? '-'
+                const notPassedCredits = record.not_passed_credits ?? '-'
+                const overedCredits = record.overed_credits ?? '-'
 
                 return (
                     <Space>

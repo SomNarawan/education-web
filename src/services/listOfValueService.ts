@@ -1,10 +1,12 @@
 import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
-import type {
-    ListOfValue,
-    ListOfValueParams,
-    ListOfValueType,
-} from '../types/ListOfValue'
+import type { ListOfValue, ListOfValueType } from '../types/ListOfValue'
+
+interface ListOfValueParams {
+    province_id?: number
+    district_id?: number
+    department_id?: number
+}
 
 const valueCache = new Map<string, ListOfValue[]>()
 const pendingRequests = new Map<string, Promise<ListOfValue[]>>()
@@ -19,7 +21,7 @@ function getCacheKey(type: ListOfValueType, params: ListOfValueParams) {
     return query ? `${type}?${query}` : type
 }
 
-export async function getListOfValues(
+async function getListOfValues(
     type: ListOfValueType,
     params: ListOfValueParams = {},
 ): Promise<ListOfValue[]> {

@@ -18,9 +18,3 @@ export interface ListOfValue {
     name_th: string
     name_en: string | null
 }
-
-export interface ListOfValueParams {
-    province_id?: number
-    district_id?: number
-    department_id?: number
-}

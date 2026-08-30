@@ -11,7 +11,13 @@ import StudentFormModal from './StudentFormModal'
 import type { StudentFormValues } from '../../../types/StudentFormValues'
 import type { StudentListResponse } from '../../../types/StudentListResponse'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
-import { getStudentDetail, getStudentsByPage, createStudent, updateStudent, deleteStudent } from '../../../services/studentService'
+import {
+    createStudent,
+    deleteStudent,
+    getStudentDetail,
+    getStudents,
+    updateStudent,
+} from '../../../services/studentService'
 import {
     getNoteTypes,
     getStudentStatuses,
@@ -153,15 +159,14 @@ function StudentList() {
                         ? undefined
                         : studentStatusId
 
-                const data = await getStudentsByPage(
-                    currentStudentGroup,
-                    systemTeacherIdForSearch,
-                    departmentId,
-                    facultyId,
-                    noteText,
-                    searchText,
-                    statusIdForSearch,
-                )
+                const data = await getStudents({
+                    teacher_id: systemTeacherIdForSearch,
+                    department_id: departmentId,
+                    faculty_id: facultyId,
+                    search_note: noteText,
+                    search_text: searchText,
+                    student_status_id: statusIdForSearch,
+                })
 
                 setStudents(data)
             } catch (error) {
@@ -487,6 +492,7 @@ function StudentList() {
                             size="large"
                             placeholder="ค้นหาจากรหัสนิสิต / ชื่อ-นามสกุล / เลขบัตรประชาชน"
                             value={studentSearchText}
+                            maxLength={255}
                             onChange={(e) =>
                                 setStudentSearchText(e.target.value)
                             }
@@ -622,6 +628,7 @@ function StudentList() {
                                     allowClear
                                     placeholder="กรอกรายละเอียด Note"
                                     value={noteSearchText}
+                                    maxLength={255}
                                     style={{ width: '100%', marginTop: 6 }}
                                     onChange={(e) =>
                                         setNoteSearchText(e.target.value)

@@ -9,6 +9,9 @@ interface DetailItemProps {
 }
 
 export default function DetailItem({ label, value }: DetailItemProps) {
+    const displayValue =
+        value === null || value === undefined || value === '' ? '-' : value
+
     return (
         <Row style={{ marginBottom: 18 }}>
             <Col span={10}>
@@ -17,7 +20,7 @@ export default function DetailItem({ label, value }: DetailItemProps) {
                 </Text>
             </Col>
             <Col span={14}>
-                <Text>{value || '-'}</Text>
+                <Text>{displayValue}</Text>
             </Col>
         </Row>
     )

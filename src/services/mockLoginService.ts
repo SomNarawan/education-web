@@ -15,7 +15,7 @@ export async function searchMockLoginUsers(
 }
 
 export function mockLoginRedirectUrl(nontriId: string, asAdmin: boolean) {
-    return `${mockLoginBaseUrl}/mock-login/system-teacher/${nontriId}${
+    return `${mockLoginBaseUrl}/mock-login/system-teacher/${encodeURIComponent(nontriId)}${
         asAdmin ? '?admin=1' : ''
     }`
 }

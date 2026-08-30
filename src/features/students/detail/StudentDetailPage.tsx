@@ -59,6 +59,17 @@ export default function StudentDetailPage() {
 
     const isOtherNoteType = selectedNoteType?.name_th === 'อื่นๆ'
 
+    const creditSummary = student
+        ? [
+              student.required_credits,
+              student.passed_credits,
+              student.not_passed_credits,
+              student.overed_credits,
+          ]
+              .map((credit) => credit ?? '-')
+              .join('/')
+        : '-'
+
     const loadNoteTypes = useCallback(async () => {
         try {
             setNoteTypesLoading(true)
@@ -241,7 +252,7 @@ export default function StudentDetailPage() {
                                             />
                                             <DetailItem
                                                 label="หน่วยกิตที่ลงทะเบียน (ทั้งหมด/ผ่าน/ไม่ผ่าน/เกิน)"
-                                                value={`${student.required_credits}/${student.passed_credits}/${student.not_passed_credits}/${student.overed_credits}`}
+                                                value={creditSummary}
                                             />
                                         </Col>
                                     </Row>
@@ -285,7 +296,7 @@ export default function StudentDetailPage() {
                                             <DetailItem
                                                 label="แผนการเรียน"
                                                 value={
-                                                    student.curriculum_plan_name
+                                                    student.study_plan_name
                                                 }
                                             />
                                         </Col>

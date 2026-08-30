@@ -2,41 +2,19 @@ import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
 import type { StudentListResponse } from '../types/StudentListResponse'
 import type { StudentDetailResponse } from '../types/StudentDetailResponse'
-import type { StudentFormValues } from '../types/StudentFormValues'
+import type {
+    CreateStudentRequest,
+    ListStudentsRequest,
+    UpdateStudentRequest,
+} from '../types/StudentRequest'
 
-export async function getStudentsByPage(
-    studentGroup?: string,
-    systemTeacherId?: number,
-    departmentId?: number,
-    facultyId?: number,
-    searchNote?: string,
-    searchText?: string,
-    studentStatusId?: number,
+export async function getStudents(
+    filters: ListStudentsRequest = {},
 ): Promise<StudentListResponse[]> {
-    const params: Record<string, string | number> = {}
-
-    if (studentGroup === 'advisor' && systemTeacherId) {
-        params.teacher_id = systemTeacherId
-    }
-
-    if (studentGroup === 'department' && departmentId) {
-        params.department_id = departmentId
-    }
-
-    if (studentGroup === 'faculty' && facultyId) {
-        params.faculty_id = facultyId
-    }
-
-    if (studentStatusId) {
-        params.student_status_id = studentStatusId
-    }
-
-    if (searchNote?.trim()) {
-        params.search_note = searchNote.trim()
-    }
-
-    if (searchText?.trim()) {
-        params.search_text = searchText.trim()
+    const params: ListStudentsRequest = {
+        ...filters,
+        search_note: filters.search_note?.trim() || undefined,
+        search_text: filters.search_text?.trim() || undefined,
     }
 
     const response = await api.get<ApiResponse<StudentListResponse[]>>(
@@ -60,7 +38,7 @@ export async function getStudentDetail(
 }
 
 export async function createStudent(
-    data: StudentFormValues,
+    data: CreateStudentRequest,
 ): Promise<StudentDetailResponse> {
     const response = await api.post<ApiResponse<StudentDetailResponse>>(
         '/students',
@@ -72,9 +50,9 @@ export async function createStudent(
 
 export async function updateStudent(
     id: number,
-    data: StudentFormValues,
+    data: UpdateStudentRequest,
 ): Promise<StudentDetailResponse> {
-    const response = await api.put<ApiResponse<StudentDetailResponse>>(
+    const response = await api.patch<ApiResponse<StudentDetailResponse>>(
         `/students/${id}`,
         data,
     )
@@ -83,5 +61,5 @@ export async function updateStudent(
 }
 
 export async function deleteStudent(id: number): Promise<void> {
-    await api.delete(`/students/${id}`)
+    await api.delete<ApiResponse<null>>(`/students/${id}`)
 }
