@@ -58,3 +58,19 @@ export async function downloadStudentImportResult(
         ),
     }
 }
+
+export async function downloadStudentImportTemplate(): Promise<
+    StudentImportDownload
+> {
+    const response = await api.get<Blob>('/students/import/template', {
+        responseType: 'blob',
+    })
+
+    return {
+        blob: response.data,
+        fileName: getStudentImportFileName(
+            response.headers,
+            'Import Student Template.xlsx',
+        ),
+    }
+}

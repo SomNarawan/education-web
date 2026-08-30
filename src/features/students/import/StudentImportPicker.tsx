@@ -1,6 +1,7 @@
 import {
     CheckCircleOutlined,
     DeleteOutlined,
+    DownloadOutlined,
     FileExcelOutlined,
     InboxOutlined,
     UploadOutlined,
@@ -17,8 +18,12 @@ import {
 import type { UploadProps } from 'antd'
 import { useRef, useState } from 'react'
 import { useAuth } from '../../../hooks/useAuth'
-import { importStudents } from '../../../services/studentImportService'
 import {
+    downloadStudentImportTemplate,
+    importStudents,
+} from '../../../services/studentImportService'
+import {
+    downloadStudentImportBlob,
     parseStudentImportError,
     runStudentImportOnce,
     validateStudentImportFile,
@@ -38,7 +43,27 @@ export default function StudentImportPicker({
     const importLock = useRef(false)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [importing, setImporting] = useState(false)
+    const [templateDownloading, setTemplateDownloading] = useState(false)
     const [uploadPercent, setUploadPercent] = useState(0)
+
+    const handleDownloadTemplate = async () => {
+        try {
+            setTemplateDownloading(true)
+            const result = await downloadStudentImportTemplate()
+            downloadStudentImportBlob(result.blob, result.fileName)
+            message.success('ดาวน์โหลดไฟล์ Template สำเร็จ')
+        } catch (error) {
+            console.error('Unable to download student import template', error)
+            const parsedError = await parseStudentImportError(error)
+            message.error(parsedError.message)
+
+            if (parsedError.status === 401) {
+                logout()
+            }
+        } finally {
+            setTemplateDownloading(false)
+        }
+    }
 
     const handleImport = async () => {
         const validationError = validateStudentImportFile(selectedFile)
@@ -175,6 +200,15 @@ export default function StudentImportPicker({
             )}
 
             <div className="student-import-actions">
+                <Button
+                    size="large"
+                    icon={<DownloadOutlined />}
+                    loading={templateDownloading}
+                    disabled={importing}
+                    onClick={() => void handleDownloadTemplate()}
+                >
+                    ดาวน์โหลดไฟล์ Template
+                </Button>
                 <Button
                     type="primary"
                     size="large"
