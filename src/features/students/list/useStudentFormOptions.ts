@@ -1,19 +1,23 @@
 import { message } from 'antd'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
     getAdmissionChannels,
     getGuardianRelationships,
     getHighSchoolOptions,
     getStudentStatuses,
-    getSystemTeachers,
+    getSystemTeachersByStudyPlan,
     getTitles,
 } from '../../../services/listOfValueService'
-import { getStudyPlans } from '../../../services/masterDataService'
+import {
+    getCurriculums,
+    getStudyPlans,
+} from '../../../services/masterDataService'
 import type { ListOfValue } from '../../../types/ListOfValue'
-import type { StudyPlan } from '../../../types/MasterData'
+import type { Curriculum, StudyPlan } from '../../../types/MasterData'
 
 interface StudentFormOptions {
     titles: ListOfValue[]
+    curriculums: Curriculum[]
     systemTeachers: ListOfValue[]
     studentStatuses: ListOfValue[]
     admissionChannels: ListOfValue[]
@@ -24,6 +28,7 @@ interface StudentFormOptions {
 
 const emptyOptions: StudentFormOptions = {
     titles: [],
+    curriculums: [],
     systemTeachers: [],
     studentStatuses: [],
     admissionChannels: [],
@@ -32,9 +37,15 @@ const emptyOptions: StudentFormOptions = {
     studyPlans: [],
 }
 
-export function useStudentFormOptions(enabled: boolean) {
+export function useStudentFormOptions(
+    enabled: boolean,
+    curriculumId?: number,
+    studyPlanId?: number,
+) {
     const [options, setOptions] = useState<StudentFormOptions>(emptyOptions)
     const [loading, setLoading] = useState(false)
+    const [studyPlansLoading, setStudyPlansLoading] = useState(false)
+    const [systemTeachersLoading, setSystemTeachersLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
@@ -50,32 +61,30 @@ export function useStudentFormOptions(enabled: boolean) {
                 setError(null)
                 const [
                     titles,
-                    systemTeachers,
+                    curriculums,
                     studentStatuses,
                     admissionChannels,
                     highSchools,
                     guardianRelationships,
-                    studyPlans,
                 ] = await Promise.all([
                     getTitles(),
-                    getSystemTeachers(),
+                    getCurriculums(),
                     getStudentStatuses(),
                     getAdmissionChannels(),
                     getHighSchoolOptions(),
                     getGuardianRelationships(),
-                    getStudyPlans(),
                 ])
 
                 if (!cancelled) {
-                    setOptions({
+                    setOptions((current) => ({
+                        ...current,
                         titles,
-                        systemTeachers,
+                        curriculums,
                         studentStatuses,
                         admissionChannels,
                         highSchools,
                         guardianRelationships,
-                        studyPlans,
-                    })
+                    }))
                 }
             } catch (error) {
                 if (!cancelled) {
@@ -99,5 +108,97 @@ export function useStudentFormOptions(enabled: boolean) {
         }
     }, [enabled])
 
-    return { options, loading, error }
+    useEffect(() => {
+        if (!enabled || !curriculumId) {
+            return
+        }
+
+        let cancelled = false
+
+        const loadStudyPlans = async () => {
+            try {
+                setStudyPlansLoading(true)
+                const studyPlans = await getStudyPlans(curriculumId)
+
+                if (!cancelled) {
+                    setOptions((current) => ({ ...current, studyPlans }))
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error(error)
+                    message.error('โหลดข้อมูลแผนการเรียนไม่สำเร็จ')
+                }
+            } finally {
+                if (!cancelled) {
+                    setStudyPlansLoading(false)
+                }
+            }
+        }
+
+        void loadStudyPlans()
+
+        return () => {
+            cancelled = true
+        }
+    }, [curriculumId, enabled])
+
+    useEffect(() => {
+        if (!enabled || !studyPlanId) {
+            return
+        }
+
+        let cancelled = false
+
+        const loadSystemTeachers = async () => {
+            try {
+                setSystemTeachersLoading(true)
+                const systemTeachers =
+                    await getSystemTeachersByStudyPlan(studyPlanId)
+
+                if (!cancelled) {
+                    setOptions((current) => ({
+                        ...current,
+                        systemTeachers,
+                    }))
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error(error)
+                    message.error('โหลดข้อมูลอาจารย์ที่ปรึกษาไม่สำเร็จ')
+                }
+            } finally {
+                if (!cancelled) {
+                    setSystemTeachersLoading(false)
+                }
+            }
+        }
+
+        void loadSystemTeachers()
+
+        return () => {
+            cancelled = true
+        }
+    }, [enabled, studyPlanId])
+
+    const clearStudyPlans = useCallback(() => {
+        setOptions((current) => ({
+            ...current,
+            studyPlans: [],
+            systemTeachers: [],
+        }))
+    }, [])
+
+    const clearSystemTeachers = useCallback(() => {
+        setOptions((current) => ({ ...current, systemTeachers: [] }))
+    }, [])
+
+    return {
+        options,
+        loading,
+        studyPlansLoading,
+        systemTeachersLoading,
+        error,
+        clearStudyPlans,
+        clearSystemTeachers,
+    }
 }

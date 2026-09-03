@@ -13,6 +13,7 @@ export interface CreateStudentRequest {
     student_status_id: number
     admission_channel_id: number
     high_school_id: number
+    curriculum_id: number
     study_plan_id: number
     department_id?: number
     entry_year: number

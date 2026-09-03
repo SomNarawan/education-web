@@ -7,13 +7,11 @@ import type {
     SyncResult,
     SyncedSystemDepartment,
     SyncedSystemFaculty,
-    SyncedSystemTeacher,
 } from '../types/SyncData'
 
 const syncEndpoints: Record<SyncDataType, string> = {
     faculty: '/system-faculties/sync',
     department: '/system-departments/sync',
-    systemTeacher: '/system-teachers/sync',
 }
 
 export async function syncMasterData(
@@ -61,16 +59,6 @@ export async function getSyncedSystemDepartments(): Promise<
 > {
     const response = await api.get<ApiResponse<SyncedSystemDepartment[]>>(
         '/system-departments/all',
-    )
-
-    return response.data.data
-}
-
-export async function getSyncedSystemTeachers(): Promise<
-    SyncedSystemTeacher[]
-> {
-    const response = await api.get<ApiResponse<SyncedSystemTeacher[]>>(
-        '/system-teachers/all',
     )
 
     return response.data.data

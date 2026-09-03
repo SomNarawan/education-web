@@ -1,6 +1,6 @@
-export type SyncDataType = 'faculty' | 'department' | 'systemTeacher'
+export type SyncDataType = 'faculty' | 'department'
 
-export type SyncType = 1 | 2 | 3
+export type SyncType = 1 | 2
 
 export type SyncExecutionStatus = 'running' | 'success' | 'failed'
 
@@ -64,12 +64,6 @@ export interface SyncedSystemDepartment extends SyncedDataBase {
     en_short_name: string
     system_faculty_id: number
     faculty_name: string | null
-}
-
-export interface SyncedSystemTeacher extends SyncedDataBase {
-    nontri_id: string
-    full_name_th: string
-    department_id: number
 }
 
 export type SyncStatus = 'waiting' | SyncExecutionStatus

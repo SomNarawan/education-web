@@ -6,7 +6,6 @@ Form,
 Input,
 Modal,
 Row,
-Select,
 } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
 import { useEffect } from 'react'
@@ -37,11 +36,21 @@ onCancel,
 onSave,
 }: StudentFormModalProps) {
 const [form] = Form.useForm<FormValues>()
+const selectedCurriculumId = Form.useWatch('curriculum_id', form)
+const selectedStudyPlanId = Form.useWatch('study_plan_id', form)
 const {
     options: dropdownData,
     loading: optionsLoading,
+    studyPlansLoading,
+    systemTeachersLoading,
     error: optionsError,
-} = useStudentFormOptions(open)
+    clearStudyPlans,
+    clearSystemTeachers,
+} = useStudentFormOptions(
+    open,
+    selectedCurriculumId,
+    selectedStudyPlanId,
+)
 
 useEffect(() => {
     if (!open) return
@@ -57,6 +66,7 @@ useEffect(() => {
             last_name_en: editingStudent.last_name_en,
             phone: editingStudent.phone,
             email: editingStudent.email,
+            curriculum_id: editingStudent.curriculum_id,
             study_plan_id: editingStudent.study_plan_id,
             entry_year: dayjs().year(editingStudent.entry_year),
             teacher_id: editingStudent.teacher_id,
@@ -71,8 +81,26 @@ useEffect(() => {
         })
     } else {
         form.resetFields()
+        clearStudyPlans()
     }
-}, [open, editingStudent, form])
+}, [open, editingStudent, form, clearStudyPlans])
+
+const handleCurriculumChange = (curriculumId?: number) => {
+    form.setFieldsValue({
+        curriculum_id: curriculumId,
+        study_plan_id: undefined,
+        teacher_id: undefined,
+    })
+    clearStudyPlans()
+}
+
+const handleStudyPlanChange = (studyPlanId?: number) => {
+    form.setFieldsValue({
+        study_plan_id: studyPlanId,
+        teacher_id: undefined,
+    })
+    clearSystemTeachers()
+}
 
 const handleOk = async () => {
     const values = await form.validateFields()
@@ -93,7 +121,12 @@ return (
         okText="บันทึก"
         cancelText="ยกเลิก"
         width={1000}
-        confirmLoading={loading || optionsLoading}
+        confirmLoading={
+            loading ||
+            optionsLoading ||
+            studyPlansLoading ||
+            systemTeachersLoading
+        }
     >
         <Form
             layout="vertical"
@@ -258,13 +291,40 @@ return (
             </Card>
 
             <Card
-                title="3. แผนการเรียน"
+                title="3. หลักสูตรและแผนการเรียน"
                 size="small"
                 style={{ marginBottom: 16 }}
             >
                 <Row gutter={16}>
 
-                    <Col xs={24} md={12}>
+                    <Col xs={24} md={8}>
+                        <Form.Item
+                            label="หลักสูตร"
+                            name="curriculum_id"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'กรุณาเลือกหลักสูตร',
+                                },
+                            ]}
+                        >
+                            <ListOfValueSelect
+                                allowClear
+                                showSearch
+                                optionFilterProp={'label'}
+                                loading={optionsLoading}
+                                error={optionsError}
+                                placeholder="เลือกหลักสูตร"
+                                options={dropdownData.curriculums.map((item) => ({
+                                    label: item.name_th,
+                                    value: item.id,
+                                }))}
+                                onChange={handleCurriculumChange}
+                            />
+                        </Form.Item>
+                    </Col>
+
+                    <Col xs={24} md={8}>
                         <Form.Item
                             label="แผนการเรียน"
                             name="study_plan_id"
@@ -275,20 +335,26 @@ return (
                                 },
                             ]}
                         >
-                            <Select
+                            <ListOfValueSelect
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={optionsLoading}
-                                placeholder="เลือกแผนการเรียน"
+                                loading={studyPlansLoading}
+                                disabled={!selectedCurriculumId}
+                                placeholder={
+                                    selectedCurriculumId
+                                        ? 'เลือกแผนการเรียน'
+                                        : 'กรุณาเลือกหลักสูตรก่อน'
+                                }
                                 options={dropdownData.studyPlans.map((item) => ({
                                     label: item.name_th,
                                     value: item.id,
                                 }))}
+                                onChange={handleStudyPlanChange}
                             />
                         </Form.Item>
                     </Col>
-                    <Col xs={24} md={12}>
+                    <Col xs={24} md={8}>
                         <Form.Item
                             label="ปีเข้าเรียน"
                             name="entry_year"
@@ -318,9 +384,16 @@ return (
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={optionsLoading}
+                        loading={systemTeachersLoading}
+                        disabled={
+                            !selectedCurriculumId || !selectedStudyPlanId
+                        }
                         error={optionsError}
-                        placeholder="เลือกอาจารย์ที่ปรึกษา"
+                        placeholder={
+                            selectedCurriculumId && selectedStudyPlanId
+                                ? 'เลือกอาจารย์ที่ปรึกษา'
+                                : 'กรุณาเลือกหลักสูตรและแผนการเรียนก่อน'
+                        }
                         options={toListOfValueOptions(
                             dropdownData.systemTeachers,
                         )}

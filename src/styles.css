@@ -910,9 +910,9 @@ body {
 
 .advisor-search-fields {
     display: grid;
-    grid-template-columns: repeat(2, minmax(240px, 1fr)) auto;
+    grid-template-columns: repeat(3, minmax(220px, 1fr)) auto;
     gap: 18px;
-    max-width: 900px;
+    max-width: 1200px;
 }
 
 .advisor-search-fields label {

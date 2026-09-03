@@ -39,7 +39,6 @@ import { formatThaiDateTime } from '../utils/dateFormat'
 const syncOptions: { label: string; value: SyncDataType }[] = [
     { label: 'คณะ', value: 'faculty' },
     { label: 'ภาควิชา', value: 'department' },
-    { label: 'อาจารย์ที่ปรึกษา', value: 'systemTeacher' },
 ]
 
 const statusDisplay: Record<
@@ -66,7 +65,6 @@ interface SyncHistoryError {
 const syncTypeByDataType: Record<SyncDataType, SyncType> = {
     faculty: 1,
     department: 2,
-    systemTeacher: 3,
 }
 
 function getSyncStatus(status: SyncExecutionStatus | null): SyncStatus {

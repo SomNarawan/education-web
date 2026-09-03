@@ -6,6 +6,7 @@ interface ListOfValueParams {
     province_id?: number
     district_id?: number
     department_id?: number
+    study_plan_id?: number
 }
 
 const valueCache = new Map<string, ListOfValue[]>()
@@ -79,6 +80,8 @@ export const getSubdistricts = (districtId: number) =>
     getListOfValues('subdistricts', { district_id: districtId })
 export const getSystemTeachers = (departmentId?: number) =>
     getListOfValues('system-teachers', { department_id: departmentId })
+export const getSystemTeachersByStudyPlan = (studyPlanId: number) =>
+    getListOfValues('system-teachers', { study_plan_id: studyPlanId })
 export const getSystemDepartments = () =>
     getListOfValues('system-departments')
 export const getSystemFaculties = () =>

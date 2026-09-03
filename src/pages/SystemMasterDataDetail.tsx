@@ -13,13 +13,11 @@ import CustomTable from '../components/custom/CustomTable'
 import {
     getSyncedSystemDepartments,
     getSyncedSystemFaculties,
-    getSyncedSystemTeachers,
 } from '../services/syncService'
 import type {
     SyncDataType,
     SyncedSystemDepartment,
     SyncedSystemFaculty,
-    SyncedSystemTeacher,
     SystemMasterDataStatus,
 } from '../types/SyncData'
 import { formatThaiDateTime } from '../utils/dateFormat'
@@ -31,9 +29,6 @@ interface DetailRecord {
     thShortName?: string
     enShortName?: string
     facultyName?: string | null
-    nontriId?: string
-    fullNameTh?: string
-    departmentName?: string | null
     status: SystemMasterDataStatus
     createdAt: string | null
     createdBy: string | null
@@ -55,25 +50,16 @@ const pageConfig: Record<
         description: 'ข้อมูลภาควิชาและคณะที่สังกัดทั้งหมด',
         searchPlaceholder: 'ค้นหาภาควิชาหรือคณะ...',
     },
-    systemTeacher: {
-        title: 'รายละเอียดข้อมูลอาจารย์ที่ปรึกษา',
-        description: 'ข้อมูลอาจารย์และภาควิชาที่สังกัดทั้งหมด',
-        searchPlaceholder: 'ค้นหาชื่ออาจารย์ Nontri ID หรือภาควิชา...',
-    },
 }
 
-const syncDataTypes: SyncDataType[] = [
-    'faculty',
-    'department',
-    'systemTeacher',
-]
+const syncDataTypes: SyncDataType[] = ['faculty', 'department']
 
 function isSyncDataType(value: string | undefined): value is SyncDataType {
     return syncDataTypes.some((dataType) => dataType === value)
 }
 
 function mapAuditFields(
-    item: SyncedSystemFaculty | SyncedSystemDepartment | SyncedSystemTeacher,
+    item: SyncedSystemFaculty | SyncedSystemDepartment,
 ) {
     return {
         status: item.status,
@@ -182,25 +168,6 @@ const columnsByType: Record<SyncDataType, ColumnsType<DetailRecord>> = {
         ...auditColumns,
         statusColumn,
     ],
-    systemTeacher: [
-        {
-            title: 'Nontri ID',
-            dataIndex: 'nontriId',
-            key: 'nontriId',
-        },
-        {
-            title: 'ชื่ออาจารย์',
-            dataIndex: 'fullNameTh',
-            key: 'fullNameTh',
-        },
-        {
-            title: 'ชื่อภาควิชา',
-            dataIndex: 'departmentName',
-            key: 'departmentName',
-        },
-        ...auditColumns,
-        statusColumn,
-    ],
 }
 
 async function loadDetailRecords(dataType: SyncDataType): Promise<DetailRecord[]> {
@@ -231,21 +198,7 @@ async function loadDetailRecords(dataType: SyncDataType): Promise<DetailRecord[]
         }))
     }
 
-    const [teachers, departments] = await Promise.all([
-        getSyncedSystemTeachers(),
-        getSyncedSystemDepartments(),
-    ])
-    const departmentNames = new Map(
-        departments.map((department) => [department.id, department.th_name]),
-    )
-
-    return teachers.map((teacher) => ({
-        id: teacher.id,
-        nontriId: teacher.nontri_id,
-        fullNameTh: teacher.full_name_th,
-        departmentName: departmentNames.get(teacher.department_id) ?? null,
-        ...mapAuditFields(teacher),
-    }))
+    return []
 }
 
 function getErrorMessage(error: unknown): string {

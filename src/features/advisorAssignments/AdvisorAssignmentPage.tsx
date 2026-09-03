@@ -17,11 +17,18 @@ import {
     updateStudentAdvisors,
 } from '../../services/advisorAssignmentService'
 import {
-    getSystemDepartments,
-    getSystemTeachers,
+    getSystemTeachersByStudyPlan,
 } from '../../services/listOfValueService'
+import {
+    getCurriculums,
+    getStudyPlans,
+} from '../../services/masterDataService'
 import type { AdvisorAssignmentStudent } from '../../types/AdvisorAssignment'
-import type { SelectOption } from '../../types/MasterData'
+import type {
+    Curriculum,
+    SelectOption,
+    StudyPlan,
+} from '../../types/MasterData'
 import ListOfValueSelect from '../../components/custom/ListOfValueSelect'
 import { toListOfValueOptions } from '../../utils/listOfValue'
 
@@ -70,11 +77,15 @@ function filterStudents(
 }
 
 export default function AdvisorAssignmentPage() {
-    const [departmentOptions, setDepartmentOptions] = useState<SelectOption[]>([])
+    const [curriculums, setCurriculums] = useState<Curriculum[]>([])
+    const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([])
     const [systemTeacherOptions, setSystemTeacherOptions] = useState<
         SelectOption[]
     >([])
-    const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+    const [selectedCurriculumId, setSelectedCurriculumId] = useState<
+        number | undefined
+    >()
+    const [selectedStudyPlanId, setSelectedStudyPlanId] = useState<
         number | undefined
     >()
     const [selectedSystemTeacherId, setSelectedSystemTeacherId] = useState<
@@ -97,11 +108,13 @@ export default function AdvisorAssignmentPage() {
     )
     const [unassignedSearchText, setUnassignedSearchText] = useState('')
     const [assignedSearchText, setAssignedSearchText] = useState('')
-    const [loadingDepartments, setLoadingDepartments] = useState(false)
+    const [loadingCurriculums, setLoadingCurriculums] = useState(false)
+    const [loadingStudyPlans, setLoadingStudyPlans] = useState(false)
     const [loadingSystemTeachers, setLoadingSystemTeachers] = useState(false)
-    const [departmentsError, setDepartmentsError] = useState<string | null>(
+    const [curriculumsError, setCurriculumsError] = useState<string | null>(
         null,
     )
+    const [studyPlansError, setStudyPlansError] = useState<string | null>(null)
     const [systemTeachersError, setSystemTeachersError] = useState<
         string | null
     >(null)
@@ -114,26 +127,26 @@ export default function AdvisorAssignmentPage() {
     useEffect(() => {
         let active = true
 
-        const loadDepartments = async () => {
+        const loadCurriculums = async () => {
             try {
-                setLoadingDepartments(true)
-                setDepartmentsError(null)
-                const departments = await getSystemDepartments()
+                setLoadingCurriculums(true)
+                setCurriculumsError(null)
+                const curriculumData = await getCurriculums()
 
                 if (!active) return
 
-                setDepartmentOptions(toListOfValueOptions(departments))
+                setCurriculums(curriculumData)
             } catch (error) {
                 console.error(error)
-                const errorMessage = 'โหลดข้อมูลภาควิชาไม่สำเร็จ'
-                setDepartmentsError(errorMessage)
+                const errorMessage = 'โหลดข้อมูลหลักสูตรไม่สำเร็จ'
+                setCurriculumsError(errorMessage)
                 message.error(errorMessage)
             } finally {
-                if (active) setLoadingDepartments(false)
+                if (active) setLoadingCurriculums(false)
             }
         }
 
-        loadDepartments()
+        void loadCurriculums()
 
         return () => {
             active = false
@@ -141,16 +154,49 @@ export default function AdvisorAssignmentPage() {
     }, [])
 
     useEffect(() => {
-        if (!selectedDepartmentId) return
+        if (!selectedCurriculumId) return
 
         let active = true
 
-        const loadDepartmentSystemTeachers = async () => {
+        const loadCurriculumStudyPlans = async () => {
+            try {
+                setLoadingStudyPlans(true)
+                setStudyPlansError(null)
+                const studyPlanData = await getStudyPlans(
+                    selectedCurriculumId,
+                )
+
+                if (!active) return
+
+                setStudyPlans(studyPlanData)
+            } catch (error) {
+                console.error(error)
+                const errorMessage = 'โหลดข้อมูลแผนการเรียนไม่สำเร็จ'
+                setStudyPlansError(errorMessage)
+                message.error(errorMessage)
+            } finally {
+                if (active) setLoadingStudyPlans(false)
+            }
+        }
+
+        void loadCurriculumStudyPlans()
+
+        return () => {
+            active = false
+        }
+    }, [selectedCurriculumId])
+
+    useEffect(() => {
+        if (!selectedStudyPlanId) return
+
+        let active = true
+
+        const loadStudyPlanSystemTeachers = async () => {
             try {
                 setLoadingSystemTeachers(true)
                 setSystemTeachersError(null)
                 const systemTeachers =
-                    await getSystemTeachers(selectedDepartmentId)
+                    await getSystemTeachersByStudyPlan(selectedStudyPlanId)
 
                 if (!active) return
 
@@ -165,15 +211,15 @@ export default function AdvisorAssignmentPage() {
             }
         }
 
-        loadDepartmentSystemTeachers()
+        void loadStudyPlanSystemTeachers()
 
         return () => {
             active = false
         }
-    }, [selectedDepartmentId])
+    }, [selectedStudyPlanId])
 
     useEffect(() => {
-        if (!selectedDepartmentId || !selectedSystemTeacherId) return
+        if (!selectedStudyPlanId || !selectedSystemTeacherId) return
 
         let active = true
 
@@ -183,9 +229,10 @@ export default function AdvisorAssignmentPage() {
                 setLoadingAssigned(true)
 
                 const [unassigned, assigned] = await Promise.all([
-                    getStudyingStudentsWithoutAdvisor(selectedDepartmentId),
+                    getStudyingStudentsWithoutAdvisor(selectedStudyPlanId),
                     getStudyingStudentsBySystemTeacher(
                         selectedSystemTeacherId,
+                        selectedStudyPlanId,
                     ),
                 ])
 
@@ -214,7 +261,7 @@ export default function AdvisorAssignmentPage() {
         return () => {
             active = false
         }
-    }, [reloadKey, selectedDepartmentId, selectedSystemTeacherId])
+    }, [reloadKey, selectedStudyPlanId, selectedSystemTeacherId])
 
     const filteredUnassignedStudents = useMemo(
         () => filterStudents(unassignedStudents, unassignedSearchText),
@@ -321,11 +368,7 @@ export default function AdvisorAssignmentPage() {
         setDragPayload(null)
     }
 
-    const handleDepartmentChange = (departmentId: number) => {
-        setSelectedDepartmentId(departmentId)
-        setSelectedSystemTeacherId(undefined)
-        setSystemTeacherOptions([])
-        setSystemTeachersError(null)
+    const clearStudentLists = () => {
         setUnassignedStudents([])
         setAssignedStudents([])
         setInitialAssignedStudentIds([])
@@ -335,36 +378,55 @@ export default function AdvisorAssignmentPage() {
         setAssignedSearchText('')
         setLoadingUnassigned(false)
         setLoadingAssigned(false)
+    }
+
+    const handleCurriculumChange = (curriculumId?: number) => {
+        setSelectedCurriculumId(curriculumId)
+        setSelectedStudyPlanId(undefined)
+        setSelectedSystemTeacherId(undefined)
+        setStudyPlans([])
+        setStudyPlansError(null)
+        setLoadingStudyPlans(false)
+        setSystemTeacherOptions([])
+        setSystemTeachersError(null)
+        setLoadingSystemTeachers(false)
+        clearStudentLists()
+    }
+
+    const handleStudyPlanChange = (studyPlanId?: number) => {
+        setSelectedStudyPlanId(studyPlanId)
+        setSelectedSystemTeacherId(undefined)
+        setSystemTeacherOptions([])
+        setSystemTeachersError(null)
+        setLoadingSystemTeachers(false)
+        clearStudentLists()
     }
 
     const handleSystemTeacherChange = (systemTeacherId: number) => {
         setSelectedSystemTeacherId(systemTeacherId)
-        setAssignedStudents([])
-        setInitialAssignedStudentIds([])
-        setSelectedUnassignedCodes([])
-        setSelectedAssignedCodes([])
+        clearStudentLists()
     }
 
     const handleClearSearch = () => {
-        setSelectedDepartmentId(undefined)
+        setSelectedCurriculumId(undefined)
+        setSelectedStudyPlanId(undefined)
         setSelectedSystemTeacherId(undefined)
+        setStudyPlans([])
+        setStudyPlansError(null)
         setSystemTeacherOptions([])
         setSystemTeachersError(null)
-        setUnassignedStudents([])
-        setAssignedStudents([])
-        setInitialAssignedStudentIds([])
-        setSelectedUnassignedCodes([])
-        setSelectedAssignedCodes([])
-        setUnassignedSearchText('')
-        setAssignedSearchText('')
+        clearStudentLists()
+        setLoadingStudyPlans(false)
         setLoadingSystemTeachers(false)
-        setLoadingUnassigned(false)
-        setLoadingAssigned(false)
         setDragPayload(null)
     }
 
     const handleSave = async () => {
-        if (!selectedSystemTeacherId || !hasAssignmentChanges) return
+        if (
+            !selectedStudyPlanId ||
+            !selectedSystemTeacherId ||
+            !hasAssignmentChanges
+        ) return
 
         if (
             assignmentChanges.currentAssignedIds.length !==
@@ -377,6 +439,7 @@ export default function AdvisorAssignmentPage() {
         try {
             setSaving(true)
             const result = await updateStudentAdvisors(
+                selectedStudyPlanId,
                 selectedSystemTeacherId,
                 assignmentChanges.assignStudentIds,
                 assignmentChanges.removeStudentIds,
@@ -448,24 +511,49 @@ export default function AdvisorAssignmentPage() {
             <div className="page-title-section">
                 <div>
                     <h1>กำหนดอาจารย์ที่ปรึกษา</h1>
-                    <p>กำหนดอาจารย์ที่ปรึกษาให้แก่นิสิตในแต่ละภาควิชา</p>
+                    <p>กำหนดอาจารย์ที่ปรึกษาให้แก่นิสิตตามแผนการเรียน</p>
                 </div>
             </div>
 
             <Card className="advisor-search-card" title="ค้นหา">
                 <div className="advisor-search-fields">
                     <label>
-                        <Text strong>ภาควิชา</Text>
+                        <Text strong>หลักสูตร</Text>
                         <ListOfValueSelect
-                            aria-label="ภาควิชา"
-                            placeholder="เลือกภาควิชา"
-                            options={departmentOptions}
-                            value={selectedDepartmentId}
-                            loading={loadingDepartments}
-                            error={departmentsError}
+                            aria-label="หลักสูตร"
+                            placeholder="เลือกหลักสูตร"
+                            options={curriculums.map((curriculum) => ({
+                                label: curriculum.name_th,
+                                value: curriculum.id,
+                            }))}
+                            value={selectedCurriculumId}
+                            loading={loadingCurriculums}
+                            error={curriculumsError}
                             showSearch
                             optionFilterProp="label"
-                            onChange={handleDepartmentChange}
+                            onChange={handleCurriculumChange}
+                        />
+                    </label>
+                    <label>
+                        <Text strong>แผนการเรียน</Text>
+                        <ListOfValueSelect
+                            aria-label="แผนการเรียน"
+                            placeholder={
+                                selectedCurriculumId
+                                    ? 'เลือกแผนการเรียน'
+                                    : 'กรุณาเลือกหลักสูตรก่อน'
+                            }
+                            options={studyPlans.map((studyPlan) => ({
+                                label: studyPlan.name_th,
+                                value: studyPlan.id,
+                            }))}
+                            value={selectedStudyPlanId}
+                            loading={loadingStudyPlans}
+                            error={studyPlansError}
+                            disabled={!selectedCurriculumId}
+                            showSearch
+                            optionFilterProp="label"
+                            onChange={handleStudyPlanChange}
                         />
                     </label>
                     <label>
@@ -473,15 +561,15 @@ export default function AdvisorAssignmentPage() {
                         <ListOfValueSelect
                             aria-label="อาจารย์ที่ปรึกษา"
                             placeholder={
-                                selectedDepartmentId
+                                selectedStudyPlanId
                                     ? 'เลือกอาจารย์ที่ปรึกษา'
-                                    : 'กรุณาเลือกภาควิชาก่อน'
+                                    : 'กรุณาเลือกแผนการเรียนก่อน'
                             }
                             options={systemTeacherOptions}
                             value={selectedSystemTeacherId}
                             loading={loadingSystemTeachers}
                             error={systemTeachersError}
-                            disabled={!selectedDepartmentId}
+                            disabled={!selectedStudyPlanId}
                             showSearch
                             optionFilterProp="label"
                             onChange={handleSystemTeacherChange}
@@ -491,7 +579,8 @@ export default function AdvisorAssignmentPage() {
                         <Button
                             icon={<ClearOutlined />}
                             disabled={
-                                !selectedDepartmentId &&
+                                !selectedCurriculumId &&
+                                !selectedStudyPlanId &&
                                 !selectedSystemTeacherId &&
                                 unassignedStudents.length === 0 &&
                                 assignedStudents.length === 0
