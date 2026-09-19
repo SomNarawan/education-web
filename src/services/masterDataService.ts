@@ -94,9 +94,12 @@ export async function getCurriculums(): Promise<Curriculum[]> {
 export async function getStudyPlans(
     curriculumId?: number,
 ): Promise<StudyPlan[]> {
-    const response = await api.get<ApiResponse<StudyPlan[]>>('/study-plans', {
+    const response = await api.get<ApiResponse<StudyPlan[]>>(
+        '/list-of-values/study-plans',
+        {
         params: curriculumId ? { curriculum_id: curriculumId } : undefined,
-    })
+        },
+    )
     return response.data.data
 }
 
