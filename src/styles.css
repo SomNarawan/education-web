@@ -921,6 +921,11 @@ body {
     gap: 8px;
 }
 
+.advisor-search-fields .advisor-curriculum-field {
+    grid-column: 1 / -1;
+    max-width: 930px;
+}
+
 .advisor-search-fields .ant-select {
     width: 100%;
 }

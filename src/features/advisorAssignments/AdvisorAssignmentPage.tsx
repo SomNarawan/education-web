@@ -16,11 +16,11 @@ import {
     getStudyingStudentsWithoutAdvisor,
     updateStudentAdvisors,
 } from '../../services/advisorAssignmentService'
-import { getCurriculumPersonnel } from '../../services/listOfValueService'
 import {
+    getCurriculumPersonnel,
     getCurriculums,
-    getStudyPlans,
-} from '../../services/masterDataService'
+} from '../../services/listOfValueService'
+import { getStudyPlans } from '../../services/masterDataService'
 import type { AdvisorAssignmentStudent } from '../../types/AdvisorAssignment'
 import type {
     Curriculum,
@@ -394,9 +394,6 @@ export default function AdvisorAssignmentPage() {
     const handleStudyPlanChange = (studyPlanId?: number) => {
         setSelectedStudyPlanId(studyPlanId)
         setSelectedSystemTeacherId(undefined)
-        setSystemTeacherOptions([])
-        setSystemTeachersError(null)
-        setLoadingSystemTeachers(false)
         clearStudentLists()
     }
 
@@ -515,7 +512,7 @@ export default function AdvisorAssignmentPage() {
 
             <Card className="advisor-search-card" title="ค้นหา">
                 <div className="advisor-search-fields">
-                    <label>
+                    <label className="advisor-curriculum-field">
                         <Text strong>หลักสูตร</Text>
                         <ListOfValueSelect
                             aria-label="หลักสูตร"
@@ -559,15 +556,15 @@ export default function AdvisorAssignmentPage() {
                         <ListOfValueSelect
                             aria-label="อาจารย์ที่ปรึกษา"
                             placeholder={
-                                selectedStudyPlanId
+                                selectedCurriculumId
                                     ? 'เลือกอาจารย์ที่ปรึกษา'
-                                    : 'กรุณาเลือกแผนการเรียนก่อน'
+                                    : 'กรุณาเลือกหลักสูตรก่อน'
                             }
                             options={systemTeacherOptions}
                             value={selectedSystemTeacherId}
                             loading={loadingSystemTeachers}
                             error={systemTeachersError}
-                            disabled={!selectedStudyPlanId}
+                            disabled={!selectedCurriculumId}
                             showSearch
                             optionFilterProp="label"
                             onChange={handleSystemTeacherChange}
