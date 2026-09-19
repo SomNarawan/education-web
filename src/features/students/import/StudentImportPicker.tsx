@@ -23,10 +23,8 @@ import { useEffect, useRef, useState } from 'react'
 import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
 import { renderRequiredFormMark } from '../../../components/custom/RequiredFormMark'
 import { useAuth } from '../../../hooks/useAuth'
-import {
-    getCurriculums,
-    getStudyPlans,
-} from '../../../services/masterDataService'
+import { getCurriculums } from '../../../services/listOfValueService'
+import { getStudyPlans } from '../../../services/masterDataService'
 import {
     downloadStudentImportTemplate,
     importStudents,
