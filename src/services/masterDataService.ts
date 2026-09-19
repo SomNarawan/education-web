@@ -93,11 +93,18 @@ export async function getCurriculums(): Promise<Curriculum[]> {
 
 export async function getStudyPlans(
     curriculumId?: number,
+    includeIds?: number[],
 ): Promise<StudyPlan[]> {
     const response = await api.get<ApiResponse<StudyPlan[]>>(
         '/list-of-values/study-plans',
         {
-        params: curriculumId ? { curriculum_id: curriculumId } : undefined,
+            params:
+                curriculumId || includeIds
+                    ? {
+                          curriculum_id: curriculumId,
+                          include_ids: includeIds,
+                      }
+                    : undefined,
         },
     )
     return response.data.data

@@ -68,29 +68,43 @@ export function invalidateListOfValueCache(type?: ListOfValueType) {
     }
 }
 
-export const getTitles = () => getListOfValues('titles')
-export const getAdmissionChannels = () =>
-    getListOfValues('admission-channels')
-export const getGuardianRelationships = () =>
-    getListOfValues('relationships')
-export const getStudentStatuses = () =>
-    getListOfValues('student-statuses')
-export const getNoteTypes = () => getListOfValues('note-types')
-export const getImportTypes = () => getListOfValues('import-types')
-export const getHighSchoolOptions = () => getListOfValues('high-schools')
-export const getProvinces = () => getListOfValues('provinces')
-export const getDistricts = (provinceId: number) =>
-    getListOfValues('districts', { province_id: provinceId })
-export const getSubdistricts = (districtId: number) =>
-    getListOfValues('subdistricts', { district_id: districtId })
-export const getCurriculumPersonnel = (curriculumId: number) =>
-    getListOfValues('curriculum-personnel', { curriculum_id: curriculumId })
-export const getSystemDepartments = () =>
-    getListOfValues('system-departments')
-export const getSystemFaculties = () =>
-    getListOfValues('system-faculties')
+export const getTitles = (includeIds?: number[]) =>
+    getListOfValues('titles', { include_ids: includeIds })
+export const getAdmissionChannels = (includeIds?: number[]) =>
+    getListOfValues('admission-channels', { include_ids: includeIds })
+export const getGuardianRelationships = (includeIds?: number[]) =>
+    getListOfValues('relationships', { include_ids: includeIds })
+export const getStudentStatuses = (includeIds?: number[]) =>
+    getListOfValues('student-statuses', { include_ids: includeIds })
+export const getNoteTypes = (includeIds?: number[]) =>
+    getListOfValues('note-types', { include_ids: includeIds })
+export const getImportTypes = (includeIds?: number[]) =>
+    getListOfValues('import-types', { include_ids: includeIds })
+export const getHighSchoolOptions = (includeIds?: number[]) =>
+    getListOfValues('high-schools', { include_ids: includeIds })
+export const getProvinces = (includeIds?: number[]) =>
+    getListOfValues('provinces', { include_ids: includeIds })
+export const getDistricts = (provinceId: number, includeIds?: number[]) =>
+    getListOfValues('districts', {
+        province_id: provinceId,
+        include_ids: includeIds,
+    })
+export const getSubdistricts = (districtId: number, includeIds?: number[]) =>
+    getListOfValues('subdistricts', {
+        district_id: districtId,
+        include_ids: includeIds,
+    })
+export const getCurriculumPersonnel = (
+    curriculumId: number,
+    includeIds?: number[],
+) =>
+    getListOfValues('curriculum-personnel', {
+        curriculum_id: curriculumId,
+        include_ids: includeIds,
+    })
+export const getSystemDepartments = (includeIds?: number[]) =>
+    getListOfValues('system-departments', { include_ids: includeIds })
+export const getSystemFaculties = (includeIds?: number[]) =>
+    getListOfValues('system-faculties', { include_ids: includeIds })
 export const getCurriculums = (includeIds?: number[]): Promise<Curriculum[]> =>
-    getListOfValues<Curriculum>(
-        'curriculums',
-        includeIds ? { include_ids: includeIds } : {},
-    )
+    getListOfValues<Curriculum>('curriculums', { include_ids: includeIds })

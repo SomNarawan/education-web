@@ -12,6 +12,7 @@ import {
 import { getStudyPlans } from '../../../services/masterDataService'
 import type { ListOfValue } from '../../../types/ListOfValue'
 import type { Curriculum, StudyPlan } from '../../../types/MasterData'
+import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
 
 interface StudentFormOptions {
     titles: ListOfValue[]
@@ -38,7 +39,7 @@ const emptyOptions: StudentFormOptions = {
 export function useStudentFormOptions(
     enabled: boolean,
     curriculumId?: number,
-    editingCurriculumId?: number,
+    editingStudent?: StudentDetailResponse | null,
 ) {
     const [options, setOptions] = useState<StudentFormOptions>(emptyOptions)
     const [loading, setLoading] = useState(false)
@@ -65,14 +66,36 @@ export function useStudentFormOptions(
                     highSchools,
                     guardianRelationships,
                 ] = await Promise.all([
-                    getTitles(),
-                    getCurriculums(
-                        editingCurriculumId ? [editingCurriculumId] : undefined,
+                    getTitles(
+                        editingStudent?.title_id
+                            ? [editingStudent.title_id]
+                            : undefined,
                     ),
-                    getStudentStatuses(),
-                    getAdmissionChannels(),
-                    getHighSchoolOptions(),
-                    getGuardianRelationships(),
+                    getCurriculums(
+                        editingStudent?.curriculum_id
+                            ? [editingStudent.curriculum_id]
+                            : undefined,
+                    ),
+                    getStudentStatuses(
+                        editingStudent?.student_status_id
+                            ? [editingStudent.student_status_id]
+                            : undefined,
+                    ),
+                    getAdmissionChannels(
+                        editingStudent?.admission_channel_id
+                            ? [editingStudent.admission_channel_id]
+                            : undefined,
+                    ),
+                    getHighSchoolOptions(
+                        editingStudent?.high_school_id
+                            ? [editingStudent.high_school_id]
+                            : undefined,
+                    ),
+                    getGuardianRelationships(
+                        editingStudent?.guardian_relationship_id
+                            ? [editingStudent.guardian_relationship_id]
+                            : undefined,
+                    ),
                 ])
 
                 if (!cancelled) {
@@ -106,7 +129,7 @@ export function useStudentFormOptions(
         return () => {
             cancelled = true
         }
-    }, [editingCurriculumId, enabled])
+    }, [editingStudent, enabled])
 
     useEffect(() => {
         if (!enabled || !curriculumId) {
@@ -118,7 +141,12 @@ export function useStudentFormOptions(
         const loadStudyPlans = async () => {
             try {
                 setStudyPlansLoading(true)
-                const studyPlans = await getStudyPlans(curriculumId)
+                const studyPlans = await getStudyPlans(
+                    curriculumId,
+                    editingStudent?.study_plan_id
+                        ? [editingStudent.study_plan_id]
+                        : undefined,
+                )
 
                 if (!cancelled) {
                     setOptions((current) => ({ ...current, studyPlans }))
@@ -140,7 +168,7 @@ export function useStudentFormOptions(
         return () => {
             cancelled = true
         }
-    }, [curriculumId, enabled])
+    }, [curriculumId, editingStudent, enabled])
 
     useEffect(() => {
         if (!enabled || !curriculumId) {
@@ -152,7 +180,12 @@ export function useStudentFormOptions(
         const loadSystemTeachers = async () => {
             try {
                 setSystemTeachersLoading(true)
-                const systemTeachers = await getCurriculumPersonnel(curriculumId)
+                const systemTeachers = await getCurriculumPersonnel(
+                    curriculumId,
+                    editingStudent?.teacher_id
+                        ? [editingStudent.teacher_id]
+                        : undefined,
+                )
 
                 if (!cancelled) {
                     setOptions((current) => ({
@@ -177,7 +210,7 @@ export function useStudentFormOptions(
         return () => {
             cancelled = true
         }
-    }, [curriculumId, enabled])
+    }, [curriculumId, editingStudent, enabled])
 
     const clearStudyPlans = useCallback(() => {
         setOptions((current) => ({

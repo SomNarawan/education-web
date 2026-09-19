@@ -48,7 +48,7 @@ const {
 } = useStudentFormOptions(
     open,
     selectedCurriculumId,
-    editingStudent?.curriculum_id,
+    editingStudent,
 )
 
 useEffect(() => {
