@@ -2,11 +2,11 @@ import { message } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import {
     getAdmissionChannels,
+    getCurriculumPersonnel,
     getCurriculums,
     getGuardianRelationships,
     getHighSchoolOptions,
     getStudentStatuses,
-    getSystemTeachersByStudyPlan,
     getTitles,
 } from '../../../services/listOfValueService'
 import { getStudyPlans } from '../../../services/masterDataService'
@@ -38,7 +38,6 @@ const emptyOptions: StudentFormOptions = {
 export function useStudentFormOptions(
     enabled: boolean,
     curriculumId?: number,
-    studyPlanId?: number,
     editingCurriculumId?: number,
 ) {
     const [options, setOptions] = useState<StudentFormOptions>(emptyOptions)
@@ -144,7 +143,7 @@ export function useStudentFormOptions(
     }, [curriculumId, enabled])
 
     useEffect(() => {
-        if (!enabled || !studyPlanId) {
+        if (!enabled || !curriculumId) {
             return
         }
 
@@ -153,8 +152,7 @@ export function useStudentFormOptions(
         const loadSystemTeachers = async () => {
             try {
                 setSystemTeachersLoading(true)
-                const systemTeachers =
-                    await getSystemTeachersByStudyPlan(studyPlanId)
+                const systemTeachers = await getCurriculumPersonnel(curriculumId)
 
                 if (!cancelled) {
                     setOptions((current) => ({
@@ -179,7 +177,7 @@ export function useStudentFormOptions(
         return () => {
             cancelled = true
         }
-    }, [enabled, studyPlanId])
+    }, [curriculumId, enabled])
 
     const clearStudyPlans = useCallback(() => {
         setOptions((current) => ({

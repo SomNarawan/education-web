@@ -37,7 +37,6 @@ onSave,
 }: StudentFormModalProps) {
 const [form] = Form.useForm<FormValues>()
 const selectedCurriculumId = Form.useWatch('curriculum_id', form)
-const selectedStudyPlanId = Form.useWatch('study_plan_id', form)
 const {
     options: dropdownData,
     loading: optionsLoading,
@@ -49,7 +48,6 @@ const {
 } = useStudentFormOptions(
     open,
     selectedCurriculumId,
-    selectedStudyPlanId,
     editingStudent?.curriculum_id,
 )
 
@@ -386,14 +384,12 @@ return (
                         showSearch
                         optionFilterProp={'label'}
                         loading={systemTeachersLoading}
-                        disabled={
-                            !selectedCurriculumId || !selectedStudyPlanId
-                        }
+                        disabled={!selectedCurriculumId}
                         error={optionsError}
                         placeholder={
-                            selectedCurriculumId && selectedStudyPlanId
+                            selectedCurriculumId
                                 ? 'เลือกอาจารย์ที่ปรึกษา'
-                                : 'กรุณาเลือกหลักสูตรและแผนการเรียนก่อน'
+                                : 'กรุณาเลือกหลักสูตรก่อน'
                         }
                         options={toListOfValueOptions(
                             dropdownData.systemTeachers,

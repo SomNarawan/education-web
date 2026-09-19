@@ -10,6 +10,7 @@ export type ListOfValueType =
     | 'districts'
     | 'subdistricts'
     | 'system-teachers'
+    | 'curriculum-personnel'
     | 'system-departments'
     | 'system-faculties'
     | 'curriculums'
