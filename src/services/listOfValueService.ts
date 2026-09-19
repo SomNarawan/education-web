@@ -1,42 +1,46 @@
 import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
 import type { ListOfValue, ListOfValueType } from '../types/ListOfValue'
+import type { Curriculum } from '../types/MasterData'
 
 interface ListOfValueParams {
     province_id?: number
     district_id?: number
     department_id?: number
     study_plan_id?: number
+    include_ids?: number[]
 }
 
-const valueCache = new Map<string, ListOfValue[]>()
-const pendingRequests = new Map<string, Promise<ListOfValue[]>>()
+const valueCache = new Map<string, unknown[]>()
+const pendingRequests = new Map<string, Promise<unknown[]>>()
 
 function getCacheKey(type: ListOfValueType, params: ListOfValueParams) {
     const query = Object.entries(params)
-        .filter((entry): entry is [string, number] => entry[1] !== undefined)
+        .filter((entry) => entry[1] !== undefined)
         .sort(([first], [second]) => first.localeCompare(second))
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${key}=${Array.isArray(value) ? value.join(',') : value}`)
         .join('&')
 
     return query ? `${type}?${query}` : type
 }
 
-async function getListOfValues(
+async function getListOfValues<
+    T extends { id: number; name_th: string } = ListOfValue,
+>(
     type: ListOfValueType,
     params: ListOfValueParams = {},
-): Promise<ListOfValue[]> {
+): Promise<T[]> {
     const cacheKey = getCacheKey(type, params)
-    const cachedValues = valueCache.get(cacheKey)
+    const cachedValues = valueCache.get(cacheKey) as T[] | undefined
 
     if (cachedValues) return cachedValues
 
     const pendingRequest = pendingRequests.get(cacheKey)
 
-    if (pendingRequest) return pendingRequest
+    if (pendingRequest) return pendingRequest as Promise<T[]>
 
     const request = api
-        .get<ApiResponse<ListOfValue[]>>(`/list-of-values/${type}`, { params })
+        .get<ApiResponse<T[]>>(`/list-of-values/${type}`, { params })
         .then((response) => {
             const values = response.data.data
             valueCache.set(cacheKey, values)
@@ -86,3 +90,8 @@ export const getSystemDepartments = () =>
     getListOfValues('system-departments')
 export const getSystemFaculties = () =>
     getListOfValues('system-faculties')
+export const getCurriculums = (includeIds?: number[]): Promise<Curriculum[]> =>
+    getListOfValues<Curriculum>(
+        'curriculums',
+        includeIds ? { include_ids: includeIds } : {},
+    )

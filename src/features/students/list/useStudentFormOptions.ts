@@ -2,16 +2,14 @@ import { message } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import {
     getAdmissionChannels,
+    getCurriculums,
     getGuardianRelationships,
     getHighSchoolOptions,
     getStudentStatuses,
     getSystemTeachersByStudyPlan,
     getTitles,
 } from '../../../services/listOfValueService'
-import {
-    getCurriculums,
-    getStudyPlans,
-} from '../../../services/masterDataService'
+import { getStudyPlans } from '../../../services/masterDataService'
 import type { ListOfValue } from '../../../types/ListOfValue'
 import type { Curriculum, StudyPlan } from '../../../types/MasterData'
 
@@ -41,6 +39,7 @@ export function useStudentFormOptions(
     enabled: boolean,
     curriculumId?: number,
     studyPlanId?: number,
+    editingCurriculumId?: number,
 ) {
     const [options, setOptions] = useState<StudentFormOptions>(emptyOptions)
     const [loading, setLoading] = useState(false)
@@ -68,7 +67,9 @@ export function useStudentFormOptions(
                     guardianRelationships,
                 ] = await Promise.all([
                     getTitles(),
-                    getCurriculums(),
+                    getCurriculums(
+                        editingCurriculumId ? [editingCurriculumId] : undefined,
+                    ),
                     getStudentStatuses(),
                     getAdmissionChannels(),
                     getHighSchoolOptions(),
@@ -106,7 +107,7 @@ export function useStudentFormOptions(
         return () => {
             cancelled = true
         }
-    }, [enabled])
+    }, [editingCurriculumId, enabled])
 
     useEffect(() => {
         if (!enabled || !curriculumId) {

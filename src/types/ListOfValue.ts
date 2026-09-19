@@ -12,6 +12,7 @@ export type ListOfValueType =
     | 'system-teachers'
     | 'system-departments'
     | 'system-faculties'
+    | 'curriculums'
 
 export interface ListOfValue {
     id: number

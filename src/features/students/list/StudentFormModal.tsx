@@ -50,6 +50,7 @@ const {
     open,
     selectedCurriculumId,
     selectedStudyPlanId,
+    editingStudent?.curriculum_id,
 )
 
 useEffect(() => {
@@ -297,7 +298,7 @@ return (
             >
                 <Row gutter={16}>
 
-                    <Col xs={24} md={8}>
+                    <Col xs={24} md={24}>
                         <Form.Item
                             label="หลักสูตร"
                             name="curriculum_id"
@@ -324,7 +325,7 @@ return (
                         </Form.Item>
                     </Col>
 
-                    <Col xs={24} md={8}>
+                    <Col xs={24} md={14}>
                         <Form.Item
                             label="แผนการเรียน"
                             name="study_plan_id"
@@ -354,7 +355,7 @@ return (
                             />
                         </Form.Item>
                     </Col>
-                    <Col xs={24} md={8}>
+                    <Col xs={24} md={10}>
                         <Form.Item
                             label="ปีเข้าเรียน"
                             name="entry_year"
