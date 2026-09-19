@@ -16,9 +16,7 @@ import {
     getStudyingStudentsWithoutAdvisor,
     updateStudentAdvisors,
 } from '../../services/advisorAssignmentService'
-import {
-    getSystemTeachersByStudyPlan,
-} from '../../services/listOfValueService'
+import { getCurriculumPersonnel } from '../../services/listOfValueService'
 import {
     getCurriculums,
     getStudyPlans,
@@ -187,16 +185,16 @@ export default function AdvisorAssignmentPage() {
     }, [selectedCurriculumId])
 
     useEffect(() => {
-        if (!selectedStudyPlanId) return
+        if (!selectedCurriculumId) return
 
         let active = true
 
-        const loadStudyPlanSystemTeachers = async () => {
+        const loadCurriculumPersonnel = async () => {
             try {
                 setLoadingSystemTeachers(true)
                 setSystemTeachersError(null)
                 const systemTeachers =
-                    await getSystemTeachersByStudyPlan(selectedStudyPlanId)
+                    await getCurriculumPersonnel(selectedCurriculumId)
 
                 if (!active) return
 
@@ -211,12 +209,12 @@ export default function AdvisorAssignmentPage() {
             }
         }
 
-        void loadStudyPlanSystemTeachers()
+        void loadCurriculumPersonnel()
 
         return () => {
             active = false
         }
-    }, [selectedStudyPlanId])
+    }, [selectedCurriculumId])
 
     useEffect(() => {
         if (!selectedStudyPlanId || !selectedSystemTeacherId) return

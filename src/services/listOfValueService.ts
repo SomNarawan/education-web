@@ -83,10 +83,6 @@ export const getDistricts = (provinceId: number) =>
     getListOfValues('districts', { province_id: provinceId })
 export const getSubdistricts = (districtId: number) =>
     getListOfValues('subdistricts', { district_id: districtId })
-export const getSystemTeachers = (departmentId?: number) =>
-    getListOfValues('system-teachers', { department_id: departmentId })
-export const getSystemTeachersByStudyPlan = (studyPlanId: number) =>
-    getListOfValues('system-teachers', { study_plan_id: studyPlanId })
 export const getCurriculumPersonnel = (curriculumId: number) =>
     getListOfValues('curriculum-personnel', { curriculum_id: curriculumId })
 export const getSystemDepartments = () =>
