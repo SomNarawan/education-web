@@ -24,7 +24,7 @@ export interface StudentDetailResponse {
     current_year: number
     current_semester: number
 
-    teacher_id: number | null
+    teacher_id: string | null
     teacher_full_name: string | null
 
     student_status_id: number

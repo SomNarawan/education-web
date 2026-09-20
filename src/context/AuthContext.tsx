@@ -81,8 +81,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                     'data' in response ? response.data : response
 
                 const roles = payload.role ?? []
-                const rawId = payload.id ?? payload.nontri_id
-                const id = rawId == null ? undefined : Number(rawId)
+                const id = payload.id
                 const teacherId = payload.nontri_id ?? null
                 const name = payload.name
 
@@ -92,8 +91,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 
                 const authUser: AuthUser = {
                     id,
-                    teacherId:
-                        teacherId == null ? null : Number(teacherId),
+                    teacherId,
                     name,
                     roles,
                     departmentId: departmentId ? Number(departmentId) : null,

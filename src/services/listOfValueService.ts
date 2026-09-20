@@ -9,7 +9,7 @@ interface ListOfValueParams {
     department_id?: number
     study_plan_id?: number
     curriculum_id?: number
-    include_ids?: number[]
+    include_ids?: Array<number | string>
 }
 
 const valueCache = new Map<string, unknown[]>()
@@ -96,7 +96,7 @@ export const getSubdistricts = (districtId: number, includeIds?: number[]) =>
     })
 export const getCurriculumPersonnel = (
     curriculumId: number,
-    includeIds?: number[],
+    includeIds?: Array<number | string>,
 ) =>
     getListOfValues('curriculum-personnel', {
         curriculum_id: curriculumId,

@@ -9,7 +9,7 @@ export interface CreateStudentRequest {
     phone: string
     email: string
 
-    teacher_id?: number | null
+    teacher_id?: string | null
     student_status_id: number
     admission_channel_id: number
     high_school_id: number
@@ -31,7 +31,7 @@ export interface CreateStudentRequest {
 export type UpdateStudentRequest = Partial<CreateStudentRequest>
 
 export interface ListStudentsRequest {
-    teacher_id?: number
+    teacher_id?: string
     department_id?: number
     faculty_id?: number
     student_status_id?: number
