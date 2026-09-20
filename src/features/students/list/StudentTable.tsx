@@ -50,7 +50,7 @@ export default function StudentTable({
 
     const advisorColumn: ColumnsType<StudentListResponse>[number] = {
         title: 'อาจารย์ที่ปรึกษา',
-        dataIndex: 'teacher_full_name_th',
+        dataIndex: 'teacher_full_name',
         width: 180,
         render: (value) => value || '-',
     }

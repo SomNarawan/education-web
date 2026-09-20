@@ -48,7 +48,7 @@ function StudentList() {
 
     const { currentRole, user } = useAuth()
 
-    const authSystemTeacherId = user?.systemTeacherId ?? undefined
+    const authTeacherId = user?.teacherId ?? undefined
     const authDepartmentId = user?.departmentId ?? undefined
     const authFacultyId = user?.facultyId ?? undefined
 
@@ -126,9 +126,9 @@ function StudentList() {
             try {
                 setLoading(true)
 
-                const systemTeacherIdForSearch =
+                const teacherIdForSearch =
                     currentStudentGroup === 'advisor'
-                        ? authSystemTeacherId
+                        ? authTeacherId
                         : undefined
 
                 const departmentId = isDepartmentListPage
@@ -144,13 +144,20 @@ function StudentList() {
 
                 if (
                     (currentStudentGroup === 'advisor' &&
-                        !systemTeacherIdForSearch) ||
+                        !teacherIdForSearch) ||
                     (currentStudentGroup === 'department' &&
                         isTeacher &&
                         !departmentId) ||
                     (currentStudentGroup === 'faculty' && !facultyId)
                 ) {
                     setStudents([])
+
+                    if (currentStudentGroup === 'advisor') {
+                        message.warning(
+                            'ไม่พบรหัสอาจารย์จากข้อมูลผู้ใช้ จึงไม่สามารถค้นหารายชื่อนิสิตที่ปรึกษาได้',
+                        )
+                    }
+
                     return
                 }
 
@@ -160,7 +167,7 @@ function StudentList() {
                         : studentStatusId
 
                 const data = await getStudents({
-                    teacher_id: systemTeacherIdForSearch,
+                    teacher_id: teacherIdForSearch,
                     department_id: departmentId,
                     faculty_id: facultyId,
                     search_note: noteText,
@@ -179,7 +186,7 @@ function StudentList() {
         [
             currentStudentGroup,
             authFacultyId,
-            authSystemTeacherId,
+            authTeacherId,
             authDepartmentId,
             isDepartmentListPage,
             isTeacher,

@@ -4,7 +4,7 @@ export interface StudentListResponse {
     full_name_th: string
 
     teacher_id: number | null
-    teacher_full_name_th: string | null
+    teacher_full_name: string | null
 
     curriculum_type: string
     study_plan_name: string | null

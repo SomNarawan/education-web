@@ -208,7 +208,7 @@ export default function StudentDetailPage() {
                                             <DetailItem
                                                 label="อาจารย์ที่ปรึกษา"
                                                 value={
-                                                    student.teacher_full_name_th
+                                                    student.teacher_full_name
                                                 }
                                             />
                                             <DetailItem

@@ -86,7 +86,7 @@ export default function AdvisorAssignmentPage() {
     const [selectedStudyPlanId, setSelectedStudyPlanId] = useState<
         number | undefined
     >()
-    const [selectedSystemTeacherId, setSelectedSystemTeacherId] = useState<
+    const [selectedTeacherId, setSelectedTeacherId] = useState<
         number | undefined
     >()
     const [unassignedStudents, setUnassignedStudents] = useState<
@@ -217,7 +217,7 @@ export default function AdvisorAssignmentPage() {
     }, [selectedCurriculumId])
 
     useEffect(() => {
-        if (!selectedStudyPlanId || !selectedSystemTeacherId) return
+        if (!selectedStudyPlanId || !selectedTeacherId) return
 
         let active = true
 
@@ -229,7 +229,7 @@ export default function AdvisorAssignmentPage() {
                 const [unassigned, assigned] = await Promise.all([
                     getStudyingStudentsWithoutAdvisor(selectedStudyPlanId),
                     getStudyingStudentsBySystemTeacher(
-                        selectedSystemTeacherId,
+                        selectedTeacherId,
                         selectedStudyPlanId,
                     ),
                 ])
@@ -259,7 +259,7 @@ export default function AdvisorAssignmentPage() {
         return () => {
             active = false
         }
-    }, [reloadKey, selectedStudyPlanId, selectedSystemTeacherId])
+    }, [reloadKey, selectedStudyPlanId, selectedTeacherId])
 
     const filteredUnassignedStudents = useMemo(
         () => filterStudents(unassignedStudents, unassignedSearchText),
@@ -294,7 +294,7 @@ export default function AdvisorAssignmentPage() {
         sourceSide: StudentListSide,
         studentCodes: string[],
     ) => {
-        if (!selectedSystemTeacherId || studentCodes.length === 0) return
+        if (!selectedTeacherId || studentCodes.length === 0) return
 
         const codeSet = new Set(studentCodes)
 
@@ -381,7 +381,7 @@ export default function AdvisorAssignmentPage() {
     const handleCurriculumChange = (curriculumId?: number) => {
         setSelectedCurriculumId(curriculumId)
         setSelectedStudyPlanId(undefined)
-        setSelectedSystemTeacherId(undefined)
+        setSelectedTeacherId(undefined)
         setStudyPlans([])
         setStudyPlansError(null)
         setLoadingStudyPlans(false)
@@ -393,19 +393,19 @@ export default function AdvisorAssignmentPage() {
 
     const handleStudyPlanChange = (studyPlanId?: number) => {
         setSelectedStudyPlanId(studyPlanId)
-        setSelectedSystemTeacherId(undefined)
+        setSelectedTeacherId(undefined)
         clearStudentLists()
     }
 
-    const handleSystemTeacherChange = (systemTeacherId: number) => {
-        setSelectedSystemTeacherId(systemTeacherId)
+    const handleTeacherChange = (teacherId: number) => {
+        setSelectedTeacherId(teacherId)
         clearStudentLists()
     }
 
     const handleClearSearch = () => {
         setSelectedCurriculumId(undefined)
         setSelectedStudyPlanId(undefined)
-        setSelectedSystemTeacherId(undefined)
+        setSelectedTeacherId(undefined)
         setStudyPlans([])
         setStudyPlansError(null)
         setSystemTeacherOptions([])
@@ -419,7 +419,7 @@ export default function AdvisorAssignmentPage() {
     const handleSave = async () => {
         if (
             !selectedStudyPlanId ||
-            !selectedSystemTeacherId ||
+            !selectedTeacherId ||
             !hasAssignmentChanges
         ) return
 
@@ -435,7 +435,7 @@ export default function AdvisorAssignmentPage() {
             setSaving(true)
             const result = await updateStudentAdvisors(
                 selectedStudyPlanId,
-                selectedSystemTeacherId,
+                selectedTeacherId,
                 assignmentChanges.assignStudentIds,
                 assignmentChanges.removeStudentIds,
             )
@@ -477,7 +477,7 @@ export default function AdvisorAssignmentPage() {
             size="small"
             scroll={{ x: 440, y: 585 }}
             locale={{
-                emptyText: !selectedSystemTeacherId
+                emptyText: !selectedTeacherId
                     ? 'กรุณาเลือกอาจารย์ที่ปรึกษา'
                     : 'ไม่พบข้อมูลนิสิต',
             }}
@@ -493,7 +493,7 @@ export default function AdvisorAssignmentPage() {
                 onChange: (keys) => setSelectedCodes(keys.map(String)),
             }}
             onRow={(student) => ({
-                draggable: Boolean(selectedSystemTeacherId),
+                draggable: Boolean(selectedTeacherId),
                 onDragStart: (event) =>
                     handleDragStart(event, side, student.student_code),
                 onDragEnd: () => setDragPayload(null),
@@ -561,13 +561,13 @@ export default function AdvisorAssignmentPage() {
                                     : 'กรุณาเลือกหลักสูตรก่อน'
                             }
                             options={systemTeacherOptions}
-                            value={selectedSystemTeacherId}
+                            value={selectedTeacherId}
                             loading={loadingSystemTeachers}
                             error={systemTeachersError}
                             disabled={!selectedCurriculumId}
                             showSearch
                             optionFilterProp="label"
-                            onChange={handleSystemTeacherChange}
+                            onChange={handleTeacherChange}
                         />
                     </label>
                     <div className="advisor-search-actions">
@@ -576,7 +576,7 @@ export default function AdvisorAssignmentPage() {
                             disabled={
                                 !selectedCurriculumId &&
                                 !selectedStudyPlanId &&
-                                !selectedSystemTeacherId &&
+                                !selectedTeacherId &&
                                 unassignedStudents.length === 0 &&
                                 assignedStudents.length === 0
                             }
@@ -631,7 +631,7 @@ export default function AdvisorAssignmentPage() {
                             type="primary"
                             icon={<ArrowRightOutlined />}
                             disabled={
-                                !selectedSystemTeacherId ||
+                                !selectedTeacherId ||
                                 selectedUnassignedCodes.length === 0
                             }
                             onClick={() =>
@@ -646,7 +646,7 @@ export default function AdvisorAssignmentPage() {
                         <Button
                             icon={<DoubleRightOutlined />}
                             disabled={
-                                !selectedSystemTeacherId ||
+                                !selectedTeacherId ||
                                 unassignedStudents.length === 0
                             }
                             onClick={() =>
@@ -663,7 +663,7 @@ export default function AdvisorAssignmentPage() {
                         <Button
                             icon={<ArrowLeftOutlined />}
                             disabled={
-                                !selectedSystemTeacherId ||
+                                !selectedTeacherId ||
                                 selectedAssignedCodes.length === 0
                             }
                             onClick={() =>
@@ -675,7 +675,7 @@ export default function AdvisorAssignmentPage() {
                         <Button
                             icon={<DoubleLeftOutlined />}
                             disabled={
-                                !selectedSystemTeacherId ||
+                                !selectedTeacherId ||
                                 assignedStudents.length === 0
                             }
                             onClick={() =>
@@ -696,7 +696,7 @@ export default function AdvisorAssignmentPage() {
                             <div>
                                 <h2>นิสิตในที่ปรึกษา</h2>
                                 <Text type="secondary">
-                                    {selectedSystemTeacherId
+                                    {selectedTeacherId
                                         ? `พบ ${assignedStudents.length} คน`
                                         : 'กรุณาเลือกอาจารย์ที่ปรึกษา'}
                                 </Text>
@@ -707,7 +707,7 @@ export default function AdvisorAssignmentPage() {
                             prefix={<SearchOutlined />}
                             placeholder="ค้นหารหัสนิสิต หรือชื่อ-สกุล"
                             value={assignedSearchText}
-                            disabled={!selectedSystemTeacherId}
+                            disabled={!selectedTeacherId}
                             onChange={(event) =>
                                 setAssignedSearchText(event.target.value)
                             }
@@ -735,7 +735,7 @@ export default function AdvisorAssignmentPage() {
                         icon={<SaveOutlined />}
                         loading={saving}
                         disabled={
-                            !selectedSystemTeacherId ||
+                            !selectedTeacherId ||
                             !hasAssignmentChanges ||
                             loadingUnassigned ||
                             loadingAssigned

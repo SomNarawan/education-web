@@ -2,8 +2,7 @@ export type AppRole = 'admin' | 'teacher'
 
 export interface AuthUser {
     id?: number
-    nontriId?: number | string | null
-    systemTeacherId?: number | null
+    teacherId?: number | null
     name?: string
     roles: AppRole[]
     departmentId?: number | null
