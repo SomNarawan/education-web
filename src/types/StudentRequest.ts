@@ -14,7 +14,9 @@ export interface CreateStudentRequest {
     admission_channel_id: number
     high_school_id: number
     curriculum_id: number
+    curriculum_name_th: string
     study_plan_id: number
+    study_plan_name_th: string
     department_id?: number
     entry_year: number
     study_year?: number

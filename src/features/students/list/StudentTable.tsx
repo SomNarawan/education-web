@@ -87,11 +87,11 @@ export default function StudentTable({
         ...(!isAdvisorPage ? [advisorColumn] : []),
 
         {
-            title: 'ประเภทหลักสูตร',
+            title: 'หลักสูตร',
             width: 260,
             render: (_, record) => {
-                const degree = record.curriculum_type || '-'
-                const planName = record.study_plan_name ?? '-'
+                const degree = record.curriculum_name_th || '-'
+                const planName = record.study_plan_name_th || '-'
 
                 return (
                     <div>

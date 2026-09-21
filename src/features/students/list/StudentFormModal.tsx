@@ -103,8 +103,21 @@ const handleStudyPlanChange = (studyPlanId?: number) => {
 
 const handleOk = async () => {
     const values = await form.validateFields()
+    const curriculum = dropdownData.curriculums.find(
+        (item) => item.id === values.curriculum_id,
+    )
+    const studyPlan = dropdownData.studyPlans.find(
+        (item) => item.id === values.study_plan_id,
+    )
+
+    if (!curriculum || !studyPlan) {
+        return
+    }
+
     const formattedValues: StudentFormValues = {
         ...values,
+        curriculum_name_th: curriculum.name_th,
+        study_plan_name_th: studyPlan.name_th,
         entry_year: values.entry_year.year(),
         teacher_id: values.teacher_id ?? null,
     }

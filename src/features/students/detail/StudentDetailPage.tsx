@@ -288,15 +288,15 @@ export default function StudentDetailPage() {
                                     <Row gutter={[48, 8]}>
                                         <Col xs={24} md={12}>
                                             <DetailItem
-                                                label="ประเภทหลักสูตร"
+                                                label="หลักสูตร"
                                                 value={
-                                                    student.curriculum_type
+                                                    student.curriculum_name_th
                                                 }
                                             />
                                             <DetailItem
                                                 label="แผนการเรียน"
                                                 value={
-                                                    student.study_plan_name
+                                                    student.study_plan_name_th
                                                 }
                                             />
                                         </Col>
