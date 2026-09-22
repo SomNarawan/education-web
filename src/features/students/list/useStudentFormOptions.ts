@@ -17,7 +17,7 @@ import type { StudentDetailResponse } from '../../../types/StudentDetailResponse
 interface StudentFormOptions {
     titles: ListOfValue[]
     curriculums: Curriculum[]
-    systemTeachers: ListOfValue[]
+    systemTeachers: ListOfValue<string>[]
     studentStatuses: ListOfValue[]
     admissionChannels: ListOfValue[]
     highSchools: ListOfValue[]

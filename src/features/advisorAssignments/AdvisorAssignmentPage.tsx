@@ -78,7 +78,7 @@ export default function AdvisorAssignmentPage() {
     const [curriculums, setCurriculums] = useState<Curriculum[]>([])
     const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([])
     const [systemTeacherOptions, setSystemTeacherOptions] = useState<
-        SelectOption[]
+        SelectOption<string>[]
     >([])
     const [selectedCurriculumId, setSelectedCurriculumId] = useState<
         number | undefined
@@ -87,7 +87,7 @@ export default function AdvisorAssignmentPage() {
         number | undefined
     >()
     const [selectedTeacherId, setSelectedTeacherId] = useState<
-        number | undefined
+        string | undefined
     >()
     const [unassignedStudents, setUnassignedStudents] = useState<
         AdvisorAssignmentStudent[]
@@ -397,7 +397,7 @@ export default function AdvisorAssignmentPage() {
         clearStudentLists()
     }
 
-    const handleTeacherChange = (teacherId: number) => {
+    const handleTeacherChange = (teacherId: string) => {
         setSelectedTeacherId(teacherId)
         clearStudentLists()
     }
@@ -417,6 +417,11 @@ export default function AdvisorAssignmentPage() {
     }
 
     const handleSave = async () => {
+        const teacher = systemTeacherOptions.find(
+            (option) => option.value === selectedTeacherId,
+        )
+        if (!teacher) return
+
         if (
             !selectedStudyPlanId ||
             !selectedTeacherId ||
@@ -436,6 +441,7 @@ export default function AdvisorAssignmentPage() {
             const result = await updateStudentAdvisors(
                 selectedStudyPlanId,
                 selectedTeacherId,
+                teacher.label,
                 assignmentChanges.assignStudentIds,
                 assignmentChanges.removeStudentIds,
             )

@@ -120,6 +120,9 @@ const handleOk = async () => {
         study_plan_name_th: studyPlan.name_th,
         entry_year: values.entry_year.year(),
         teacher_id: values.teacher_id ?? null,
+        teacher_full_name: dropdownData.systemTeachers.find(
+            (teacher) => teacher.id === values.teacher_id,
+        )?.name_th ?? null,
     }
     await onSave(formattedValues)
 }
@@ -192,7 +195,7 @@ return (
                                 },
                             ]}
                         >
-                            <ListOfValueSelect
+                            <ListOfValueSelect<number>
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
@@ -320,7 +323,7 @@ return (
                                 },
                             ]}
                         >
-                            <ListOfValueSelect
+                            <ListOfValueSelect<number>
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
@@ -347,7 +350,7 @@ return (
                                 },
                             ]}
                         >
-                            <ListOfValueSelect
+                            <ListOfValueSelect<number>
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
@@ -392,7 +395,7 @@ return (
                     label="อาจารย์ที่ปรึกษา"
                     name="teacher_id"
                 >
-                    <ListOfValueSelect
+                    <ListOfValueSelect<string>
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
@@ -422,7 +425,7 @@ return (
                         },
                     ]}
                 >
-                    <ListOfValueSelect
+                    <ListOfValueSelect<number>
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
@@ -447,7 +450,7 @@ return (
                         },
                     ]}
                 >
-                    <ListOfValueSelect
+                    <ListOfValueSelect<number>
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
@@ -474,7 +477,7 @@ return (
                                 },
                             ]}
                         >
-                            <ListOfValueSelect
+                            <ListOfValueSelect<number>
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
@@ -529,7 +532,7 @@ return (
                                 },
                             ]}
                         >
-                            <ListOfValueSelect
+                            <ListOfValueSelect<number>
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
@@ -571,7 +574,7 @@ return (
                         },
                     ]}
                 >
-                    <ListOfValueSelect
+                    <ListOfValueSelect<number>
                         allowClear
                         showSearch
                         optionFilterProp={'label'}

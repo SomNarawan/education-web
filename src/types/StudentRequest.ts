@@ -10,6 +10,7 @@ export interface CreateStudentRequest {
     email: string
 
     teacher_id?: string | null
+    teacher_full_name?: string | null
     student_status_id: number
     admission_channel_id: number
     high_school_id: number

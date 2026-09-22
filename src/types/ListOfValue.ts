@@ -14,8 +14,8 @@ export type ListOfValueType =
     | 'system-faculties'
     | 'curriculums'
 
-export interface ListOfValue {
-    id: number
+export interface ListOfValue<T extends string | number = number> {
+    id: T
     name_th: string
     name_en: string | null
 }

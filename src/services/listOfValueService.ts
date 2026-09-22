@@ -26,7 +26,7 @@ function getCacheKey(type: ListOfValueType, params: ListOfValueParams) {
 }
 
 async function getListOfValues<
-    T extends { id: number; name_th: string } = ListOfValue,
+    T extends { id: string | number; name_th: string } = ListOfValue,
 >(
     type: ListOfValueType,
     params: ListOfValueParams = {},
@@ -98,7 +98,7 @@ export const getCurriculumPersonnel = (
     curriculumId: number,
     includeIds?: Array<number | string>,
 ) =>
-    getListOfValues('curriculum-personnel', {
+    getListOfValues<ListOfValue<string>>('curriculum-personnel', {
         curriculum_id: curriculumId,
         include_ids: includeIds,
     })

@@ -6,7 +6,7 @@ export interface AdvisorAssignmentStudent {
 
 export interface AdvisorUpdateResult {
     study_plan_id: number
-    teacher_id: number
+    teacher_id: string
     assign_student_ids: number[]
     remove_student_ids: number[]
     assigned_count: number
