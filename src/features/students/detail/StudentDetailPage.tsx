@@ -290,7 +290,7 @@ export default function StudentDetailPage() {
                                             <DetailItem
                                                 label="หลักสูตร"
                                                 value={
-                                                    student.curriculum_name_th
+                                                    student.curriculum_code
                                                 }
                                             />
                                             <DetailItem

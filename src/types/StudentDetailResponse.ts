@@ -46,7 +46,7 @@ export interface StudentDetailResponse {
     high_school_address: string
 
     curriculum_id: number
-    curriculum_name_th: string
+    curriculum_code: string
     study_plan_id: number
     study_plan_name_th: string
     study_plan_name: string | null
