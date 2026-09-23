@@ -1,6 +1,6 @@
 export interface CreateStudentRequest {
     student_code?: string | null
-    student_id_card: string
+    student_id_card?: string | null
     title_id: number
     first_name_th: string
     last_name_th: string

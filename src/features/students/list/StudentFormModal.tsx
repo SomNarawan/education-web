@@ -163,6 +163,10 @@ return (
                     name="student_code"
                     rules={[
                         {
+                            required: true,
+                            message: 'กรุณากรอกรหัสนิสิต',
+                        },
+                        {
                             pattern: /^\d+$/,
                             message: 'รหัสนิสิตต้องเป็นตัวเลขเท่านั้น',
                         },
@@ -178,12 +182,6 @@ return (
                         <Form.Item
                             label="เลขบัตรประชาชน"
                             name="student_id_card"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกเลขบัตรประชาชน',
-                                },
-                            ]}
                         >
                             <Input maxLength={13} />
                         </Form.Item>
