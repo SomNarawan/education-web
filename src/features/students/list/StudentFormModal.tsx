@@ -116,7 +116,16 @@ const handleOk = async () => {
 
     const formattedValues: StudentFormValues = {
         ...values,
-        curriculum_code: curriculum.name_th,
+        student_code: values.student_code?.trim() || null,
+        high_school_id: values.high_school_id ?? null,
+        guardian_title_id: values.guardian_title_id ?? null,
+        guardian_first_name_th:
+            values.guardian_first_name_th?.trim() || null,
+        guardian_last_name_th:
+            values.guardian_last_name_th?.trim() || null,
+        guardian_relationship_id: values.guardian_relationship_id ?? null,
+        guardian_phone: values.guardian_phone?.trim() || null,
+        curriculum_code: curriculum.code,
         study_plan_name_th: studyPlan.name_th,
         entry_year: values.entry_year.year(),
         teacher_id: values.teacher_id ?? null,
@@ -153,10 +162,6 @@ return (
                     label="รหัสนิสิต"
                     name="student_code"
                     rules={[
-                        {
-                            required: true,
-                            message: 'กรุณากรอกรหัสนิสิต',
-                        },
                         {
                             pattern: /^\d+$/,
                             message: 'รหัสนิสิตต้องเป็นตัวเลขเท่านั้น',
@@ -443,12 +448,6 @@ return (
                 <Form.Item
                     label="ชื่อโรงเรียน"
                     name="high_school_id"
-                    rules={[
-                        {
-                            required: true,
-                            message: 'กรุณาเลือกโรงเรียน',
-                        },
-                    ]}
                 >
                     <ListOfValueSelect<number>
                         allowClear
@@ -470,12 +469,6 @@ return (
                         <Form.Item
                             label="คำนำหน้าผู้ปกครอง"
                             name="guardian_title_id"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณาเลือกคำนำหน้าผู้ปกครอง',
-                                },
-                            ]}
                         >
                             <ListOfValueSelect<number>
                                 allowClear
@@ -495,12 +488,6 @@ return (
                         <Form.Item
                             label="ชื่อผู้ปกครอง"
                             name="guardian_first_name_th"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกชื่อผู้ปกครอง',
-                                },
-                            ]}
                         >
                             <Input maxLength={50} />
                         </Form.Item>
@@ -510,12 +497,6 @@ return (
                         <Form.Item
                             label="นามสกุลผู้ปกครอง"
                             name="guardian_last_name_th"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกนามสกุลผู้ปกครอง',
-                                },
-                            ]}
                         >
                             <Input maxLength={50} />
                         </Form.Item>
@@ -525,12 +506,6 @@ return (
                         <Form.Item
                             label="ความสัมพันธ์"
                             name="guardian_relationship_id"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณาเลือกความสัมพันธ์',
-                                },
-                            ]}
                         >
                             <ListOfValueSelect<number>
                                 allowClear
@@ -550,12 +525,6 @@ return (
                         <Form.Item
                             label="เบอร์โทรผู้ปกครอง"
                             name="guardian_phone"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกเบอร์โทรผู้ปกครอง',
-                                },
-                            ]}
                         >
                             <Input maxLength={10} />
                         </Form.Item>

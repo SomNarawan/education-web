@@ -76,6 +76,7 @@ export default function StudentTable({
             dataIndex: 'student_code',
             align: 'center',
             width: 130,
+            render: (value) => value || '-',
         },
         {
             title: 'ชื่อ-นามสกุล',

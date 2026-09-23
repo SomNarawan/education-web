@@ -1,6 +1,6 @@
 export interface StudentListResponse {
     id: number
-    student_code: string
+    student_code: string | null
     full_name_th: string
 
     teacher_id: string | null

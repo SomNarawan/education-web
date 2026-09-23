@@ -11,7 +11,6 @@ import type {
     ManagedMasterDataRecord,
     ManagedMasterDataResource,
     MasterDataStatus,
-    Curriculum,
     StudyPlan,
 } from '../types/MasterData'
 
@@ -83,11 +82,6 @@ export async function deleteManagedMasterData(
 export async function getHighSchools(): Promise<HighSchoolListItem[]> {
     const response =
         await api.get<ApiResponse<HighSchoolListItem[]>>('/high-schools')
-    return response.data.data
-}
-
-export async function getCurriculums(): Promise<Curriculum[]> {
-    const response = await api.get<ApiResponse<Curriculum[]>>('/curriculums')
     return response.data.data
 }
 

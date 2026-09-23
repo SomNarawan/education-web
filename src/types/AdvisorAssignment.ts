@@ -1,6 +1,6 @@
 export interface AdvisorAssignmentStudent {
     id: number
-    student_code: string
+    student_code: string | null
     full_name_th: string
 }
 

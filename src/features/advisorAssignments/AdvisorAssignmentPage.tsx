@@ -36,7 +36,7 @@ type StudentListSide = 'unassigned' | 'assigned'
 
 interface DragPayload {
     side: StudentListSide
-    studentCodes: string[]
+    studentIds: number[]
 }
 
 const studentColumns: ColumnsType<AdvisorAssignmentStudent> = [
@@ -55,7 +55,10 @@ const studentColumns: ColumnsType<AdvisorAssignmentStudent> = [
 
 function sortStudents(students: AdvisorAssignmentStudent[]) {
     return [...students].sort((first, second) =>
-        first.student_code.localeCompare(second.student_code, 'th'),
+        (first.student_code ?? '').localeCompare(
+            second.student_code ?? '',
+            'th',
+        ),
     )
 }
 
@@ -69,7 +72,9 @@ function filterStudents(
 
     return students.filter(
         (student) =>
-            student.student_code.toLocaleLowerCase('th').includes(keyword) ||
+            (student.student_code ?? '')
+                .toLocaleLowerCase('th')
+                .includes(keyword) ||
             student.full_name_th.toLocaleLowerCase('th').includes(keyword),
     )
 }
@@ -98,10 +103,10 @@ export default function AdvisorAssignmentPage() {
     const [initialAssignedStudentIds, setInitialAssignedStudentIds] = useState<
         number[]
     >([])
-    const [selectedUnassignedCodes, setSelectedUnassignedCodes] = useState<
-        string[]
+    const [selectedUnassignedIds, setSelectedUnassignedIds] = useState<
+        number[]
     >([])
-    const [selectedAssignedCodes, setSelectedAssignedCodes] = useState<string[]>(
+    const [selectedAssignedIds, setSelectedAssignedIds] = useState<number[]>(
         [],
     )
     const [unassignedSearchText, setUnassignedSearchText] = useState('')
@@ -292,62 +297,62 @@ export default function AdvisorAssignmentPage() {
 
     const moveStudents = (
         sourceSide: StudentListSide,
-        studentCodes: string[],
+        studentIds: number[],
     ) => {
-        if (!selectedTeacherId || studentCodes.length === 0) return
+        if (!selectedTeacherId || studentIds.length === 0) return
 
-        const codeSet = new Set(studentCodes)
+        const idSet = new Set(studentIds)
 
         if (sourceSide === 'unassigned') {
             const movingStudents = unassignedStudents.filter((student) =>
-                codeSet.has(student.student_code),
+                idSet.has(student.id),
             )
 
             setUnassignedStudents((students) =>
-                students.filter((student) => !codeSet.has(student.student_code)),
+                students.filter((student) => !idSet.has(student.id)),
             )
             setAssignedStudents((students) =>
                 sortStudents([
                     ...students.filter(
-                        (student) => !codeSet.has(student.student_code),
+                        (student) => !idSet.has(student.id),
                     ),
                     ...movingStudents,
                 ]),
             )
-            setSelectedUnassignedCodes([])
+            setSelectedUnassignedIds([])
         } else {
             const movingStudents = assignedStudents.filter((student) =>
-                codeSet.has(student.student_code),
+                idSet.has(student.id),
             )
 
             setAssignedStudents((students) =>
-                students.filter((student) => !codeSet.has(student.student_code)),
+                students.filter((student) => !idSet.has(student.id)),
             )
             setUnassignedStudents((students) =>
                 sortStudents([
                     ...students.filter(
-                        (student) => !codeSet.has(student.student_code),
+                        (student) => !idSet.has(student.id),
                     ),
                     ...movingStudents,
                 ]),
             )
-            setSelectedAssignedCodes([])
+            setSelectedAssignedIds([])
         }
     }
 
     const handleDragStart = (
         event: DragEvent<HTMLElement>,
         side: StudentListSide,
-        studentCode: string,
+        studentId: number,
     ) => {
-        const selectedCodes =
+        const selectedIds =
             side === 'unassigned'
-                ? selectedUnassignedCodes
-                : selectedAssignedCodes
-        const studentCodes = selectedCodes.includes(studentCode)
-            ? selectedCodes
-            : [studentCode]
-        const payload = { side, studentCodes }
+                ? selectedUnassignedIds
+                : selectedAssignedIds
+        const studentIds = selectedIds.includes(studentId)
+            ? selectedIds
+            : [studentId]
+        const payload = { side, studentIds }
 
         setDragPayload(payload)
         event.dataTransfer.effectAllowed = 'move'
@@ -362,7 +367,7 @@ export default function AdvisorAssignmentPage() {
 
         if (!dragPayload || dragPayload.side === targetSide) return
 
-        moveStudents(dragPayload.side, dragPayload.studentCodes)
+        moveStudents(dragPayload.side, dragPayload.studentIds)
         setDragPayload(null)
     }
 
@@ -370,8 +375,8 @@ export default function AdvisorAssignmentPage() {
         setUnassignedStudents([])
         setAssignedStudents([])
         setInitialAssignedStudentIds([])
-        setSelectedUnassignedCodes([])
-        setSelectedAssignedCodes([])
+        setSelectedUnassignedIds([])
+        setSelectedAssignedIds([])
         setUnassignedSearchText('')
         setAssignedSearchText('')
         setLoadingUnassigned(false)
@@ -453,8 +458,8 @@ export default function AdvisorAssignmentPage() {
                     result.removed_count +
                     ' คน',
             )
-            setSelectedUnassignedCodes([])
-            setSelectedAssignedCodes([])
+            setSelectedUnassignedIds([])
+            setSelectedAssignedIds([])
             setInitialAssignedStudentIds(
                 assignmentChanges.currentAssignedIds,
             )
@@ -470,15 +475,15 @@ export default function AdvisorAssignmentPage() {
     const renderStudentTable = (
         side: StudentListSide,
         students: AdvisorAssignmentStudent[],
-        selectedCodes: string[],
-        setSelectedCodes: (codes: string[]) => void,
+        selectedIds: number[],
+        setSelectedIds: (ids: number[]) => void,
         loading: boolean,
     ) => (
         <Table<AdvisorAssignmentStudent>
             className="advisor-assignment-table"
             columns={studentColumns}
             dataSource={students}
-            rowKey="student_code"
+            rowKey="id"
             loading={loading}
             size="small"
             scroll={{ x: 440, y: 585 }}
@@ -494,14 +499,14 @@ export default function AdvisorAssignmentPage() {
                 showTotal: (total) => `ทั้งหมด ${total} คน`,
             }}
             rowSelection={{
-                selectedRowKeys: selectedCodes,
+                selectedRowKeys: selectedIds,
                 preserveSelectedRowKeys: true,
-                onChange: (keys) => setSelectedCodes(keys.map(String)),
+                onChange: (keys) => setSelectedIds(keys.map(Number)),
             }}
             onRow={(student) => ({
                 draggable: Boolean(selectedTeacherId),
                 onDragStart: (event) =>
-                    handleDragStart(event, side, student.student_code),
+                    handleDragStart(event, side, student.id),
                 onDragEnd: () => setDragPayload(null),
             })}
         />
@@ -622,8 +627,8 @@ export default function AdvisorAssignmentPage() {
                             {renderStudentTable(
                                 'unassigned',
                                 filteredUnassignedStudents,
-                                selectedUnassignedCodes,
-                                setSelectedUnassignedCodes,
+                                selectedUnassignedIds,
+                                setSelectedUnassignedIds,
                                 loadingUnassigned,
                             )}
                         </div>
@@ -638,12 +643,12 @@ export default function AdvisorAssignmentPage() {
                             icon={<ArrowRightOutlined />}
                             disabled={
                                 !selectedTeacherId ||
-                                selectedUnassignedCodes.length === 0
+                                selectedUnassignedIds.length === 0
                             }
                             onClick={() =>
                                 moveStudents(
                                     'unassigned',
-                                    selectedUnassignedCodes,
+                                    selectedUnassignedIds,
                                 )
                             }
                         >
@@ -658,9 +663,7 @@ export default function AdvisorAssignmentPage() {
                             onClick={() =>
                                 moveStudents(
                                     'unassigned',
-                                    unassignedStudents.map(
-                                        (student) => student.student_code,
-                                    ),
+                                    unassignedStudents.map((student) => student.id),
                                 )
                             }
                         >
@@ -670,10 +673,10 @@ export default function AdvisorAssignmentPage() {
                             icon={<ArrowLeftOutlined />}
                             disabled={
                                 !selectedTeacherId ||
-                                selectedAssignedCodes.length === 0
+                                selectedAssignedIds.length === 0
                             }
                             onClick={() =>
-                                moveStudents('assigned', selectedAssignedCodes)
+                                moveStudents('assigned', selectedAssignedIds)
                             }
                         >
                             นำออก
@@ -687,9 +690,7 @@ export default function AdvisorAssignmentPage() {
                             onClick={() =>
                                 moveStudents(
                                     'assigned',
-                                    assignedStudents.map(
-                                        (student) => student.student_code,
-                                    ),
+                                    assignedStudents.map((student) => student.id),
                                 )
                             }
                         >
@@ -726,8 +727,8 @@ export default function AdvisorAssignmentPage() {
                             {renderStudentTable(
                                 'assigned',
                                 filteredAssignedStudents,
-                                selectedAssignedCodes,
-                                setSelectedAssignedCodes,
+                                selectedAssignedIds,
+                                setSelectedAssignedIds,
                                 loadingAssigned,
                             )}
                         </div>

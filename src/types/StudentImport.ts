@@ -6,12 +6,15 @@ export type StudentImportStatus =
 
 export interface StudentImportHistory {
     id: number
+    import_type_id: number
+    type: string | null
     curriculum_id: number
     curriculum_name_th: string
     curriculum_plan_id: number
     curriculum_plan_name_th: string
     file_name: string
     started_at: string
+    completed_at: string | null
     imported_by: string
     total_count: number
     success_count: number

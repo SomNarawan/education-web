@@ -1,4 +1,5 @@
 import {
+    Alert,
     Button,
     Card,
     Col,
@@ -173,7 +174,9 @@ export default function StudentDetailPage() {
         <Card
             title={
                 student
-                    ? `${student.student_code} ${student.full_name_th}`
+                    ? [student.student_code, student.full_name_th]
+                          .filter(Boolean)
+                          .join(' ')
                     : ''
             }
         >
@@ -377,33 +380,45 @@ export default function StudentDetailPage() {
                                 </Card>
                             </Col>
 
-                            <Col xs={24}>
-                                <StudentSemesterPerformanceSection
-                                    creditStatuses={creditStatuses}
-                                    rows={semesterRows}
-                                    loading={loadingPerformance}
-                                />
-                            </Col>
+                            {student.student_code ? (
+                                <>
+                                    <Col xs={24}>
+                                        <StudentSemesterPerformanceSection
+                                            creditStatuses={creditStatuses}
+                                            rows={semesterRows}
+                                            loading={loadingPerformance}
+                                        />
+                                    </Col>
 
-                            <Col xs={24}>
-                                <StudentCourseGroupPerformanceSection
-                                    datasets={courseGroupDatasets}
-                                    loading={loadingPerformance}
-                                />
-                            </Col>
+                                    <Col xs={24}>
+                                        <StudentCourseGroupPerformanceSection
+                                            datasets={courseGroupDatasets}
+                                            loading={loadingPerformance}
+                                        />
+                                    </Col>
 
-                            <Col xs={24}>
-                                <StudentFailedPlannedCoursesSection
-                                    studentCode={student.student_code}
-                                />
-                            </Col>
+                                    <Col xs={24}>
+                                        <StudentFailedPlannedCoursesSection
+                                            studentCode={student.student_code}
+                                        />
+                                    </Col>
 
-                            <Col xs={24}>
-                                <StudentCurriculumDetailSection
-                                    studentCode={student.student_code}
-                                    studyPlanId={student.study_plan_id}
-                                />
-                            </Col>
+                                    <Col xs={24}>
+                                        <StudentCurriculumDetailSection
+                                            studentCode={student.student_code}
+                                            studyPlanId={student.study_plan_id}
+                                        />
+                                    </Col>
+                                </>
+                            ) : (
+                                <Col xs={24}>
+                                    <Alert
+                                        type="info"
+                                        showIcon
+                                        message="ยังไม่มีรหัสนิสิต จึงไม่สามารถโหลดข้อมูลผลการเรียนได้"
+                                    />
+                                </Col>
+                            )}
                         </Row>
 
                         <NoteHistoryModal

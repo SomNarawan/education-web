@@ -1,6 +1,6 @@
 export interface StudentDetailResponse {
     id: number
-    student_code: string
+    student_code: string | null
     student_id_card: string
 
     title_id: number
@@ -33,15 +33,15 @@ export interface StudentDetailResponse {
     admission_channel_id: number
     admission_channel_name: string | null
 
-    guardian_title_id: number
-    guardian_first_name_th: string
-    guardian_last_name_th: string
+    guardian_title_id: number | null
+    guardian_first_name_th: string | null
+    guardian_last_name_th: string | null
     guardian_full_name: string
-    guardian_relationship_id: number
+    guardian_relationship_id: number | null
     guardian_relationship_name: string | null
-    guardian_phone: string
+    guardian_phone: string | null
 
-    high_school_id: number
+    high_school_id: number | null
     high_school_name: string | null
     high_school_address: string
 
@@ -51,7 +51,7 @@ export interface StudentDetailResponse {
     study_plan_name_th: string
     study_plan_name: string | null
     curriculum_plan_name: string | null
-    department_id: number | null
+    department_id: number
     department_name: string | null
     faculty_id: number | null
     faculty_name: string | null

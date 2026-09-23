@@ -23,13 +23,17 @@ import { useEffect, useRef, useState } from 'react'
 import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
 import { renderRequiredFormMark } from '../../../components/custom/RequiredFormMark'
 import { useAuth } from '../../../hooks/useAuth'
-import { getCurriculums } from '../../../services/listOfValueService'
+import {
+    getCurriculumPersonnel,
+    getCurriculums,
+} from '../../../services/listOfValueService'
 import { getStudyPlans } from '../../../services/masterDataService'
 import {
     downloadStudentImportTemplate,
     importStudents,
 } from '../../../services/studentImportService'
 import type { Curriculum, StudyPlan } from '../../../types/MasterData'
+import type { ListOfValue } from '../../../types/ListOfValue'
 import {
     downloadStudentImportBlob,
     parseStudentImportError,
@@ -52,14 +56,19 @@ export default function StudentImportPicker({
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [curriculums, setCurriculums] = useState<Curriculum[]>([])
     const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([])
+    const [advisors, setAdvisors] = useState<ListOfValue<string>[]>([])
     const [selectedCurriculumId, setSelectedCurriculumId] = useState<
         number | undefined
     >()
     const [selectedStudyPlanId, setSelectedStudyPlanId] = useState<
         number | undefined
     >()
+    const [selectedAdvisorId, setSelectedAdvisorId] = useState<
+        string | undefined
+    >()
     const [curriculumsLoading, setCurriculumsLoading] = useState(false)
     const [studyPlansLoading, setStudyPlansLoading] = useState(false)
+    const [advisorsLoading, setAdvisorsLoading] = useState(false)
     const [importing, setImporting] = useState(false)
     const [templateDownloading, setTemplateDownloading] = useState(false)
     const [uploadPercent, setUploadPercent] = useState(0)
@@ -128,11 +137,50 @@ export default function StudentImportPicker({
         }
     }, [selectedCurriculumId])
 
+    useEffect(() => {
+        if (!selectedCurriculumId) {
+            return
+        }
+
+        let cancelled = false
+
+        const loadAdvisors = async () => {
+            try {
+                setAdvisorsLoading(true)
+                const data = await getCurriculumPersonnel(
+                    selectedCurriculumId,
+                )
+
+                if (!cancelled) {
+                    setAdvisors(data)
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error('Unable to load curriculum personnel', error)
+                    message.error('โหลดข้อมูลอาจารย์ที่ปรึกษาไม่สำเร็จ')
+                }
+            } finally {
+                if (!cancelled) {
+                    setAdvisorsLoading(false)
+                }
+            }
+        }
+
+        void loadAdvisors()
+
+        return () => {
+            cancelled = true
+        }
+    }, [selectedCurriculumId])
+
     const handleCurriculumChange = (curriculumId?: number) => {
         setSelectedCurriculumId(curriculumId)
         setSelectedStudyPlanId(undefined)
+        setSelectedAdvisorId(undefined)
         setStudyPlans([])
+        setAdvisors([])
         setStudyPlansLoading(false)
+        setAdvisorsLoading(false)
     }
 
     const handleDownloadTemplate = async () => {
@@ -164,8 +212,18 @@ export default function StudentImportPicker({
 
         if (!selectedFile) return
 
-        if (!selectedCurriculumId || !selectedStudyPlanId) {
-            message.error('กรุณาเลือกหลักสูตรและแผนการเรียน')
+        const curriculum = curriculums.find(
+            (item) => item.id === selectedCurriculumId,
+        )
+        const studyPlan = studyPlans.find(
+            (item) => item.id === selectedStudyPlanId,
+        )
+        const advisor = advisors.find(
+            (item) => item.id === selectedAdvisorId,
+        )
+
+        if (!curriculum || !studyPlan || !advisor) {
+            message.error('กรุณาเลือกหลักสูตร แผนการเรียน และอาจารย์ที่ปรึกษา')
             return
         }
 
@@ -177,8 +235,12 @@ export default function StudentImportPicker({
                 setUploadPercent(0)
                 const result = await importStudents(
                     selectedFile,
-                    selectedCurriculumId,
-                    selectedStudyPlanId,
+                    curriculum.id,
+                    curriculum.code,
+                    studyPlan.id,
+                    studyPlan.name_th,
+                    advisor.id,
+                    advisor.name_th,
                     (progressEvent) => {
                         if (!progressEvent.total) return
 
@@ -256,7 +318,7 @@ export default function StudentImportPicker({
                 requiredMark={renderRequiredFormMark}
             >
                 <Row gutter={[16, 16]}>
-                    <Col xs={24} md={12}>
+                    <Col xs={24} md={8}>
                         <Form.Item label={'หลักสูตร'} required>
                             <ListOfValueSelect
                                 allowClear
@@ -267,14 +329,14 @@ export default function StudentImportPicker({
                                 placeholder={'เลือกหลักสูตร'}
                                 value={selectedCurriculumId}
                                 options={curriculums.map((curriculum) => ({
-                                    label: curriculum.name_th,
+                                    label: `${curriculum.code} ${curriculum.name_th}`,
                                     value: curriculum.id,
                                 }))}
                                 onChange={handleCurriculumChange}
                             />
                         </Form.Item>
                     </Col>
-                    <Col xs={24} md={12}>
+                    <Col xs={24} md={8}>
                         <Form.Item label={'แผนการเรียน'} required>
                             <ListOfValueSelect
                                 allowClear
@@ -293,6 +355,28 @@ export default function StudentImportPicker({
                                     value: studyPlan.id,
                                 }))}
                                 onChange={setSelectedStudyPlanId}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} md={8}>
+                        <Form.Item label={'อาจารย์ที่ปรึกษา'} required>
+                            <ListOfValueSelect<string>
+                                allowClear
+                                showSearch
+                                optionFilterProp={'label'}
+                                loading={advisorsLoading}
+                                disabled={!selectedCurriculumId || importing}
+                                placeholder={
+                                    selectedCurriculumId
+                                        ? 'เลือกอาจารย์ที่ปรึกษา'
+                                        : 'กรุณาเลือกหลักสูตรก่อน'
+                                }
+                                value={selectedAdvisorId}
+                                options={advisors.map((advisor) => ({
+                                    label: advisor.name_th,
+                                    value: advisor.id,
+                                }))}
+                                onChange={setSelectedAdvisorId}
                             />
                         </Form.Item>
                     </Col>
@@ -362,6 +446,7 @@ export default function StudentImportPicker({
                         !selectedFile ||
                         !selectedCurriculumId ||
                         !selectedStudyPlanId ||
+                        !selectedAdvisorId ||
                         importing
                     }
                     onClick={() => void handleImport()}
