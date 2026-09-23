@@ -58,14 +58,7 @@ export function useStudentFormOptions(
             try {
                 setLoading(true)
                 setError(null)
-                const [
-                    titles,
-                    curriculums,
-                    studentStatuses,
-                    admissionChannels,
-                    highSchools,
-                    guardianRelationships,
-                ] = await Promise.all([
+                const results = await Promise.allSettled([
                     getTitles(
                         editingStudent?.title_id
                             ? [editingStudent.title_id]
@@ -99,15 +92,40 @@ export function useStudentFormOptions(
                 ])
 
                 if (!cancelled) {
-                    setOptions((current) => ({
-                        ...current,
+                    const [
                         titles,
                         curriculums,
                         studentStatuses,
                         admissionChannels,
                         highSchools,
                         guardianRelationships,
+                    ] = results
+
+                    setOptions((current) => ({
+                        ...current,
+                        ...(titles.status === 'fulfilled'
+                            ? { titles: titles.value }
+                            : {}),
+                        ...(curriculums.status === 'fulfilled'
+                            ? { curriculums: curriculums.value }
+                            : {}),
+                        ...(studentStatuses.status === 'fulfilled'
+                            ? { studentStatuses: studentStatuses.value }
+                            : {}),
+                        ...(admissionChannels.status === 'fulfilled'
+                            ? { admissionChannels: admissionChannels.value }
+                            : {}),
+                        ...(highSchools.status === 'fulfilled'
+                            ? { highSchools: highSchools.value }
+                            : {}),
+                        ...(guardianRelationships.status === 'fulfilled'
+                            ? { guardianRelationships: guardianRelationships.value }
+                            : {}),
                     }))
+
+                    if (results.some((result) => result.status === 'rejected')) {
+                        throw new Error('Some form options failed to load')
+                    }
                 }
             } catch (error) {
                 if (!cancelled) {
