@@ -73,17 +73,6 @@ function buildRows(
     }))
 }
 
-function filterActiveCategories(
-    categories: CurriculumCategory[],
-): CurriculumCategory[] {
-    return categories
-        .filter((category) => category.status === 'activate')
-        .map((category) => ({
-            ...category,
-            children: filterActiveCategories(category.children),
-        }))
-}
-
 function getErrorMessage(error: unknown, fallback: string) {
     return error instanceof Error && error.message ? error.message : fallback
 }
@@ -112,7 +101,7 @@ export function useStudentCurriculumDetail(
                 const data = await getCurriculumCategories(studyPlanId)
 
                 if (!cancelled) {
-                    setCategories(filterActiveCategories(data))
+                    setCategories(data)
                 }
             } catch (error) {
                 if (cancelled) return

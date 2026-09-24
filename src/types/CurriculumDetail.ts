@@ -1,5 +1,7 @@
 export type CurriculumCategoryType = 'category' | 'subcategory' | 'group'
 
+export type CurriculumCategoryApiType = CurriculumCategoryType | 'subject'
+
 export type CurriculumCourseSourceType =
     | 'manual'
     | 'ku_subject_category'
@@ -8,14 +10,22 @@ export type CurriculumCourseSourceType =
 
 export interface CurriculumCategory {
     id: number
-    curriculum_id: number
     category_type: CurriculumCategoryType
     code: string | null
     name_th: string | null
     name_en: string | null
-    course_source_type: CurriculumCourseSourceType | null
-    status: string
+    course_source_type?: CurriculumCourseSourceType | null
     children: CurriculumCategory[]
+}
+
+export interface CurriculumCategoryApiNode {
+    id: number
+    category_type: CurriculumCategoryApiType
+    code: string | null
+    name_th: string | null
+    name_en: string | null
+    course_source_type?: CurriculumCourseSourceType | null
+    children: CurriculumCategoryApiNode[]
 }
 
 export interface CurriculumEnrollment {
