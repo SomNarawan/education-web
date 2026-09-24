@@ -236,7 +236,7 @@ export default function StudentImportPicker({
                 const result = await importStudents(
                     selectedFile,
                     curriculum.id,
-                    curriculum.code,
+                    curriculum.name_th,
                     studyPlan.id,
                     studyPlan.name_th,
                     advisor.id,
@@ -329,7 +329,7 @@ export default function StudentImportPicker({
                                 placeholder={'เลือกหลักสูตร'}
                                 value={selectedCurriculumId}
                                 options={curriculums.map((curriculum) => ({
-                                    label: `${curriculum.code} ${curriculum.name_th}`,
+                                    label: curriculum.name_th,
                                     value: curriculum.id,
                                 }))}
                                 onChange={handleCurriculumChange}

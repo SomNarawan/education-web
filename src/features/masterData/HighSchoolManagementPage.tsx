@@ -13,6 +13,7 @@ import {
     message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import type { ApiErrorResponse } from '../../types/ApiResponse'
 import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import CustomTable from '../../components/custom/CustomTable'
@@ -42,11 +43,6 @@ interface HighSchoolFormValues {
     subdistrict_id: number
     latitude: number
     longitude: number
-}
-
-interface ApiErrorResponse {
-    message?: string
-    errors?: Record<string, string[]> | null
 }
 
 interface EditState {
@@ -153,19 +149,19 @@ export default function HighSchoolManagementPage() {
     function openEditForm(school: HighSchool) {
         form.setFieldsValue({
             school_name: school.school_name,
-            province_id: school.province_id,
-            district_id: school.district_id,
+            province_id: school.province_id ?? undefined,
+            district_id: school.district_id ?? undefined,
             subdistrict_id: school.subdistrict_id,
             latitude: Number(school.latitude),
             longitude: Number(school.longitude),
         })
         setEditState({ mode: 'edit', school })
 
-        if (school.district_name) {
+        if (school.province_id) {
             void loadDistrictOptions(school.province_id)
         }
 
-        if (school.subdistrict_name) {
+        if (school.district_id) {
             void loadSubdistrictOptions(school.district_id)
         }
     }
@@ -253,7 +249,7 @@ export default function HighSchoolManagementPage() {
         await loadSubdistrictOptions(nextDistrictId)
     }
 
-    function applyServerValidationErrors(errors: Record<string, string[]>) {
+    function applyServerValidationErrors(errors: Record<string, string | string[]>) {
         form.setFields(
             Object.entries(errors)
                 .flatMap(([field, fieldErrors]) =>
@@ -261,7 +257,9 @@ export default function HighSchoolManagementPage() {
                         ? [
                               {
                                   name: field,
-                                  errors: fieldErrors,
+                                  errors: Array.isArray(fieldErrors)
+                                      ? fieldErrors
+                                      : [fieldErrors],
                               },
                           ]
                         : [],

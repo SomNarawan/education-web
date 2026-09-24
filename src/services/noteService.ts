@@ -8,8 +8,15 @@ interface CreateNoteRequest {
     remark?: string | null
 }
 
-export async function createNote(data: CreateNoteRequest): Promise<void> {
-    await api.post('/notes', data)
+export async function createNote(
+    data: CreateNoteRequest,
+): Promise<NoteListResponse> {
+    const response = await api.post<ApiResponse<NoteListResponse>>(
+        '/notes',
+        data,
+    )
+
+    return response.data.data
 }
 
 export async function getNotes(studentId: number): Promise<NoteListResponse[]> {
@@ -23,5 +30,5 @@ export async function getNotes(studentId: number): Promise<NoteListResponse[]> {
 }
 
 export async function deleteNote(id: number): Promise<void> {
-    await api.delete(`/notes/${id}`)
+    await api.delete<ApiResponse<null>>(`/notes/${id}`)
 }

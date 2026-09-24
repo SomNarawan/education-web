@@ -2,7 +2,7 @@ export interface NoteListResponse {
     id: number
     student_id: number
     note_type_id: number
-    note: string
+    note: string | null
     remark: string | null
     created_at: string
     created_by: string

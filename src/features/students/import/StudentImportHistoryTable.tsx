@@ -84,8 +84,8 @@ export default function StudentImportHistoryTable({
             },
             {
                 title: 'หลักสูตร',
-                dataIndex: 'curriculum_name_th',
-                key: 'curriculum_name_th',
+                dataIndex: 'curriculum_code',
+                key: 'curriculum_code',
             },
             {
                 title: 'แผนการเรียน',

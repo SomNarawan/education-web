@@ -1,6 +1,6 @@
 import axios from 'axios'
 import api from '../config/axios'
-import type { ApiResponse } from '../types/ApiResponse'
+import type { ApiErrorResponse, ApiResponse } from '../types/ApiResponse'
 import type { CurriculumCategory } from '../types/CurriculumDetail'
 import { invalidateListOfValueCache } from './listOfValueService'
 import type {
@@ -71,14 +71,6 @@ export async function updateManagedMasterDataStatus(
     return response.data.data
 }
 
-export async function deleteManagedMasterData(
-    resource: ManagedMasterDataResource,
-    id: number,
-): Promise<void> {
-    await api.delete(`/${resource}/${id}`)
-    invalidateListOfValueCache(resource)
-}
-
 export async function getHighSchools(): Promise<HighSchoolListItem[]> {
     const response =
         await api.get<ApiResponse<HighSchoolListItem[]>>('/high-schools')
@@ -86,19 +78,16 @@ export async function getHighSchools(): Promise<HighSchoolListItem[]> {
 }
 
 export async function getStudyPlans(
-    curriculumId?: number,
+    curriculumId: number,
     includeIds?: number[],
 ): Promise<StudyPlan[]> {
     const response = await api.get<ApiResponse<StudyPlan[]>>(
         '/list-of-values/study-plans',
         {
-            params:
-                curriculumId || includeIds
-                    ? {
-                          curriculum_id: curriculumId,
-                          include_ids: includeIds,
-                      }
-                    : undefined,
+            params: {
+                curriculum_id: curriculumId,
+                include_ids: includeIds,
+            },
         },
     )
     return response.data.data
@@ -150,20 +139,16 @@ export async function getCurriculumCategories(
     studyPlanId: number,
 ): Promise<CurriculumCategory[]> {
     try {
-        const response = await api.get<ApiResponse<CurriculumCategory[]>>(
+        const response = await api.get<CurriculumCategory[]>(
             '/curriculum-categories',
             {
                 params: { study_plan_id: studyPlanId },
             },
         )
 
-        if (!response.data.success) {
-            throw new Error(response.data.message)
-        }
-
-        return response.data.data
+        return response.data
     } catch (error) {
-        if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
+        if (axios.isAxiosError<ApiErrorResponse>(error)) {
             if (error.response?.status === 422) {
                 throw new Error(
                     'แผนการเรียนไม่ถูกต้องหรือยังไม่ได้เลือก',

@@ -32,19 +32,20 @@ export interface HighSchoolListItem {
     id: number
     school_name: string
     status: 'active' | 'inactive'
-    created_at: string
-    created_by: string
-    updated_at: string
-    updated_by: string
+    created_at: string | null
+    created_by: string | null
+    updated_at: string | null
+    updated_by: string | null
 }
 
 export interface HighSchool extends HighSchoolListItem {
-    province_id: number
-    province_name: string
-    district_id: number
-    district_name: string
+    province_id: number | null
+    province_name: string | null
+    district_id: number | null
+    district_name: string | null
     subdistrict_id: number
-    subdistrict_name: string
+    subdistrict_name: string | null
+    address: string
     latitude: string
     longitude: string
 }
@@ -69,7 +70,6 @@ export interface StudyPlan {
 
 export interface Curriculum {
     id: number
-    code: string
     name_th: string
     name_en: string | null
 }

@@ -24,7 +24,7 @@ import {
     getSyncHistory,
     syncMasterData,
 } from '../services/syncService'
-import type { ApiResponse } from '../types/ApiResponse'
+import type { ApiErrorResponse, ApiResponse } from '../types/ApiResponse'
 import type {
     SyncDataType,
     SyncExecutionStatus,
@@ -49,12 +49,6 @@ const statusDisplay: Record<
     running: { color: 'processing', label: 'กำลัง Sync' },
     success: { color: 'success', label: 'สำเร็จ' },
     failed: { color: 'error', label: 'ไม่สำเร็จ' },
-}
-
-interface ApiErrorResponse {
-    success?: boolean
-    message?: string
-    errors?: Record<string, string[]> | null
 }
 
 interface SyncHistoryError {

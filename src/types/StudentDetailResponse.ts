@@ -1,7 +1,7 @@
 export interface StudentDetailResponse {
     id: number
     student_code: string | null
-    student_id_card: string
+    student_id_card: string | null
 
     title_id: number
     full_name_th: string
@@ -51,7 +51,7 @@ export interface StudentDetailResponse {
     study_plan_name_th: string
     study_plan_name: string | null
     curriculum_plan_name: string | null
-    department_id: number
+    department_id: number | null
     department_name: string | null
     faculty_id: number | null
     faculty_name: string | null

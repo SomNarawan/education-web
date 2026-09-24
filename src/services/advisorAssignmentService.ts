@@ -4,6 +4,7 @@ import type {
     AdvisorUpdateResult,
 } from '../types/AdvisorAssignment'
 import type { ApiResponse } from '../types/ApiResponse'
+import type { StudentListResponse } from '../types/StudentListResponse'
 
 export async function getStudyingStudentsWithoutAdvisor(
     studyPlanId: number,
@@ -21,8 +22,8 @@ export async function getStudyingStudentsWithoutAdvisor(
 export async function getStudyingStudentsBySystemTeacher(
     teacherId: string,
     studyPlanId: number,
-): Promise<AdvisorAssignmentStudent[]> {
-    const response = await api.get<ApiResponse<AdvisorAssignmentStudent[]>>(
+): Promise<StudentListResponse[]> {
+    const response = await api.get<ApiResponse<StudentListResponse[]>>(
         '/students/studying',
         {
             params: {

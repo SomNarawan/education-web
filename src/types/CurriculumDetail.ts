@@ -30,10 +30,10 @@ export interface CurriculumEnrollment {
 }
 
 export interface CurriculumCourse {
-    plan_study_year: number
-    plan_semester: string
-    plan_semester_order: number
-    plan_study_period: string
+    plan_study_year?: number
+    plan_semester?: string
+    plan_semester_order?: number
+    plan_study_period?: string
     course_code: string | null
     course_name: string
     course_category: string

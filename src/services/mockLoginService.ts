@@ -1,4 +1,4 @@
-import axios from 'axios'
+import api from '../config/axios'
 import type { MockLoginUser } from '../types/MockLogin'
 
 export const mockLoginBaseUrl = import.meta.env.VITE_API_URL ?? ''
@@ -6,8 +6,8 @@ export const mockLoginBaseUrl = import.meta.env.VITE_API_URL ?? ''
 export async function searchMockLoginUsers(
     query: string,
 ): Promise<MockLoginUser[]> {
-    const response = await axios.get<MockLoginUser[]>(
-        `${mockLoginBaseUrl}/mock-login/search`,
+    const response = await api.get<MockLoginUser[]>(
+        '/mock-login/search',
         { params: { q: query } },
     )
 

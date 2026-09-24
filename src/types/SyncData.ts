@@ -12,6 +12,7 @@ export interface GetSyncsParams {
 export interface SyncResult {
     id: number
     sync_type: SyncType
+    sync_type_name?: string
     inserted_count: number
     updated_count: number
     inactivated_count: number
@@ -19,7 +20,9 @@ export interface SyncResult {
     status: SyncExecutionStatus
     error_message: string | null
     created_at: string
+    created_by: string | null
     updated_at: string
+    updated_by: string | null
 }
 
 export interface SyncHistoryRecord {

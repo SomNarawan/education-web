@@ -72,25 +72,20 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         let cancelled = false
         fetchingRef.current = true
 
-        api.get<ApiResponse<MeResponse> | MeResponse>('/me')
+        api.get<ApiResponse<MeResponse>>('/me')
             .then((res) => {
                 if (cancelled) return
 
-                const response = res.data
-                const payload =
-                    'data' in response ? response.data : response
-
-                const roles = payload.role ?? []
-                const id = payload.id
-                const teacherId = payload.nontri_id ?? null
-                const name = payload.name
+                const payload = res.data.data
+                const roles = payload.role
+                const teacherId = payload.nontri_id
+                const name = payload.name ?? undefined
 
                 const departmentId = payload.department_id ?? null
 
                 const facultyId = payload.faculty_id ?? null
 
                 const authUser: AuthUser = {
-                    id,
                     teacherId,
                     name,
                     roles,

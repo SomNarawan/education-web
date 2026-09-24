@@ -16,7 +16,6 @@ export interface MasterDataDefinition {
     fields: MasterDataFieldDefinition[]
     listFieldKeys?: string[]
     supportsDetail?: boolean
-    supportsDelete?: boolean
     refreshAfterMutation?: boolean
 }
 

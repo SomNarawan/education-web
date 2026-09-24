@@ -1,5 +1,5 @@
 export interface CreateStudentRequest {
-    student_code?: string | null
+    student_code: string
     student_id_card?: string | null
     title_id: number
     first_name_th: string
@@ -20,9 +20,6 @@ export interface CreateStudentRequest {
     study_plan_name_th: string
     department_id?: number
     entry_year: number
-    study_year?: number
-    study_semester?: 1 | 2 | 3
-    study_period?: string
 
     guardian_title_id?: number | null
     guardian_first_name_th?: string | null

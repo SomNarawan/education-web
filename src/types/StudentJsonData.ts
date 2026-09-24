@@ -1,10 +1,13 @@
-import type { CurriculumEnrollmentRecord } from './CurriculumDetail'
+import type {
+    CurriculumEnrollmentPlan,
+    CurriculumEnrollmentRecord,
+} from './CurriculumDetail'
 import type { StudentCourseGroupPerformance } from './StudentCourseGroupPerformance'
 import type { StudentSemesterPerformance } from './StudentSemesterPerformance'
 
 export interface StudentEnrollmentData {
     student_code: string
-    enrollment: CurriculumEnrollmentRecord[]
+    enrollment: CurriculumEnrollmentRecord[] | CurriculumEnrollmentPlan
 }
 
 export interface StudentEnrollmentStatusesData {

@@ -1,5 +1,4 @@
 import {
-    DeleteOutlined,
     EditOutlined,
     EyeOutlined,
     PlusOutlined,
@@ -18,6 +17,7 @@ import {
     message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import type { ApiErrorResponse } from '../../types/ApiResponse'
 import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
@@ -26,7 +26,6 @@ import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark
 import { useAuth } from '../../hooks/useAuth'
 import {
     createManagedMasterData,
-    deleteManagedMasterData,
     getManagedMasterData,
     getManagedMasterDataList,
     updateManagedMasterData,
@@ -44,11 +43,6 @@ import {
 } from './masterDataConfig'
 
 type MasterDataFormValues = Record<string, string>
-
-interface ApiErrorResponse {
-    message?: string
-    errors?: Record<string, string[] | string> | null
-}
 
 interface EditState {
     mode: 'create' | 'edit'
@@ -80,7 +74,6 @@ function MasterDataManagementContent({
     const [loadingViewId, setLoadingViewId] = useState<number | null>(null)
     const [loadingEditId, setLoadingEditId] = useState<number | null>(null)
     const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null)
-    const [deletingId, setDeletingId] = useState<number | null>(null)
     const [editState, setEditState] = useState<EditState | null>(null)
     const [viewingRecord, setViewingRecord] =
         useState<ManagedMasterDataRecord | null>(null)
@@ -303,35 +296,6 @@ function MasterDataManagementContent({
         }
     }
 
-    async function handleDelete(record: ManagedMasterDataRecord) {
-        setDeletingId(record.id)
-
-        try {
-            await deleteManagedMasterData(resource, record.id)
-            message.success(`ลบ${definition.itemLabel}เรียบร้อยแล้ว`)
-            await loadRecords()
-        } catch (error) {
-            console.error(`Unable to delete ${resource}`, error)
-
-            if (
-                resource === 'import-types' &&
-                axios.isAxiosError(error) &&
-                error.response?.status === 409
-            ) {
-                message.error(
-                    'ไม่สามารถลบประเภทการนำเข้านี้ได้ เนื่องจากมีประวัติการนำเข้าใช้งานอยู่',
-                )
-            } else {
-                showRequestError(
-                    error,
-                    `ไม่สามารถลบ${definition.itemLabel}ได้`,
-                )
-            }
-        } finally {
-            setDeletingId(null)
-        }
-    }
-
     const tableFields = definition.listFieldKeys
         ? definition.fields.filter((field) =>
               definition.listFieldKeys?.includes(field.key),
@@ -431,10 +395,7 @@ function MasterDataManagementContent({
     const actionColumn: ColumnsType<ManagedMasterDataRecord>[number] = {
             title: 'การจัดการ',
             key: 'actions',
-            width:
-                80 +
-                (definition.supportsDetail ? 40 : 0) +
-                (definition.supportsDelete ? 40 : 0),
+            width: 80 + (definition.supportsDetail ? 40 : 0),
             align: 'center',
             fixed: 'right',
             render: (_, record) => {
@@ -446,8 +407,7 @@ function MasterDataManagementContent({
                 const actionInProgress =
                     loadingViewId !== null ||
                     loadingEditId !== null ||
-                    updatingStatusId !== null ||
-                    deletingId !== null
+                    updatingStatusId !== null
 
                 return (
                     <Space size="small">
@@ -481,27 +441,6 @@ function MasterDataManagementContent({
                             }}
                             onClick={() => void handleOpenEdit(record)}
                         />
-                        {definition.supportsDelete && (
-                            <Popconfirm
-                                title={`ยืนยันการลบ${definition.itemLabel}`}
-                                description={`ต้องการลบ ${recordLabel} ใช่หรือไม่`}
-                                okText="ลบ"
-                                okButtonProps={{ danger: true }}
-                                cancelText="ยกเลิก"
-                                onConfirm={() => handleDelete(record)}
-                            >
-                                <Button
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                    aria-label={`ลบ${recordLabel}`}
-                                    loading={deletingId === record.id}
-                                    disabled={
-                                        actionInProgress &&
-                                        deletingId !== record.id
-                                    }
-                                />
-                            </Popconfirm>
-                        )}
                     </Space>
                 )
             },

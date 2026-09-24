@@ -6,8 +6,6 @@ import type { Curriculum } from '../types/MasterData'
 interface ListOfValueParams {
     province_id?: number
     district_id?: number
-    department_id?: number
-    study_plan_id?: number
     curriculum_id?: number
     include_ids?: Array<number | string>
 }

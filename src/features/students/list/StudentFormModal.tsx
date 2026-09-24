@@ -56,8 +56,8 @@ useEffect(() => {
 
     if (editingStudent) {
         form.setFieldsValue({
-            student_code: editingStudent.student_code,
-            student_id_card: editingStudent.student_id_card,
+            student_code: editingStudent.student_code ?? undefined,
+            student_id_card: editingStudent.student_id_card ?? undefined,
             title_id: editingStudent.title_id,
             first_name_th: editingStudent.first_name_th,
             last_name_th: editingStudent.last_name_th,
@@ -116,7 +116,7 @@ const handleOk = async () => {
 
     const formattedValues: StudentFormValues = {
         ...values,
-        student_code: values.student_code?.trim() || null,
+        student_code: values.student_code.trim(),
         high_school_id: values.high_school_id ?? null,
         guardian_title_id: values.guardian_title_id ?? null,
         guardian_first_name_th:
@@ -125,7 +125,7 @@ const handleOk = async () => {
             values.guardian_last_name_th?.trim() || null,
         guardian_relationship_id: values.guardian_relationship_id ?? null,
         guardian_phone: values.guardian_phone?.trim() || null,
-        curriculum_code: curriculum.code,
+        curriculum_code: curriculum.name_th,
         study_plan_name_th: studyPlan.name_th,
         entry_year: values.entry_year.year(),
         teacher_id: values.teacher_id ?? null,
