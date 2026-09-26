@@ -46,7 +46,6 @@ const {
     systemTeachersLoading,
     error: optionsError,
     clearStudyPlans,
-    clearSystemTeachers,
 } = useStudentFormOptions(
     open,
     selectedCurriculumId,
@@ -95,14 +94,6 @@ const handleCurriculumChange = (curriculumId?: number) => {
         teacher_id: undefined,
     })
     clearStudyPlans()
-}
-
-const handleStudyPlanChange = (studyPlanId?: number) => {
-    form.setFieldsValue({
-        study_plan_id: studyPlanId,
-        teacher_id: undefined,
-    })
-    clearSystemTeachers()
 }
 
 const handleOk = async () => {
@@ -426,7 +417,6 @@ return (
                                     label: item.name_th,
                                     value: item.id,
                                 }))}
-                                onChange={handleStudyPlanChange}
                             />
                         </Form.Item>
                     </Col>

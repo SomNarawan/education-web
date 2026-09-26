@@ -250,10 +250,6 @@ export function useStudentFormOptions(
         }))
     }, [])
 
-    const clearSystemTeachers = useCallback(() => {
-        setOptions((current) => ({ ...current, systemTeachers: [] }))
-    }, [])
-
     return {
         options,
         loading,
@@ -261,6 +257,5 @@ export function useStudentFormOptions(
         systemTeachersLoading,
         error,
         clearStudyPlans,
-        clearSystemTeachers,
     }
 }
