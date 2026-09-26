@@ -5,12 +5,14 @@ import {
 } from '@ant-design/icons'
 import { Button, Empty, Modal, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import CustomTable from '../../../components/custom/CustomTable'
+import { getSystemDepartments } from '../../../services/listOfValueService'
 import type {
     StudentImportHistory,
     StudentImportStatus,
 } from '../../../types/StudentImport'
+import type { ListOfValue } from '../../../types/ListOfValue'
 import { formatThaiDateTime } from '../../../utils/dateFormat'
 
 const statusDisplay: Record<
@@ -68,6 +70,43 @@ export default function StudentImportHistoryTable({
     const [errorRecord, setErrorRecord] = useState<StudentImportHistory | null>(
         null,
     )
+    const [departments, setDepartments] = useState<ListOfValue[]>([])
+    const departmentNames = useMemo(
+        () =>
+            new Map(
+                departments.map((department) => [
+                    department.id,
+                    department.name_th,
+                ]),
+            ),
+        [departments],
+    )
+
+    useEffect(() => {
+        let cancelled = false
+
+        const loadDepartments = async () => {
+            try {
+                const departmentOptions = await getSystemDepartments()
+
+                if (!cancelled) {
+                    setDepartments(departmentOptions)
+                }
+            } catch (error) {
+                console.error(
+                    'Unable to load departments for student import history',
+                    error,
+                )
+            }
+        }
+
+        void loadDepartments()
+
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
     const columns = useMemo<ColumnsType<StudentImportHistory>>(
         () => [
             {
@@ -81,6 +120,13 @@ export default function StudentImportHistoryTable({
                 title: 'ชื่อไฟล์',
                 dataIndex: 'file_name',
                 key: 'file_name',
+            },
+            {
+                title: 'ภาควิชา',
+                dataIndex: 'system_department_id',
+                key: 'system_department_id',
+                render: (value: number | null) =>
+                    value ? (departmentNames.get(value) ?? '-') : '-',
             },
             {
                 title: 'หลักสูตร',
@@ -186,7 +232,7 @@ export default function StudentImportHistoryTable({
                 },
             },
         ],
-        [downloadingId, onDownload],
+        [departmentNames, downloadingId, onDownload],
     )
 
     return (

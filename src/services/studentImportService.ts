@@ -24,6 +24,7 @@ export async function getStudentImportHistory(): Promise<
 
 export async function importStudents(
     file: File,
+    systemDepartmentId: number,
     curriculumId: number,
     curriculumCode: string,
     studyPlanId: number,
@@ -34,6 +35,7 @@ export async function importStudents(
 ): Promise<StudentImportResult> {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('system_department_id', String(systemDepartmentId))
     formData.append('curriculum_id', String(curriculumId))
     formData.append('curriculum_code', curriculumCode)
     formData.append('study_plan_id', String(studyPlanId))

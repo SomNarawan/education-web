@@ -8,6 +8,7 @@ export interface StudentImportHistory {
     id: number
     import_type_id: number
     type: string | null
+    system_department_id: number | null
     curriculum_id: number
     curriculum_code: string
     curriculum_plan_id: number

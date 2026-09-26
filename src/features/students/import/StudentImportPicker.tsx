@@ -26,6 +26,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import {
     getCurriculumPersonnel,
     getCurriculums,
+    getSystemDepartments,
 } from '../../../services/listOfValueService'
 import { getStudyPlans } from '../../../services/masterDataService'
 import {
@@ -57,6 +58,10 @@ export default function StudentImportPicker({
     const [curriculums, setCurriculums] = useState<Curriculum[]>([])
     const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([])
     const [advisors, setAdvisors] = useState<ListOfValue<string>[]>([])
+    const [departments, setDepartments] = useState<ListOfValue[]>([])
+    const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+        number | undefined
+    >()
     const [selectedCurriculumId, setSelectedCurriculumId] = useState<
         number | undefined
     >()
@@ -69,6 +74,7 @@ export default function StudentImportPicker({
     const [curriculumsLoading, setCurriculumsLoading] = useState(false)
     const [studyPlansLoading, setStudyPlansLoading] = useState(false)
     const [advisorsLoading, setAdvisorsLoading] = useState(false)
+    const [departmentsLoading, setDepartmentsLoading] = useState(false)
     const [importing, setImporting] = useState(false)
     const [templateDownloading, setTemplateDownloading] = useState(false)
     const [uploadPercent, setUploadPercent] = useState(0)
@@ -97,6 +103,36 @@ export default function StudentImportPicker({
         }
 
         void loadCurriculums()
+
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
+    useEffect(() => {
+        let cancelled = false
+
+        const loadDepartments = async () => {
+            try {
+                setDepartmentsLoading(true)
+                const data = await getSystemDepartments()
+
+                if (!cancelled) {
+                    setDepartments(data)
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error('Unable to load system departments', error)
+                    message.error('โหลดข้อมูลภาควิชาไม่สำเร็จ')
+                }
+            } finally {
+                if (!cancelled) {
+                    setDepartmentsLoading(false)
+                }
+            }
+        }
+
+        void loadDepartments()
 
         return () => {
             cancelled = true
@@ -222,8 +258,10 @@ export default function StudentImportPicker({
             (item) => item.id === selectedAdvisorId,
         )
 
-        if (!curriculum || !studyPlan || !advisor) {
-            message.error('กรุณาเลือกหลักสูตร แผนการเรียน และอาจารย์ที่ปรึกษา')
+        if (!selectedDepartmentId || !curriculum || !studyPlan || !advisor) {
+            message.error(
+                'กรุณาเลือกภาควิชา หลักสูตร แผนการเรียน และอาจารย์ที่ปรึกษา',
+            )
             return
         }
 
@@ -235,6 +273,7 @@ export default function StudentImportPicker({
                 setUploadPercent(0)
                 const result = await importStudents(
                     selectedFile,
+                    selectedDepartmentId,
                     curriculum.id,
                     curriculum.name_th,
                     studyPlan.id,
@@ -318,7 +357,25 @@ export default function StudentImportPicker({
                 requiredMark={renderRequiredFormMark}
             >
                 <Row gutter={[16, 16]}>
-                    <Col xs={24} md={8}>
+                    <Col xs={24} md={6}>
+                        <Form.Item label={'ภาควิชา'} required>
+                            <ListOfValueSelect
+                                allowClear
+                                showSearch
+                                optionFilterProp={'label'}
+                                loading={departmentsLoading}
+                                disabled={importing}
+                                placeholder={'เลือกภาควิชา'}
+                                value={selectedDepartmentId}
+                                options={departments.map((department) => ({
+                                    label: department.name_th,
+                                    value: department.id,
+                                }))}
+                                onChange={setSelectedDepartmentId}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} md={6}>
                         <Form.Item label={'หลักสูตร'} required>
                             <ListOfValueSelect
                                 allowClear
@@ -336,7 +393,7 @@ export default function StudentImportPicker({
                             />
                         </Form.Item>
                     </Col>
-                    <Col xs={24} md={8}>
+                    <Col xs={24} md={6}>
                         <Form.Item label={'แผนการเรียน'} required>
                             <ListOfValueSelect
                                 allowClear
@@ -358,7 +415,7 @@ export default function StudentImportPicker({
                             />
                         </Form.Item>
                     </Col>
-                    <Col xs={24} md={8}>
+                    <Col xs={24} md={6}>
                         <Form.Item label={'อาจารย์ที่ปรึกษา'} required>
                             <ListOfValueSelect<string>
                                 allowClear
@@ -444,6 +501,7 @@ export default function StudentImportPicker({
                     loading={importing}
                     disabled={
                         !selectedFile ||
+                        !selectedDepartmentId ||
                         !selectedCurriculumId ||
                         !selectedStudyPlanId ||
                         !selectedAdvisorId ||
