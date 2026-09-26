@@ -6,6 +6,7 @@ import {
     getCurriculums,
     getGuardianRelationships,
     getHighSchoolOptions,
+    getSystemDepartments,
     getStudentStatuses,
     getTitles,
 } from '../../../services/listOfValueService'
@@ -17,6 +18,7 @@ import type { StudentDetailResponse } from '../../../types/StudentDetailResponse
 interface StudentFormOptions {
     titles: ListOfValue[]
     curriculums: Curriculum[]
+    systemDepartments: ListOfValue[]
     systemTeachers: ListOfValue<string>[]
     studentStatuses: ListOfValue[]
     admissionChannels: ListOfValue[]
@@ -28,6 +30,7 @@ interface StudentFormOptions {
 const emptyOptions: StudentFormOptions = {
     titles: [],
     curriculums: [],
+    systemDepartments: [],
     systemTeachers: [],
     studentStatuses: [],
     admissionChannels: [],
@@ -69,6 +72,11 @@ export function useStudentFormOptions(
                             ? [editingStudent.curriculum_id]
                             : undefined,
                     ),
+                    getSystemDepartments(
+                        editingStudent?.system_department_id
+                            ? [editingStudent.system_department_id]
+                            : undefined,
+                    ),
                     getStudentStatuses(
                         editingStudent?.student_status_id
                             ? [editingStudent.student_status_id]
@@ -95,6 +103,7 @@ export function useStudentFormOptions(
                     const [
                         titles,
                         curriculums,
+                        systemDepartments,
                         studentStatuses,
                         admissionChannels,
                         highSchools,
@@ -108,6 +117,9 @@ export function useStudentFormOptions(
                             : {}),
                         ...(curriculums.status === 'fulfilled'
                             ? { curriculums: curriculums.value }
+                            : {}),
+                        ...(systemDepartments.status === 'fulfilled'
+                            ? { systemDepartments: systemDepartments.value }
                             : {}),
                         ...(studentStatuses.status === 'fulfilled'
                             ? { studentStatuses: studentStatuses.value }

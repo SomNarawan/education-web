@@ -28,6 +28,8 @@ interface FormValues extends Omit<StudentFormValues, 'entry_year'> {
     entry_year: Dayjs
 }
 
+const BUDDHIST_ERA_OFFSET = 543
+
 export default function StudentFormModal({
 open,
 loading,
@@ -65,9 +67,11 @@ useEffect(() => {
             last_name_en: editingStudent.last_name_en,
             phone: editingStudent.phone,
             email: editingStudent.email,
+            system_department_id:
+                editingStudent.system_department_id ?? undefined,
             curriculum_id: editingStudent.curriculum_id,
             study_plan_id: editingStudent.study_plan_id,
-            entry_year: dayjs().year(editingStudent.entry_year),
+            entry_year: dayjs().year(editingStudent.entry_year_be),
             teacher_id: editingStudent.teacher_id,
             admission_channel_id: editingStudent.admission_channel_id,
             high_school_id: editingStudent.high_school_id,
@@ -126,8 +130,10 @@ const handleOk = async () => {
         guardian_relationship_id: values.guardian_relationship_id ?? null,
         guardian_phone: values.guardian_phone?.trim() || null,
         curriculum_code: curriculum.name_th,
+        system_department_id: values.system_department_id,
         study_plan_name_th: studyPlan.name_th,
-        entry_year: values.entry_year.year(),
+        entry_year:
+            values.entry_year.year() - BUDDHIST_ERA_OFFSET,
         teacher_id: values.teacher_id ?? null,
         teacher_full_name: dropdownData.systemTeachers.find(
             (teacher) => teacher.id === values.teacher_id,
@@ -314,8 +320,60 @@ return (
                 style={{ marginBottom: 16 }}
             >
                 <Row gutter={16}>
-
                     <Col xs={24} md={8}>
+                        <Form.Item
+                            label="ปีเข้าเรียน"
+                            name="entry_year"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'กรุณากรอกปีเข้าเรียน',
+                                },
+                            ]}
+                        >
+                            <DatePicker
+                                picker="year"
+                                format="YYYY"
+                                style={{ width: '100%' }}
+                                defaultPickerValue={dayjs().year(
+                                    dayjs().year() + BUDDHIST_ERA_OFFSET,
+                                )}
+                                minDate={dayjs('2444-01-01')}
+                                maxDate={dayjs('2698-12-31')}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} md={16}>
+                        <Form.Item
+                            label="ภาควิชา"
+                            name="system_department_id"
+                            rules={
+                                editingStudent
+                                    ? []
+                                    : [
+                                          {
+                                              required: true,
+                                              message: 'กรุณาเลือกภาควิชา',
+                                          },
+                                      ]
+                            }
+                        >
+                            <ListOfValueSelect<number>
+                                allowClear
+                                showSearch
+                                optionFilterProp={'label'}
+                                loading={optionsLoading}
+                                error={optionsError}
+                                placeholder="เลือกภาควิชา"
+                                options={toListOfValueOptions(
+                                    dropdownData.systemDepartments,
+                                )}
+                            />
+                        </Form.Item>
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col xs={24} md={12}>
                         <Form.Item
                             label="หลักสูตร"
                             name="curriculum_id"
@@ -342,7 +400,7 @@ return (
                         </Form.Item>
                     </Col>
 
-                    <Col xs={24} md={8}>
+                    <Col xs={24} md={12}>
                         <Form.Item
                             label="แผนการเรียน"
                             name="study_plan_id"
@@ -369,24 +427,6 @@ return (
                                     value: item.id,
                                 }))}
                                 onChange={handleStudyPlanChange}
-                            />
-                        </Form.Item>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <Form.Item
-                            label="ปีเข้าเรียน"
-                            name="entry_year"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกปีเข้าเรียน',
-                                },
-                            ]}
-                        >
-                            <DatePicker
-                                picker="year"
-                                minDate={dayjs('1901-01-01')}
-                                maxDate={dayjs('2155-12-31')}
                             />
                         </Form.Item>
                     </Col>

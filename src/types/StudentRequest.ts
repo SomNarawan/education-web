@@ -18,7 +18,7 @@ export interface CreateStudentRequest {
     curriculum_code: string
     study_plan_id: number
     study_plan_name_th: string
-    department_id?: number
+    system_department_id?: number
     entry_year: number
 
     guardian_title_id?: number | null

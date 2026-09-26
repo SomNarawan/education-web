@@ -51,7 +51,7 @@ export interface StudentDetailResponse {
     study_plan_name_th: string
     study_plan_name: string | null
     curriculum_plan_name: string | null
-    department_id: number | null
+    system_department_id: number | null
     department_name: string | null
     faculty_id: number | null
     faculty_name: string | null
