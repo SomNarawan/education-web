@@ -83,6 +83,12 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             allowedRoles: ['admin'],
         },
         {
+            key: '/grade-imports',
+            icon: <FileExcelOutlined />,
+            label: 'นำเข้าเกรด',
+            allowedRoles: ['admin'],
+        },
+        {
             key: '/sync',
             icon: <SyncOutlined />,
             label: 'ซิงค์ข้อมูล',

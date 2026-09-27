@@ -45,7 +45,7 @@ const columns: ColumnsType<FailedPlannedCourseRow> = [
         dataIndex: 'course_name',
         key: 'course_name',
         width: '30%',
-        render: (value: string) => (
+        render: (value: string | null) => (
             <span className="course-result-name-cell">{value || '-'}</span>
         ),
     },
@@ -55,7 +55,7 @@ const columns: ColumnsType<FailedPlannedCourseRow> = [
         key: 'credit',
         width: '9%',
         align: 'center',
-        render: (value: number) => value ?? '-',
+        render: (value: number | null) => value ?? '-',
     },
     {
         title: 'สถานะ',
@@ -85,7 +85,7 @@ function CourseResultTable({
     loading,
 }: CourseResultTableProps) {
     const totalCredit = useMemo(
-        () => rows.reduce((total, row) => total + row.credit, 0),
+        () => rows.reduce((total, row) => total + (row.credit ?? 0), 0),
         [rows],
     )
     const tableColumns = useMemo(

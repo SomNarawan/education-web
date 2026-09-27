@@ -69,8 +69,8 @@ export interface CurriculumEnrollmentRecord {
     semester_order?: number
     study_period?: string
     course_code: string | null
-    course_name: string
-    course_category: string
+    course_name: string | null
+    course_category: string | null
     course_sub_category?: string | null
     curriculum_division?: string
     course_group: string | null
@@ -78,7 +78,7 @@ export interface CurriculumEnrollmentRecord {
     grade_letter: string | null
     grade_point?: string | number | null
     enrollment_type?: string
-    credit: number
+    credit: number | null
 }
 
 export interface CurriculumCourseRow extends CurriculumEnrollmentRecord {

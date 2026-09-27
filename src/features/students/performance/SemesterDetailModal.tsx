@@ -28,11 +28,13 @@ const columns: ColumnsType<StudentSemesterEnrollment> = [
         dataIndex: 'credit',
         key: 'credit',
         width: 180,
+        render: (value: number | null) => value ?? '-',
     },
     {
         title: 'รายชื่อวิชา',
         dataIndex: 'course_name',
         key: 'course_name',
+        render: (value: string | null) => value || '-',
     },
 ]
 

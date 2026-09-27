@@ -19,6 +19,7 @@ const SystemMasterDataDetail = lazy(
     () => import('./pages/SystemMasterDataDetail'),
 )
 const StudentImport = lazy(() => import('./pages/StudentImport'))
+const GradeImport = lazy(() => import('./pages/GradeImport'))
 const AdvisorAssignment = lazy(
     () => import('./features/advisorAssignments/AdvisorAssignmentPage'),
 )
@@ -108,6 +109,15 @@ export default function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <StudentImport />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="grade-imports"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <GradeImport />
                                 </ProtectedRoute>
                             }
                         />

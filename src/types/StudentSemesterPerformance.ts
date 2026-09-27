@@ -1,7 +1,7 @@
 export interface StudentSemesterEnrollment {
-    course_name: string
+    course_name: string | null
     grade_letter: string | null
-    credit: number
+    credit: number | null
 }
 
 export interface StudentSemesterPerformance {
