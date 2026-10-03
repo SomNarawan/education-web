@@ -6,6 +6,7 @@ import type {
     CurriculumCategoryApiNode,
     CurriculumCategoryType,
 } from '../types/CurriculumDetail'
+import type { CurriculumPlanCourseList } from '../types/CurriculumPlanCourse'
 import { invalidateListOfValueCache } from './listOfValueService'
 import type {
     HighSchool,
@@ -210,4 +211,17 @@ export async function getCurriculumCategories(
 
         throw error
     }
+}
+
+export async function getCurriculumPlanCourses(
+    studyPlanId: number,
+): Promise<CurriculumPlanCourseList[]> {
+    const response = await api.get<ApiResponse<CurriculumPlanCourseList[]>>(
+        '/curriculum-plan-courses',
+        {
+            params: { study_plan_id: studyPlanId },
+        },
+    )
+
+    return response.data.data
 }
