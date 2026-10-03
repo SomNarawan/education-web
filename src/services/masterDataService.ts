@@ -170,7 +170,9 @@ export async function getCurriculumCategories(
                 category_type: categoryType,
                 code: node.code,
                 name_th: node.name_th,
+                name_short_th: node.name_short_th,
                 name_en: node.name_en,
+                name_short_en: node.name_short_en,
                 course_source_type: node.course_source_type ?? null,
                 children:
                     categoryType === 'group'

@@ -13,7 +13,9 @@ export interface CurriculumCategory {
     category_type: CurriculumCategoryType
     code: string | null
     name_th: string | null
+    name_short_th: string | null
     name_en: string | null
+    name_short_en: string | null
     course_source_type?: CurriculumCourseSourceType | null
     children: CurriculumCategory[]
 }
@@ -23,7 +25,9 @@ export interface CurriculumCategoryApiNode {
     category_type: CurriculumCategoryApiType
     code: string | null
     name_th: string | null
+    name_short_th: string | null
     name_en: string | null
+    name_short_en: string | null
     course_source_type?: CurriculumCourseSourceType | null
     children: CurriculumCategoryApiNode[]
 }

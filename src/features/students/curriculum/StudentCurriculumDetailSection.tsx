@@ -92,7 +92,9 @@ function CourseTable({
 
 function getCategoryName(category: CurriculumCategory) {
     return (
+        category.name_short_th?.trim() ||
         category.name_th?.trim() ||
+        category.name_short_en?.trim() ||
         category.name_en?.trim() ||
         category.code?.trim() ||
         `#${category.id}`
