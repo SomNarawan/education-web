@@ -112,6 +112,10 @@ const handleOk = async () => {
     const formattedValues: StudentFormValues = {
         ...values,
         student_code: values.student_code.trim(),
+        first_name_en: values.first_name_en?.trim() || null,
+        last_name_en: values.last_name_en?.trim() || null,
+        phone: values.phone?.trim() || null,
+        email: values.email?.trim() || null,
         high_school_id: values.high_school_id ?? null,
         guardian_title_id: values.guardian_title_id ?? null,
         guardian_first_name_th:
@@ -243,12 +247,6 @@ return (
                         <Form.Item
                             label="ชื่อภาษาอังกฤษ"
                             name="first_name_en"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกชื่อภาษาอังกฤษ',
-                                },
-                            ]}
                         >
                             <Input maxLength={50} />
                         </Form.Item>
@@ -258,12 +256,6 @@ return (
                         <Form.Item
                             label="นามสกุลภาษาอังกฤษ"
                             name="last_name_en"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกนามสกุลภาษาอังกฤษ',
-                                },
-                            ]}
                         >
                             <Input maxLength={50} />
                         </Form.Item>
@@ -273,12 +265,6 @@ return (
                         <Form.Item
                             label="เบอร์โทร"
                             name="phone"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกเบอร์โทร',
-                                },
-                            ]}
                         >
                             <Input maxLength={10} />
                         </Form.Item>
@@ -289,10 +275,6 @@ return (
                             label="อีเมล"
                             name="email"
                             rules={[
-                                {
-                                    required: true,
-                                    message: 'กรุณากรอกอีเมล',
-                                },
                                 {
                                     type: 'email',
                                     message: 'รูปแบบอีเมลไม่ถูกต้อง',

@@ -4,10 +4,10 @@ export interface CreateStudentRequest {
     title_id: number
     first_name_th: string
     last_name_th: string
-    first_name_en: string
-    last_name_en: string
-    phone: string
-    email: string
+    first_name_en?: string | null
+    last_name_en?: string | null
+    phone?: string | null
+    email?: string | null
 
     teacher_id?: string | null
     teacher_full_name?: string | null

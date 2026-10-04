@@ -9,11 +9,11 @@ export interface StudentDetailResponse {
 
     first_name_th: string
     last_name_th: string
-    first_name_en: string
-    last_name_en: string
+    first_name_en: string | null
+    last_name_en: string | null
 
-    phone: string
-    email: string
+    phone: string | null
+    email: string | null
 
     entry_year: number
     entry_year_be: number
