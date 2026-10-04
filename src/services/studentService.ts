@@ -5,6 +5,8 @@ import type { StudentDetailResponse } from '../types/StudentDetailResponse'
 import type {
     CreateStudentRequest,
     ListStudentsRequest,
+    ResetStudentGradesRequest,
+    ResetStudentGradesResponse,
     UpdateStudentRequest,
 } from '../types/StudentRequest'
 
@@ -62,4 +64,16 @@ export async function updateStudent(
 
 export async function deleteStudent(id: number): Promise<void> {
     await api.delete<ApiResponse<null>>(`/students/${id}`)
+}
+
+export async function resetStudentGrades(
+    studentCode: string,
+    data: ResetStudentGradesRequest,
+): Promise<ResetStudentGradesResponse> {
+    const response = await api.delete<ApiResponse<ResetStudentGradesResponse>>(
+        `/students/${encodeURIComponent(studentCode)}/grades`,
+        { data },
+    )
+
+    return response.data.data
 }

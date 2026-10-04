@@ -54,7 +54,7 @@ function buildCreditStatuses(
     }))
 }
 
-export function useStudentPerformance(studentCode: string) {
+export function useStudentPerformance(studentCode: string, refreshKey = 0) {
     const [creditStatuses, setCreditStatuses] = useState<
         SemesterCreditStatus[]
     >([])
@@ -115,7 +115,7 @@ export function useStudentPerformance(studentCode: string) {
         return () => {
             cancelled = true
         }
-    }, [studentCode])
+    }, [refreshKey, studentCode])
 
     return {
         creditStatuses,

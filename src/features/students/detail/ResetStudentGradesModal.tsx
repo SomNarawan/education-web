@@ -22,11 +22,9 @@ const semesterLabels: Record<number, string> = {
 
 type ResetScope = 'all' | 'semester'
 
-export interface ResetStudentGradesSelection {
-    scope: ResetScope
-    studyYear?: number
-    semester?: number
-}
+export type ResetStudentGradesSelection =
+    | { scope: 'all' }
+    | { scope: 'semester'; studyYear: number; semester: number }
 
 interface ResetStudentGradesModalProps {
     open: boolean
@@ -36,7 +34,7 @@ interface ResetStudentGradesModalProps {
     currentStudySemester: number
     loading?: boolean
     onCancel: () => void
-    onConfirm: (selection: ResetStudentGradesSelection) => void
+    onConfirm: (selection: ResetStudentGradesSelection) => Promise<boolean>
 }
 
 export default function ResetStudentGradesModal({
@@ -109,17 +107,19 @@ export default function ResetStudentGradesModal({
         onCancel()
     }
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (scope === 'semester') {
             if (studyYear === undefined || semester === undefined) return
 
-            onConfirm({ scope, studyYear, semester })
-            resetSelection()
+            const confirmed = await onConfirm({ scope, studyYear, semester })
+
+            if (confirmed) resetSelection()
             return
         }
 
-        onConfirm({ scope })
-        resetSelection()
+        const confirmed = await onConfirm({ scope })
+
+        if (confirmed) resetSelection()
     }
 
     const targetDescription =

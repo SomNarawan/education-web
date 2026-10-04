@@ -12,7 +12,10 @@ import { FileTextOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
-import { getStudentDetail } from '../../../services/studentService'
+import {
+    getStudentDetail,
+    resetStudentGrades,
+} from '../../../services/studentService'
 import { createNote } from '../../../services/noteService'
 import { getNoteTypes } from '../../../services/listOfValueService'
 import NoteHistoryModal from '../notes/NoteHistoryModal'
@@ -37,6 +40,8 @@ export default function StudentDetailPage() {
     const [student, setStudent] = useState<StudentDetailResponse | null>(null)
     const [loading, setLoading] = useState(false)
     const [resetGradesOpen, setResetGradesOpen] = useState(false)
+    const [resettingGrades, setResettingGrades] = useState(false)
+    const [gradeDataVersion, setGradeDataVersion] = useState(0)
 
     const [noteTypeId, setNoteTypeId] = useState<number>()
     const [remark, setRemark] = useState('')
@@ -57,7 +62,10 @@ export default function StudentDetailPage() {
         semesterRows,
         courseGroupDatasets,
         loading: loadingPerformance,
-    } = useStudentPerformance(student?.student_code ?? '')
+    } = useStudentPerformance(
+        student?.student_code ?? '',
+        gradeDataVersion,
+    )
 
     const selectedNoteType = noteTypes.find(
         (noteType) => noteType.id === noteTypeId
@@ -175,17 +183,46 @@ export default function StudentDetailPage() {
         await removeNote(id)
     }
 
-    const handleResetGrades = (selection: ResetStudentGradesSelection) => {
-        setResetGradesOpen(false)
+    const handleResetGrades = async (
+        selection: ResetStudentGradesSelection,
+    ): Promise<boolean> => {
+        if (!student?.student_code) {
+            message.error('ไม่พบรหัสนิสิต')
+            return false
+        }
 
-        const scopeDescription =
-            selection.scope === 'all'
-                ? 'ผลการเรียนทั้งหมด'
-                : `ผลการเรียนปีที่ ${selection.studyYear} ภาคเรียนที่ ${selection.semester}`
+        try {
+            setResettingGrades(true)
+            const result = await resetStudentGrades(
+                student.student_code,
+                selection.scope === 'all'
+                    ? { scope: 'all' }
+                    : {
+                          scope: 'semester',
+                          study_year: selection.studyYear,
+                          semester: selection.semester,
+                      },
+            )
 
-        message.info(
-            `เตรียมรีเซ็ต${scopeDescription}แล้ว รอเชื่อมต่อ API ฝั่งหลังบ้าน`,
-        )
+            if (result.reset_count > 0) {
+                message.success(
+                    `รีเซ็ตผลการเรียนสำเร็จ ${result.reset_count} รายการ`,
+                )
+            } else {
+                message.warning('ไม่พบผลการเรียนในปีและเทอมที่เลือก')
+            }
+
+            setResetGradesOpen(false)
+            setGradeDataVersion((version) => version + 1)
+            await loadStudent()
+            return true
+        } catch (error) {
+            console.error('Unable to reset student grades', error)
+            message.error('รีเซ็ตผลการเรียนไม่สำเร็จ')
+            return false
+        } finally {
+            setResettingGrades(false)
+        }
     }
 
     return (
@@ -428,12 +465,14 @@ export default function StudentDetailPage() {
 
                                     <Col xs={24}>
                                         <StudentFailedPlannedCoursesSection
+                                            key={`failed-${gradeDataVersion}`}
                                             studentCode={student.student_code}
                                         />
                                     </Col>
 
                                     <Col xs={24}>
                                         <StudentCurriculumDetailSection
+                                            key={`curriculum-${gradeDataVersion}`}
                                             studentCode={student.student_code}
                                             studyPlanId={student.study_plan_id}
                                         />
@@ -464,6 +503,7 @@ export default function StudentDetailPage() {
                             studentName={student.full_name_th}
                             currentStudyYear={student.study_year}
                             currentStudySemester={student.study_semester}
+                            loading={resettingGrades}
                             onCancel={() => setResetGradesOpen(false)}
                             onConfirm={handleResetGrades}
                         />

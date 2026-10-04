@@ -38,3 +38,19 @@ export interface ListStudentsRequest {
     search_text?: string
     search_note?: string
 }
+
+export type ResetStudentGradesRequest =
+    | { scope: 'all' }
+    | {
+          scope: 'semester'
+          study_year: number
+          semester: number
+      }
+
+export interface ResetStudentGradesResponse {
+    student_code: string
+    scope: 'all' | 'semester'
+    study_year: number | null
+    semester: number | null
+    reset_count: number
+}
