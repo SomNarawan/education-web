@@ -160,6 +160,14 @@ body {
     flex: initial;
 }
 
+.curriculum-detail-table .ant-table-tbody > tr.curriculum-course-without-grade > td {
+    color: #9ca3af;
+}
+
+.curriculum-detail-table .ant-table-tbody > tr.curriculum-course-without-grade:hover > td {
+    color: #9ca3af;
+}
+
 .curriculum-detail-layout {
     display: grid;
     grid-template-columns: minmax(280px, 0.28fr) minmax(0, 0.72fr);

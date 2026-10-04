@@ -81,6 +81,11 @@ function CourseTable({
         <CustomTable<CurriculumCourseRow>
             className="curriculum-detail-table"
             rowKey="key"
+            rowClassName={(row) =>
+                row.grade_letter?.trim()
+                    ? ''
+                    : 'curriculum-course-without-grade'
+            }
             columns={columns}
             dataSource={rows}
             loading={loading}
@@ -209,11 +214,7 @@ export default function StudentCurriculumDetailSection({
             return []
         }
 
-        return rows.filter(
-            (row) =>
-                selectedRowKeys.has(row.key) &&
-                Boolean(row.grade_letter?.trim()),
-        )
+        return rows.filter((row) => selectedRowKeys.has(row.key))
     }, [curriculumTree, rows, selectedCategoryId])
     const selectedTreePath = selectedCategoryId
         ? (curriculumTree.pathByNode.get(selectedCategoryId) ?? [])
