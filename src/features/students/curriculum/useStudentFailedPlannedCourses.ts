@@ -1,6 +1,9 @@
 import { message } from 'antd'
 import { useEffect, useState } from 'react'
-import { getStudentEnrollmentStatuses } from '../../../services/studentJsonDataService'
+import {
+    getStudentEnrollmentStatuses,
+    isStudentGradeDataMissingError,
+} from '../../../services/studentJsonDataService'
 import type {
     CurriculumEnrollmentRecord,
     FailedPlannedCourseRow,
@@ -39,8 +42,10 @@ export function useStudentFailedPlannedCourses(studentCode: string) {
                     buildRows(data.enrollment_over, 'over'),
                 )
             } catch (error) {
-                console.error(error)
-                message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
+                if (!isStudentGradeDataMissingError(error)) {
+                    console.error(error)
+                    message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
+                }
                 setFailedRows([])
                 setClearedBacklogRows([])
                 setOverCurriculumRows([])

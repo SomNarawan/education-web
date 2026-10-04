@@ -1,7 +1,10 @@
 import { message } from 'antd'
 import { useEffect, useState } from 'react'
 import { getCurriculumCategories } from '../../../services/masterDataService'
-import { getStudentEnrollment } from '../../../services/studentJsonDataService'
+import {
+    getStudentEnrollment,
+    isStudentGradeDataMissingError,
+} from '../../../services/studentJsonDataService'
 import type {
     CurriculumCategory,
     CurriculumCourse,
@@ -135,8 +138,10 @@ export function useStudentCurriculumDetail(
                 const data = await getStudentEnrollment(studentCode)
                 setRows(buildRows(normalizeEnrollment(data.enrollment)))
             } catch (error) {
-                console.error(error)
-                message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
+                if (!isStudentGradeDataMissingError(error)) {
+                    console.error(error)
+                    message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
+                }
                 setRows([])
             } finally {
                 setLoadingCourses(false)

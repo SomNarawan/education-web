@@ -1,3 +1,4 @@
+import axios from 'axios'
 import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
 import type {
@@ -14,6 +15,10 @@ function getStudentDataPath(studentCode: string, resource: string) {
     }
 
     return `/students/${encodeURIComponent(normalizedStudentCode)}/${resource}`
+}
+
+export function isStudentGradeDataMissingError(error: unknown): boolean {
+    return axios.isAxiosError(error) && error.response?.status === 404
 }
 
 export async function getStudentEnrollment(

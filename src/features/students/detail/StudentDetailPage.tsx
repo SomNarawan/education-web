@@ -8,7 +8,7 @@ import {
     message,
 } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
-import { FileTextOutlined } from '@ant-design/icons'
+import { FileTextOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
@@ -26,12 +26,17 @@ import DetailItem from '../../../components/custom/DetailItem'
 import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
 import type { ListOfValue } from '../../../types/ListOfValue'
 import { toListOfValueOptions } from '../../../utils/listOfValue'
+import { useAuth } from '../../../hooks/useAuth'
+import ResetStudentGradesModal from './ResetStudentGradesModal'
+import type { ResetStudentGradesSelection } from './ResetStudentGradesModal'
 
 export default function StudentDetailPage() {
     const { id } = useParams()
+    const { currentRole } = useAuth()
 
     const [student, setStudent] = useState<StudentDetailResponse | null>(null)
     const [loading, setLoading] = useState(false)
+    const [resetGradesOpen, setResetGradesOpen] = useState(false)
 
     const [noteTypeId, setNoteTypeId] = useState<number>()
     const [remark, setRemark] = useState('')
@@ -170,6 +175,19 @@ export default function StudentDetailPage() {
         await removeNote(id)
     }
 
+    const handleResetGrades = (selection: ResetStudentGradesSelection) => {
+        setResetGradesOpen(false)
+
+        const scopeDescription =
+            selection.scope === 'all'
+                ? 'ผลการเรียนทั้งหมด'
+                : `ผลการเรียนปีที่ ${selection.studyYear} ภาคเรียนที่ ${selection.semester}`
+
+        message.info(
+            `เตรียมรีเซ็ต${scopeDescription}แล้ว รอเชื่อมต่อ API ฝั่งหลังบ้าน`,
+        )
+    }
+
     return (
         <Card
             title={
@@ -178,6 +196,17 @@ export default function StudentDetailPage() {
                           .filter(Boolean)
                           .join(' ')
                     : ''
+            }
+            extra={
+                currentRole === 'admin' && student?.student_code ? (
+                    <Button
+                        danger
+                        icon={<ReloadOutlined />}
+                        onClick={() => setResetGradesOpen(true)}
+                    >
+                        รีเซ็ตผลการเรียน
+                    </Button>
+                ) : null
             }
         >
             <Skeleton loading={loading} active paragraph={{ rows: 16 }}>
@@ -428,6 +457,15 @@ export default function StudentDetailPage() {
                             onClose={() => setNoteHistoryOpen(false)}
                             onDelete={handleDeleteNote}
                             showDelete={true}
+                        />
+                        <ResetStudentGradesModal
+                            open={resetGradesOpen}
+                            studentCode={student.student_code ?? ''}
+                            studentName={student.full_name_th}
+                            currentStudyYear={student.study_year}
+                            currentStudySemester={student.study_semester}
+                            onCancel={() => setResetGradesOpen(false)}
+                            onConfirm={handleResetGrades}
                         />
                     </>
                 )}

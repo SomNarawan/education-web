@@ -1,6 +1,9 @@
 import { message } from 'antd'
 import { useEffect, useState } from 'react'
-import { getStudentGraphs } from '../../../services/studentJsonDataService'
+import {
+    getStudentGraphs,
+    isStudentGradeDataMissingError,
+} from '../../../services/studentJsonDataService'
 import type { CourseGroupDataset } from '../../../types/StudentCourseGroupPerformance'
 import type {
     SemesterCreditStatus,
@@ -93,8 +96,10 @@ export function useStudentPerformance(studentCode: string) {
             } catch (error) {
                 if (cancelled) return
 
-                console.error(error)
-                message.error('โหลดรายงานผลการเรียนไม่สำเร็จ')
+                if (!isStudentGradeDataMissingError(error)) {
+                    console.error(error)
+                    message.error('โหลดรายงานผลการเรียนไม่สำเร็จ')
+                }
                 setCreditStatuses([])
                 setSemesterRows([])
                 setCourseGroupDatasets([])
