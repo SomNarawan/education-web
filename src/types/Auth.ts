@@ -2,6 +2,8 @@ export type AppRole = 'admin' | 'teacher' | 'student'
 
 export interface AuthUser {
     teacherId?: string | null
+    studentCode?: string | null
+    studyPlanId?: number | null
     name?: string
     roles: AppRole[]
     departmentId?: number | null
@@ -15,6 +17,7 @@ export interface MeResponse {
     current_role: AppRole | null
     department_id: number | string | null
     faculty_id: number | string | null
+    study_plan_id: number | string | null
     iat: number | null
     exp: number | null
 }

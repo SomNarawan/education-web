@@ -29,7 +29,25 @@ export default function RoleRedirect() {
     }, [token])
 
     if (appMode === 'student') {
-        return <Navigate to="/student/home" replace />
+        if (token && !user) {
+            return (
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        padding: 60,
+                    }}
+                >
+                    <Spin size="large" />
+                </div>
+            )
+        }
+
+        return currentRole === 'student' && user?.roles.includes('student') ? (
+            <Navigate to="/student/home" replace />
+        ) : (
+            <Navigate to="/student/mock-login" replace />
+        )
     }
 
     // ยังไม่ login — แสดงข้อความแทนการ navigate วนไปมากับ /auth/callback

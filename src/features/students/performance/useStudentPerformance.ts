@@ -64,7 +64,7 @@ export function useStudentPerformance(studentCode: string, refreshKey = 0) {
     const [courseGroupDatasets, setCourseGroupDatasets] = useState<
         CourseGroupDataset[]
     >([])
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(Boolean(studentCode))
 
     useEffect(() => {
         if (!studentCode) {

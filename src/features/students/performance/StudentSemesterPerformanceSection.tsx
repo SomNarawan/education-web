@@ -262,9 +262,12 @@ export default function StudentSemesterPerformanceSection({
     creditStatuses,
     rows,
     loading = false,
+    display = 'all',
 }: StudentSemesterPerformanceSectionProps) {
     const [detailRecord, setDetailRecord] =
         useState<StudentSemesterPerformanceRow | null>(null)
+    const showChart = display !== 'table'
+    const showTable = display !== 'chart'
 
     const columns = useMemo<ColumnsType<StudentSemesterPerformanceRow>>(
         () => [
@@ -330,35 +333,51 @@ export default function StudentSemesterPerformanceSection({
 
     return (
         <Card
-            title="รายงานผลการเรียนแต่ละภาคการศึกษา"
+            title={
+                display === 'chart'
+                    ? 'กราฟผลการเรียนแต่ละภาคการศึกษา'
+                    : 'รายงานผลการเรียนแต่ละภาคการศึกษา'
+            }
             size="small"
             loading={loading}
         >
-            <div className="performance-chart-table-layout">
-                <StudentSemesterChart
-                    creditStatuses={creditStatuses}
-                    rows={rows}
-                />
-                <section
-                    className="performance-table-panel"
-                    aria-label="ตารางผลการเรียนแต่ละภาคการศึกษา"
-                >
-                    <Table<StudentSemesterPerformanceRow>
-                        className="semester-performance-table"
-                        rowKey="key"
-                        columns={columns}
-                        dataSource={rows}
-                        pagination={false}
-                        size="small"
-                        tableLayout="fixed"
+            <div
+                className={`performance-chart-table-layout${
+                    display === 'all'
+                        ? ''
+                        : ' performance-chart-table-layout--single'
+                }`}
+            >
+                {showChart && (
+                    <StudentSemesterChart
+                        creditStatuses={creditStatuses}
+                        rows={rows}
                     />
-                </section>
+                )}
+                {showTable && (
+                    <section
+                        className="performance-table-panel"
+                        aria-label="ตารางผลการเรียนแต่ละภาคการศึกษา"
+                    >
+                        <Table<StudentSemesterPerformanceRow>
+                            className="semester-performance-table"
+                            rowKey="key"
+                            columns={columns}
+                            dataSource={rows}
+                            pagination={false}
+                            size="small"
+                            tableLayout="fixed"
+                        />
+                    </section>
+                )}
             </div>
 
-            <SemesterDetailModal
-                record={detailRecord}
-                onClose={() => setDetailRecord(null)}
-            />
+            {showTable && (
+                <SemesterDetailModal
+                    record={detailRecord}
+                    onClose={() => setDetailRecord(null)}
+                />
+            )}
         </Card>
     )
 }

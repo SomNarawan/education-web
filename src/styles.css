@@ -390,6 +390,10 @@ body {
     align-items: start;
 }
 
+.performance-chart-table-layout--single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .performance-chart-table-layout--credit-table
     .course-group-credit-chart-section {
     margin-top: 0;
@@ -1174,6 +1178,64 @@ body {
     gap: 20px;
 }
 
+.student-profile-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.student-performance-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.student-performance-page .page-title-section {
+    margin-bottom: 0;
+}
+
+.student-profile-page .page-title-section {
+    margin-bottom: 0;
+}
+
+.student-profile-summary-card,
+.student-profile-card {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+}
+
+.student-profile-summary-card {
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 65%);
+}
+
+.student-profile-summary-card .ant-avatar {
+    flex: 0 0 auto;
+    background: #1677ff;
+}
+
+.student-profile-summary-text {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.student-profile-summary-text h2 {
+    margin: 0;
+    color: #111827;
+    font-size: 22px;
+}
+
+.student-profile-card {
+    height: 100%;
+}
+
+.student-profile-card .ant-descriptions-item-label {
+    width: 180px;
+    color: #64748b;
+}
+
 .grade-calculator-page .page-title-section {
     margin-bottom: 0;
 }
@@ -1346,6 +1408,24 @@ body {
 }
 
 @media (max-width: 768px) {
+    .student-profile-page .page-title-section {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .student-profile-page .page-title-section .ant-btn {
+        width: 100%;
+    }
+
+    .student-profile-summary-card .ant-space {
+        align-items: flex-start;
+    }
+
+    .student-profile-card .ant-descriptions-item-label {
+        width: 130px;
+    }
+
     .grade-calculator-controls,
     .grade-summary-grid {
         grid-template-columns: 1fr;

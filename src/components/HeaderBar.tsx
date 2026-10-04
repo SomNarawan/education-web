@@ -41,20 +41,17 @@ export default function HeaderBar() {
 
     const menu = { items }
 
-    const accountControl =
-        appMode === 'student' ? (
-            <Space className="profile">
+    const accountControl = (
+        <Dropdown menu={menu} placement="bottomRight">
+            <Space className="profile" style={{ cursor: 'pointer' }}>
                 <Avatar icon={<UserOutlined />} />
-                <span>สำหรับนิสิต</span>
+                <span>
+                    {user?.name ??
+                        (appMode === 'student' ? 'นิสิต' : 'อาจารย์ที่ปรึกษา')}
+                </span>
             </Space>
-        ) : (
-            <Dropdown menu={menu} placement="bottomRight">
-                <Space className="profile" style={{ cursor: 'pointer' }}>
-                    <Avatar icon={<UserOutlined />} />
-                    <span>{user?.name ?? 'อาจารย์ที่ปรึกษา'}</span>
-                </Space>
-            </Dropdown>
-        )
+        </Dropdown>
+    )
 
     return (
         <>

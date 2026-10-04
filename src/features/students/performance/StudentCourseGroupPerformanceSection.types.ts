@@ -3,4 +3,5 @@ import type { CourseGroupDataset } from '../../../types/StudentCourseGroupPerfor
 export interface StudentCourseGroupPerformanceSectionProps {
     datasets: CourseGroupDataset[]
     loading?: boolean
+    display?: 'all' | 'chart' | 'table'
 }

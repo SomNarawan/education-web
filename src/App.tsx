@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Spin } from 'antd'
 import MainLayout from './layouts/MainLayout'
 import RoleRedirect from './components/RoleRedirect'
+import StudentAuthenticatedRoute from './components/StudentAuthenticatedRoute'
 import StudentRouteGuard from './features/students/StudentRouteGuard'
 import ProtectedRoute from './components/ProtectedRoute'
 import { appMode, type AppMode } from './config/appMode'
@@ -34,8 +35,15 @@ const HighSchoolManagement = lazy(
 const GradeCalculator = lazy(
     () => import('./features/gradeCalculator/GradeCalculatorPage'),
 )
-const StudentPlaceholderPage = lazy(
-    () => import('./pages/student/StudentPlaceholderPage'),
+const StudentHomePage = lazy(() => import('./pages/student/StudentHomePage'))
+const StudentProfilePage = lazy(
+    () => import('./pages/student/StudentProfilePage'),
+)
+const StudentGradesPage = lazy(
+    () => import('./pages/student/StudentGradesPage'),
+)
+const StudentMockLoginPage = lazy(
+    () => import('./pages/student/StudentMockLoginPage'),
 )
 
 function normalizeBasePath(value?: string): string | undefined {
@@ -78,17 +86,21 @@ export default function App() {
                 <Routes>
                     <Route
                         path="/auth/callback"
-                        element={
-                            <AppModeRoute mode="staff">
-                                <AuthCallback />
-                            </AppModeRoute>
-                        }
+                        element={<AuthCallback />}
                     />
                     <Route
                         path="/mock-login"
                         element={
                             <AppModeRoute mode="staff">
                                 <MockLogin />
+                            </AppModeRoute>
+                        }
+                    />
+                    <Route
+                        path="/student/mock-login"
+                        element={
+                            <AppModeRoute mode="student">
+                                <StudentMockLoginPage />
                             </AppModeRoute>
                         }
                     />
@@ -99,36 +111,36 @@ export default function App() {
                         <Route
                             path="student/home"
                             element={
-                                <AppModeRoute mode="student">
-                                    <StudentPlaceholderPage title="หน้าหลัก" />
-                                </AppModeRoute>
+                                <StudentAuthenticatedRoute>
+                                    <StudentHomePage />
+                                </StudentAuthenticatedRoute>
                             }
                         />
 
                         <Route
                             path="student/profile"
                             element={
-                                <AppModeRoute mode="student">
-                                    <StudentPlaceholderPage title="ข้อมูลส่วนตัว" />
-                                </AppModeRoute>
+                                <StudentAuthenticatedRoute>
+                                    <StudentProfilePage />
+                                </StudentAuthenticatedRoute>
                             }
                         />
 
                         <Route
                             path="student/grades"
                             element={
-                                <AppModeRoute mode="student">
-                                    <StudentPlaceholderPage title="ผลการเรียน" />
-                                </AppModeRoute>
+                                <StudentAuthenticatedRoute>
+                                    <StudentGradesPage />
+                                </StudentAuthenticatedRoute>
                             }
                         />
 
                         <Route
                             path="student/grade-calculator"
                             element={
-                                <AppModeRoute mode="student">
-                                    <StudentPlaceholderPage title="คำนวณเกรด" />
-                                </AppModeRoute>
+                                <StudentAuthenticatedRoute>
+                                    <GradeCalculator />
+                                </StudentAuthenticatedRoute>
                             }
                         />
 

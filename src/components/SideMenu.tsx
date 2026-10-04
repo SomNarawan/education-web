@@ -73,7 +73,7 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
         {
             key: '/student/grade-calculator',
             icon: <CalculatorOutlined />,
-            label: 'คำนวณเกรด',
+            label: 'คำนวณผลการเรียน',
             allowedRoles: ['student'],
         },
         {

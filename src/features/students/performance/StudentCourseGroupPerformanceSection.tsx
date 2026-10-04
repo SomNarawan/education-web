@@ -455,7 +455,10 @@ function CourseGroupCreditCharts({
 export default function StudentCourseGroupPerformanceSection({
     datasets,
     loading = false,
+    display = 'all',
 }: StudentCourseGroupPerformanceSectionProps) {
+    const showChart = display !== 'table'
+    const showTable = display !== 'chart'
 
     const columns = useMemo<
         ColumnsType<StudentCourseGroupPerformanceRow>
@@ -564,40 +567,45 @@ export default function StudentCourseGroupPerformanceSection({
                 >
                     <div
                         className={`performance-chart-table-layout${
-                            dataset.rows.length === 1
+                            display !== 'all'
+                                ? ' performance-chart-table-layout--single'
+                                : dataset.rows.length === 1
                                 ? ' performance-chart-table-layout--credit-table'
                                 : ''
                         }`}
                     >
-                        {dataset.rows.length === 1 ? (
-                            <CourseGroupCreditCharts rows={dataset.rows} />
-                        ) : (
-                            <CourseGroupChart rows={dataset.rows} />
+                        {showChart &&
+                            (dataset.rows.length === 1 ? (
+                                <CourseGroupCreditCharts rows={dataset.rows} />
+                            ) : (
+                                <CourseGroupChart rows={dataset.rows} />
+                            ))}
+                        {showTable && (
+                            <section
+                                className="performance-table-panel"
+                                aria-label="ตารางผลการเรียนในแต่ละหมวดวิชา"
+                            >
+                                <Table<StudentCourseGroupPerformanceRow>
+                                    className="course-group-performance-table"
+                                    rowKey="key"
+                                    columns={columns}
+                                    dataSource={sortCourseGroupRowsByGpa(
+                                        dataset.rows,
+                                    )}
+                                    rowClassName={(_, rowIndex) =>
+                                        rowIndex === 0
+                                            ? 'course-group-reference-row'
+                                            : ''
+                                    }
+                                    bordered
+                                    pagination={false}
+                                    size="small"
+                                    tableLayout="fixed"
+                                />
+                            </section>
                         )}
-                        <section
-                            className="performance-table-panel"
-                            aria-label="ตารางผลการเรียนในแต่ละหมวดวิชา"
-                        >
-                            <Table<StudentCourseGroupPerformanceRow>
-                                className="course-group-performance-table"
-                                rowKey="key"
-                                columns={columns}
-                                dataSource={sortCourseGroupRowsByGpa(
-                                    dataset.rows,
-                                )}
-                                rowClassName={(_, rowIndex) =>
-                                    rowIndex === 0
-                                        ? 'course-group-reference-row'
-                                        : ''
-                                }
-                                bordered
-                                pagination={false}
-                                size="small"
-                                tableLayout="fixed"
-                            />
-                        </section>
                     </div>
-                    {dataset.rows.length > 1 && (
+                    {showChart && dataset.rows.length > 1 && (
                         <CourseGroupCreditCharts rows={dataset.rows} />
                     )}
                 </Card>

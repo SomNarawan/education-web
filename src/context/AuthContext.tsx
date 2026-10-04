@@ -8,7 +8,11 @@ import React, {
 import api from '../config/axios'
 import { message } from 'antd'
 import type { ApiResponse } from '../types/ApiResponse'
-import type { AppRole, AuthUser, MeResponse } from '../types/Auth'
+import type {
+    AppRole,
+    AuthUser,
+    MeResponse,
+} from '../types/Auth'
 import {
     appAllowedRoles,
     isRoleAllowedInApp,
@@ -42,7 +46,19 @@ function parseStoredUser(value: string | null): AuthUser | null {
             return null
         }
 
-        return parsed as AuthUser
+        const storedUser = parsed as AuthUser
+
+        if (
+            storedUser.roles.includes('student') &&
+            !storedUser.studentCode
+        ) {
+            return {
+                ...storedUser,
+                studentCode: storedUser.teacherId,
+            }
+        }
+
+        return storedUser
     } catch {
         return null
     }
@@ -89,6 +105,13 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                 const availableRoles = roles.filter(isRoleAllowedInApp)
                 const teacherId = payload.nontri_id
                 const name = payload.name ?? undefined
+                const studentCode = roles.includes('student')
+                    ? payload.nontri_id
+                    : null
+                const studyPlanId =
+                    payload.study_plan_id === null
+                        ? null
+                        : Number(payload.study_plan_id)
 
                 const departmentId = payload.department_id ?? null
 
@@ -96,6 +119,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 
                 const authUser: AuthUser = {
                     teacherId,
+                    studentCode,
+                    studyPlanId,
                     name,
                     roles,
                     departmentId: departmentId ? Number(departmentId) : null,

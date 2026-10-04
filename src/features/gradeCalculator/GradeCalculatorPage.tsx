@@ -22,6 +22,8 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo, useState } from 'react'
+import { appMode } from '../../config/appMode'
+import { useCurrentStudent } from '../../hooks/useCurrentStudent'
 import { formatThaiDateTime } from '../../utils/dateFormat'
 import {
     gradeOptions,
@@ -139,8 +141,16 @@ function createSemesterRows(
 }
 
 export default function GradeCalculatorPage() {
+    const { currentRole, studentCode } = useCurrentStudent()
+    const isStudent = appMode === 'student' || currentRole === 'student'
+    const ownStudentProfile =
+        mockStudentProfiles.find(
+            (profile) => profile.studentCode === studentCode,
+        ) ?? mockStudentProfiles[0]
     const [selectedStudentCode, setSelectedStudentCode] = useState(
-        mockStudentProfiles[0].studentCode,
+        isStudent
+            ? ownStudentProfile.studentCode
+            : mockStudentProfiles[0].studentCode,
     )
     const [selectedCourseCodes, setSelectedCourseCodes] = useState<string[]>(
         mockPredictionCourses
@@ -157,9 +167,11 @@ export default function GradeCalculatorPage() {
         useState<GradeCalculationHistory | null>(null)
 
     const selectedProfile =
-        mockStudentProfiles.find(
-            (profile) => profile.studentCode === selectedStudentCode,
-        ) ?? mockStudentProfiles[0]
+        (isStudent
+            ? ownStudentProfile
+            : mockStudentProfiles.find(
+                  (profile) => profile.studentCode === selectedStudentCode,
+              )) ?? mockStudentProfiles[0]
     const previousSummary = useMemo(
         () => calculatePreviousSummary(selectedProfile.semesterResults),
         [selectedProfile],
@@ -178,7 +190,7 @@ export default function GradeCalculatorPage() {
         [selectedCourseCodes],
     )
     const studentHistories = mockCalculationHistories.filter(
-        (history) => history.studentCode === selectedStudentCode,
+        (history) => history.studentCode === selectedProfile.studentCode,
     )
 
     const resetPrediction = () => {
@@ -554,19 +566,26 @@ export default function GradeCalculatorPage() {
                 <div className="grade-calculator-controls">
                     <label>
                         <Text strong>นิสิต</Text>
-                        <Select
-                            showSearch
-                            optionFilterProp="label"
-                            value={selectedStudentCode}
-                            options={mockStudentProfiles.map((profile) => ({
-                                label: `${profile.studentCode} — ${profile.fullName}`,
-                                value: profile.studentCode,
-                            }))}
-                            onChange={(studentCode) => {
-                                setSelectedStudentCode(studentCode)
-                                resetPrediction()
-                            }}
-                        />
+                        {isStudent ? (
+                            <Text className="grade-calculator-readonly-value">
+                                {selectedProfile.studentCode} —{' '}
+                                {selectedProfile.fullName}
+                            </Text>
+                        ) : (
+                            <Select
+                                showSearch
+                                optionFilterProp="label"
+                                value={selectedStudentCode}
+                                options={mockStudentProfiles.map((profile) => ({
+                                    label: `${profile.studentCode} — ${profile.fullName}`,
+                                    value: profile.studentCode,
+                                }))}
+                                onChange={(studentCode) => {
+                                    setSelectedStudentCode(studentCode)
+                                    resetPrediction()
+                                }}
+                            />
+                        )}
                     </label>
                     <label>
                         <Text strong>ชั้นปีที่คาดการณ์</Text>

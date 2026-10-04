@@ -45,25 +45,58 @@ export interface GradeCalculationHistory {
 
 export const mockStudentProfiles: StudentAcademicProfile[] = [
     {
-        studentCode: '66160001',
-        fullName: 'นายกิตติพงษ์ ใจดี',
-        curriculumName: 'วิทยาการคอมพิวเตอร์',
+        studentCode: '6020501361',
+        fullName: 'นราวัลย์ เอี่ยมสอาด',
+        curriculumName: 'วิศวกรรมคอมพิวเตอร์',
         semesterResults: [
-            { id: '66160001-1', academicYear: 2566, semester: 1, credits: 18, gpa: 3.25 },
-            { id: '66160001-2', academicYear: 2566, semester: 2, credits: 21, gpa: 3.42 },
-            { id: '66160001-3', academicYear: 2567, semester: 1, credits: 18, gpa: 2.88 },
-            { id: '66160001-4', academicYear: 2567, semester: 2, credits: 18, gpa: 3.1 },
+            { id: '6020501361-1', academicYear: 2566, semester: 1, credits: 18, gpa: 3.25 },
+            { id: '6020501361-2', academicYear: 2566, semester: 2, credits: 21, gpa: 3.42 },
+            { id: '6020501361-3', academicYear: 2567, semester: 1, credits: 18, gpa: 2.88 },
+            { id: '6020501361-4', academicYear: 2567, semester: 2, credits: 18, gpa: 3.1 },
         ],
     },
     {
-        studentCode: '66160002',
-        fullName: 'นางสาวพิมพ์ชนก แสงทอง',
-        curriculumName: 'วิทยาการคอมพิวเตอร์',
+        studentCode: '6020500357',
+        fullName: 'เกียรติพันธ์ พิทักษ์วงศ์',
+        curriculumName: 'วิศวกรรมคอมพิวเตอร์',
         semesterResults: [
-            { id: '66160002-1', academicYear: 2566, semester: 1, credits: 19, gpa: 3.58 },
-            { id: '66160002-2', academicYear: 2566, semester: 2, credits: 20, gpa: 3.61 },
-            { id: '66160002-3', academicYear: 2567, semester: 1, credits: 18, gpa: 3.44 },
-            { id: '66160002-4', academicYear: 2567, semester: 2, credits: 21, gpa: 3.7 },
+            { id: '6020500357-1', academicYear: 2566, semester: 1, credits: 19, gpa: 3.58 },
+            { id: '6020500357-2', academicYear: 2566, semester: 2, credits: 20, gpa: 3.61 },
+            { id: '6020500357-3', academicYear: 2567, semester: 1, credits: 18, gpa: 3.44 },
+            { id: '6020500357-4', academicYear: 2567, semester: 2, credits: 21, gpa: 3.7 },
+        ],
+    },
+    {
+        studentCode: '6020500365',
+        fullName: 'ธนาธร ทรงพินิจ',
+        curriculumName: 'วิศวกรรมคอมพิวเตอร์',
+        semesterResults: [
+            { id: '6020500365-1', academicYear: 2566, semester: 1, credits: 18, gpa: 3.05 },
+            { id: '6020500365-2', academicYear: 2566, semester: 2, credits: 21, gpa: 3.18 },
+            { id: '6020500365-3', academicYear: 2567, semester: 1, credits: 18, gpa: 3.27 },
+            { id: '6020500365-4', academicYear: 2567, semester: 2, credits: 18, gpa: 3.34 },
+        ],
+    },
+    {
+        studentCode: '6020500373',
+        fullName: 'ใบชา เจนจบวิทยา',
+        curriculumName: 'วิศวกรรมคอมพิวเตอร์',
+        semesterResults: [
+            { id: '6020500373-1', academicYear: 2566, semester: 1, credits: 19, gpa: 2.95 },
+            { id: '6020500373-2', academicYear: 2566, semester: 2, credits: 20, gpa: 3.08 },
+            { id: '6020500373-3', academicYear: 2567, semester: 1, credits: 18, gpa: 3.16 },
+            { id: '6020500373-4', academicYear: 2567, semester: 2, credits: 21, gpa: 3.22 },
+        ],
+    },
+    {
+        studentCode: '6020500381',
+        fullName: 'ภาณุภัสส์ ธนัชญ์สุธาโชติ',
+        curriculumName: 'วิศวกรรมคอมพิวเตอร์',
+        semesterResults: [
+            { id: '6020500381-1', academicYear: 2566, semester: 1, credits: 18, gpa: 3.4 },
+            { id: '6020500381-2', academicYear: 2566, semester: 2, credits: 21, gpa: 3.51 },
+            { id: '6020500381-3', academicYear: 2567, semester: 1, credits: 18, gpa: 3.46 },
+            { id: '6020500381-4', academicYear: 2567, semester: 2, credits: 18, gpa: 3.62 },
         ],
     },
 ]
@@ -94,7 +127,7 @@ export const gradeOptions = [
 export const mockCalculationHistories: GradeCalculationHistory[] = [
     {
         id: 1,
-        studentCode: '66160001',
+        studentCode: '6020501361',
         academicYear: 2568,
         semester: 1,
         previousGpa: 3.17,
@@ -111,7 +144,7 @@ export const mockCalculationHistories: GradeCalculationHistory[] = [
     },
     {
         id: 2,
-        studentCode: '66160001',
+        studentCode: '6020501361',
         academicYear: 2568,
         semester: 1,
         previousGpa: 3.17,
@@ -128,7 +161,7 @@ export const mockCalculationHistories: GradeCalculationHistory[] = [
     },
     {
         id: 3,
-        studentCode: '66160002',
+        studentCode: '6020500357',
         academicYear: 2568,
         semester: 1,
         previousGpa: 3.59,

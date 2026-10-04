@@ -30,6 +30,10 @@ export function useStudentFailedPlannedCourses(studentCode: string) {
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
+        if (!studentCode) {
+            return
+        }
+
         const loadCourses = async () => {
             try {
                 setLoading(true)
