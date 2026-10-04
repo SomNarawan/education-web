@@ -1,4 +1,4 @@
-export type AppRole = 'admin' | 'teacher'
+export type AppRole = 'admin' | 'teacher' | 'student'
 
 export interface AuthUser {
     teacherId?: string | null

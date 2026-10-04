@@ -1,15 +1,18 @@
 import React from 'react'
 import {
+    BarChartOutlined,
     BankOutlined,
     CalculatorOutlined,
     DatabaseOutlined,
     FileExcelOutlined,
     FileTextOutlined,
+    HomeOutlined,
     IdcardOutlined,
     LoginOutlined,
     SolutionOutlined,
     SyncOutlined,
     TeamOutlined,
+    UserOutlined,
     UserSwitchOutlined,
 } from '@ant-design/icons'
 import { Menu } from 'antd'
@@ -17,6 +20,7 @@ import type { MenuProps } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import type { AppRole } from '../types/Auth'
+import { appMode } from '../config/appMode'
 
 interface SideMenuProps {
     collapsed: boolean
@@ -38,6 +42,8 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
     const navigate = useNavigate()
     const location = useLocation()
     const { currentRole } = useAuth()
+    const activeRole: AppRole | null =
+        appMode === 'student' ? 'student' : currentRole
 
     const state = location.state as LocationState | null
 
@@ -46,6 +52,30 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
         : location.pathname
 
     const menuItems: AppMenuItem[] = [
+        {
+            key: '/student/home',
+            icon: <HomeOutlined />,
+            label: 'หน้าหลัก',
+            allowedRoles: ['student'],
+        },
+        {
+            key: '/student/profile',
+            icon: <UserOutlined />,
+            label: 'ข้อมูลส่วนตัว',
+            allowedRoles: ['student'],
+        },
+        {
+            key: '/student/grades',
+            icon: <BarChartOutlined />,
+            label: 'ผลการเรียน',
+            allowedRoles: ['student'],
+        },
+        {
+            key: '/student/grade-calculator',
+            icon: <CalculatorOutlined />,
+            label: 'คำนวณเกรด',
+            allowedRoles: ['student'],
+        },
         {
             key: '/students/advisor',
             icon: <TeamOutlined />,
@@ -148,8 +178,8 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
 
     const items: MenuProps['items'] = menuItems
         .filter((item) => {
-            if (!currentRole) return false
-            return item.allowedRoles.includes(currentRole)
+            if (!activeRole) return false
+            return item.allowedRoles.includes(activeRole)
         })
         .map(({ key, icon, label, children }) => ({
             key,
@@ -158,8 +188,8 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             children: children
                 ?.filter(
                     (item) =>
-                        Boolean(currentRole) &&
-                        item.allowedRoles.includes(currentRole as AppRole),
+                        activeRole !== null &&
+                        item.allowedRoles.includes(activeRole),
                 )
                 .map((item) => ({
                     key: item.key,

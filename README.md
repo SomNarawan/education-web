@@ -17,6 +17,40 @@
 
 ## เริ่มต้นใช้งาน
 
+### รันแบบ Development แยก Staff และ Student
+
+เปิด Terminal สองหน้าต่าง แล้วรันคำสั่งต่อไปนี้แยกกัน:
+
+```sh
+npm run dev:staff
+```
+
+```sh
+npm run dev:student
+```
+
+- Staff (`admin`, `teacher`): http://localhost:3001
+- Student (`student`): http://localhost:3002
+
+พอร์ต Staff จะเปิดหน้า Mock Login ก่อนเข้าใช้งาน ส่วนพอร์ต Student
+เข้าใช้งานเมนูสำหรับนิสิตได้ทันทีโดยไม่ต้อง Login
+
+### รันด้วย Docker แยก Staff และ Student
+
+```sh
+npm run docker:up
+```
+
+- Staff (`admin`, `teacher`): http://localhost:3001
+- Student (`student`): http://localhost:3002
+
+พอร์ต Staff จะเปิดหน้า Mock Login ก่อนเข้าใช้งาน ส่วนพอร์ต Student
+เข้าใช้งานเมนูสำหรับนิสิตได้ทันทีโดยไม่ต้อง Login
+
+ทั้งสอง service ใช้ source code ชุดเดียวกัน แต่ build ด้วย `VITE_APP_MODE`
+คนละค่า สามารถหยุดระบบด้วย `npm run docker:down` และกำหนด API URL ก่อนรันได้ด้วย
+ตัวแปร `VITE_API_URL` (ค่าเริ่มต้นคือ `http://localhost:8000/api`)
+
 ### สิ่งที่ต้องมี
 
 - Node.js และ npm
@@ -76,7 +110,7 @@ src/
 
 - Auth state เก็บใน `AuthContext` และ persist ผ่าน localStorage: `auth_token`, `auth_user`, `current_role`
 - Flow: `/auth/callback?token=...` รับ token แล้ว `/me` จะ hydrate ข้อมูลผู้ใช้และ role
-- Role ที่รองรับ: `admin`, `teacher`
+- Role ที่รองรับ: `admin`, `teacher`, `student`
 - กลุ่ม route ของนักศึกษา: `advisor` (teacher เท่านั้น), `department` และ `faculty` (teacher และ admin)
 - การเข้าถึง route ถูกบังคับโดย `StudentRouteGuard` และ `ProtectedRoute` — เมนูที่ซ่อน/แสดงเป็นเพียงการแสดงผล ไม่ใช่การป้องกันสิทธิ์
 

@@ -9,6 +9,10 @@ import api from '../config/axios'
 import { message } from 'antd'
 import type { ApiResponse } from '../types/ApiResponse'
 import type { AppRole, AuthUser, MeResponse } from '../types/Auth'
+import {
+    appAllowedRoles,
+    isRoleAllowedInApp,
+} from '../config/appMode'
 
 type AuthContextType = {
     token: string | null
@@ -46,7 +50,11 @@ function parseStoredUser(value: string | null): AuthUser | null {
 
 function getStoredRole(): AppRole | null {
     const role = localStorage.getItem('current_role')
-    return role === 'admin' || role === 'teacher' ? role : null
+    if (role !== 'admin' && role !== 'teacher' && role !== 'student') {
+        return null
+    }
+
+    return isRoleAllowedInApp(role) ? role : null
 }
 
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({
@@ -78,6 +86,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 
                 const payload = res.data.data
                 const roles = payload.role
+                const availableRoles = roles.filter(isRoleAllowedInApp)
                 const teacherId = payload.nontri_id
                 const name = payload.name ?? undefined
 
@@ -100,18 +109,21 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                 const responseRole = payload.current_role
 
                 const roleToSet =
-                    (storedRole && roles.includes(storedRole)
+                    (storedRole && availableRoles.includes(storedRole)
                         ? storedRole
                         : null) ??
-                    (roles.includes('admin') ? 'admin' : null) ??
-                    (responseRole && roles.includes(responseRole)
+                    (availableRoles.includes('admin') ? 'admin' : null) ??
+                    (responseRole && availableRoles.includes(responseRole)
                         ? responseRole
                         : null) ??
-                    roles[0]
+                    availableRoles[0]
 
                 if (roleToSet) {
                     setCurrentRoleState(roleToSet)
                     localStorage.setItem('current_role', roleToSet)
+                } else {
+                    setCurrentRoleState(null)
+                    localStorage.removeItem('current_role')
                 }
             })
             .catch((err) => {
@@ -159,6 +171,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     }, [])
 
     const setCurrentRole = useCallback((role: AppRole) => {
+        if (!appAllowedRoles.includes(role)) return
+
         setCurrentRoleState(role)
         localStorage.setItem('current_role', role)
     }, [])

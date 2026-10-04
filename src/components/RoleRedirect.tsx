@@ -3,9 +3,10 @@ import { Link, Navigate } from 'react-router-dom'
 import { Alert, Button, Spin, Typography } from 'antd'
 import { useAuth } from '../hooks/useAuth'
 import { checkBackendConnectivity } from '../utils/backendConnectivity'
+import { appMode } from '../config/appMode'
 
 export default function RoleRedirect() {
-    const { token, currentRole } = useAuth()
+    const { token, user, currentRole } = useAuth()
     const [connectionError, setConnectionError] = useState<string | null>(
         null,
     )
@@ -13,7 +14,7 @@ export default function RoleRedirect() {
     // เช็คว่า FE คุยกับ BE รอดหรือไม่ ก่อนให้ผู้ใช้กด login — log ผลลง console เสมอ
     // และถ้าเชื่อมต่อไม่ได้จะโชว์เหตุผลบนหน้าจอด้วย
     useEffect(() => {
-        if (token) return
+        if (appMode === 'student' || token) return
 
         let cancelled = false
 
@@ -27,8 +28,16 @@ export default function RoleRedirect() {
         }
     }, [token])
 
+    if (appMode === 'student') {
+        return <Navigate to="/student/home" replace />
+    }
+
     // ยังไม่ login — แสดงข้อความแทนการ navigate วนไปมากับ /auth/callback
     if (!token) {
+        if (import.meta.env.VITE_MOCK_LOGIN_ENABLED === 'true') {
+            return <Navigate to="/mock-login" replace />
+        }
+
         return (
             <div style={{ textAlign: 'center', padding: 60 }}>
                 {connectionError && (
@@ -49,17 +58,29 @@ export default function RoleRedirect() {
                     ยังไม่ได้เข้าสู่ระบบ กรุณาเข้าสู่ระบบผ่านระบบ SSO
                 </Typography.Paragraph>
 
-                {import.meta.env.VITE_MOCK_LOGIN_ENABLED === 'true' && (
-                    <Link to="/mock-login">
-                        <Button type="primary">Mock Login (Dev)</Button>
-                    </Link>
-                )}
+                <Link to="/mock-login">
+                    <Button type="primary" disabled>
+                        Mock Login ไม่ได้เปิดใช้งาน
+                    </Button>
+                </Link>
             </div>
         )
     }
 
     // รอให้ /me โหลดข้อมูลและกำหนด role ก่อน redirect
     if (!currentRole) {
+        if (user) {
+            return (
+                <div style={{ padding: 60 }}>
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message="บัญชีนี้ไม่มีสิทธิ์ใช้งานระบบส่วนนี้"
+                    />
+                </div>
+            )
+        }
+
         return (
             <div
                 style={{
@@ -81,6 +102,10 @@ export default function RoleRedirect() {
     // admin
     if (currentRole === 'admin') {
         return <Navigate to="/students/department" replace />
+    }
+
+    if (currentRole === 'student') {
+        return <Navigate to="/student/home" replace />
     }
 
     // role ที่ระบบไม่รองรับ

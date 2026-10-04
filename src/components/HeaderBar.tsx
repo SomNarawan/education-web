@@ -5,21 +5,21 @@ import { useNavigate } from 'react-router-dom'
 import kuLogo from '../assets/newLogoUniversity1.png'
 import { useAuth } from '../hooks/useAuth'
 import type { AppRole } from '../types/Auth'
+import {
+    appMode,
+    getDefaultRouteForRole,
+    isRoleAllowedInApp,
+} from '../config/appMode'
 
 export default function HeaderBar() {
     const navigate = useNavigate()
     const { user, currentRole, setCurrentRole, logout } = useAuth()
 
-    const roleOptions = user?.roles ?? []
+    const roleOptions = user?.roles.filter(isRoleAllowedInApp) ?? []
 
     const handleRoleChange = (role: AppRole) => {
         setCurrentRole(role)
-        navigate(
-            role === 'admin'
-                ? '/students/department'
-                : '/students/advisor',
-            { replace: true },
-        )
+        navigate(getDefaultRouteForRole(role), { replace: true })
     }
 
     const roleItems = roleOptions.map((r) => ({
@@ -41,18 +41,28 @@ export default function HeaderBar() {
 
     const menu = { items }
 
-    return (
-        <>
-            <div className="header-logo">
-                <img src={kuLogo} alt="KU Logo" className="university-logo" />
-            </div>
-
+    const accountControl =
+        appMode === 'student' ? (
+            <Space className="profile">
+                <Avatar icon={<UserOutlined />} />
+                <span>สำหรับนิสิต</span>
+            </Space>
+        ) : (
             <Dropdown menu={menu} placement="bottomRight">
                 <Space className="profile" style={{ cursor: 'pointer' }}>
                     <Avatar icon={<UserOutlined />} />
                     <span>{user?.name ?? 'อาจารย์ที่ปรึกษา'}</span>
                 </Space>
             </Dropdown>
+        )
+
+    return (
+        <>
+            <div className="header-logo">
+                <img src={kuLogo} alt="KU Logo" className="university-logo" />
+            </div>
+
+            {accountControl}
         </>
     )
 }

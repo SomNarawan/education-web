@@ -1,10 +1,12 @@
 import { Suspense, lazy } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import type { ReactElement } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Spin } from 'antd'
 import MainLayout from './layouts/MainLayout'
 import RoleRedirect from './components/RoleRedirect'
 import StudentRouteGuard from './features/students/StudentRouteGuard'
 import ProtectedRoute from './components/ProtectedRoute'
+import { appMode, type AppMode } from './config/appMode'
 
 const StudentList = lazy(
     () => import('./features/students/list/StudentListPage'),
@@ -32,6 +34,9 @@ const HighSchoolManagement = lazy(
 const GradeCalculator = lazy(
     () => import('./features/gradeCalculator/GradeCalculatorPage'),
 )
+const StudentPlaceholderPage = lazy(
+    () => import('./pages/student/StudentPlaceholderPage'),
+)
 
 function normalizeBasePath(value?: string): string | undefined {
     if (!value) return undefined
@@ -57,16 +62,75 @@ function PageLoading() {
     )
 }
 
+interface AppModeRouteProps {
+    mode: AppMode
+    children: ReactElement
+}
+
+function AppModeRoute({ mode, children }: AppModeRouteProps) {
+    return appMode === mode ? children : <Navigate to="/" replace />
+}
+
 export default function App() {
     return (
         <BrowserRouter basename={basename}>
             <Suspense fallback={<PageLoading />}>
                 <Routes>
-                    <Route path="/auth/callback" element={<AuthCallback />} />
-                    <Route path="/mock-login" element={<MockLogin />} />
+                    <Route
+                        path="/auth/callback"
+                        element={
+                            <AppModeRoute mode="staff">
+                                <AuthCallback />
+                            </AppModeRoute>
+                        }
+                    />
+                    <Route
+                        path="/mock-login"
+                        element={
+                            <AppModeRoute mode="staff">
+                                <MockLogin />
+                            </AppModeRoute>
+                        }
+                    />
 
                     <Route path="/" element={<MainLayout />}>
                         <Route index element={<RoleRedirect />} />
+
+                        <Route
+                            path="student/home"
+                            element={
+                                <AppModeRoute mode="student">
+                                    <StudentPlaceholderPage title="หน้าหลัก" />
+                                </AppModeRoute>
+                            }
+                        />
+
+                        <Route
+                            path="student/profile"
+                            element={
+                                <AppModeRoute mode="student">
+                                    <StudentPlaceholderPage title="ข้อมูลส่วนตัว" />
+                                </AppModeRoute>
+                            }
+                        />
+
+                        <Route
+                            path="student/grades"
+                            element={
+                                <AppModeRoute mode="student">
+                                    <StudentPlaceholderPage title="ผลการเรียน" />
+                                </AppModeRoute>
+                            }
+                        />
+
+                        <Route
+                            path="student/grade-calculator"
+                            element={
+                                <AppModeRoute mode="student">
+                                    <StudentPlaceholderPage title="คำนวณเกรด" />
+                                </AppModeRoute>
+                            }
+                        />
 
                         <Route
                             path="students/:studentGroup"

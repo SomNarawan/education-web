@@ -2,6 +2,7 @@ import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import type { AppRole } from '../types/Auth'
+import { isRoleAllowedInApp } from '../config/appMode'
 
 type ProtectedRouteProps = {
     children: React.ReactElement
@@ -22,7 +23,10 @@ export default function ProtectedRoute({
         return <Navigate to="/" replace />
     }
 
-    if (!allowedRoles.includes(currentRole)) {
+    if (
+        !isRoleAllowedInApp(currentRole) ||
+        !allowedRoles.includes(currentRole)
+    ) {
         return <Navigate to="/" replace />
     }
 
