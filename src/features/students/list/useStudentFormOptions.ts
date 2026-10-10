@@ -66,6 +66,17 @@ function includeId<T extends string | number>(
     return value == null ? undefined : [value]
 }
 
+function addMissingOption<T extends { id: string | number }>(
+    options: T[],
+    option: T | null,
+): T[] {
+    if (!option || options.some((item) => item.id === option.id)) {
+        return options
+    }
+
+    return [option, ...options]
+}
+
 export function useStudentFormOptions(
     enabled: boolean,
     curriculumId?: number,
@@ -113,8 +124,19 @@ export function useStudentFormOptions(
                     ),
                     loadOption(
                         'curriculums',
-                        getCurriculums(
-                            includeId(editingStudent?.curriculum_id),
+                        getCurriculums().then((curriculums) =>
+                            addMissingOption(
+                                curriculums,
+                                editingStudent?.curriculum_id != null &&
+                                    editingStudent.curriculum_code?.trim()
+                                    ? {
+                                          id: editingStudent.curriculum_id,
+                                          name_th:
+                                              editingStudent.curriculum_code,
+                                          name_en: null,
+                                      }
+                                    : null,
+                            ),
                         ),
                     ),
                     loadOption(
@@ -193,9 +215,17 @@ export function useStudentFormOptions(
                     key: curriculumOptionsKey,
                     loading: true,
                 })
-                const studyPlans = await getStudyPlans(
-                    curriculumId,
-                    includeId(editingStudent?.study_plan_id),
+                const studyPlans = addMissingOption(
+                    await getStudyPlans(curriculumId),
+                    editingStudent?.curriculum_id === curriculumId &&
+                        editingStudent.study_plan_id != null &&
+                        editingStudent.study_plan_name_th?.trim()
+                        ? {
+                              id: editingStudent.study_plan_id,
+                              name_th: editingStudent.study_plan_name_th,
+                              name_en: editingStudent.study_plan_name,
+                          }
+                        : null,
                 )
 
                 if (!cancelled) {
@@ -236,9 +266,17 @@ export function useStudentFormOptions(
                     key: curriculumOptionsKey,
                     loading: true,
                 })
-                const systemTeachers = await getCurriculumPersonnel(
-                    curriculumId,
-                    includeId(editingStudent?.teacher_id),
+                const systemTeachers = addMissingOption(
+                    await getCurriculumPersonnel(curriculumId),
+                    editingStudent?.curriculum_id === curriculumId &&
+                        editingStudent.teacher_id != null &&
+                        editingStudent.teacher_full_name?.trim()
+                        ? {
+                              id: editingStudent.teacher_id,
+                              name_th: editingStudent.teacher_full_name,
+                              name_en: null,
+                          }
+                        : null,
                 )
 
                 if (!cancelled) {
