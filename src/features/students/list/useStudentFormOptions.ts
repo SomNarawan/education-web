@@ -29,6 +29,11 @@ interface StudentFormOptions {
     studyPlans: StudyPlan[]
 }
 
+interface OptionsRequestState {
+    key: string | null
+    loading: boolean
+}
+
 const emptyOptions: StudentFormOptions = {
     titles: [],
     curriculums: [],
@@ -42,16 +47,42 @@ const emptyOptions: StudentFormOptions = {
     studyPlans: [],
 }
 
+const idleRequest: OptionsRequestState = {
+    key: null,
+    loading: false,
+}
+
+function isRequestLoading(
+    enabled: boolean,
+    key: string | null,
+    request: OptionsRequestState,
+): boolean {
+    return enabled && key !== null && (request.key !== key || request.loading)
+}
+
+function includeId<T extends string | number>(
+    value: T | null | undefined,
+): T[] | undefined {
+    return value == null ? undefined : [value]
+}
+
 export function useStudentFormOptions(
     enabled: boolean,
     curriculumId?: number,
     editingStudent?: StudentDetailResponse | null,
 ) {
     const [options, setOptions] = useState<StudentFormOptions>(emptyOptions)
-    const [loading, setLoading] = useState(false)
-    const [studyPlansLoading, setStudyPlansLoading] = useState(false)
-    const [systemTeachersLoading, setSystemTeachersLoading] = useState(false)
+    const [optionsRequest, setOptionsRequest] =
+        useState<OptionsRequestState>(idleRequest)
+    const [studyPlansRequest, setStudyPlansRequest] =
+        useState<OptionsRequestState>(idleRequest)
+    const [systemTeachersRequest, setSystemTeachersRequest] =
+        useState<OptionsRequestState>(idleRequest)
     const [error, setError] = useState<string | null>(null)
+    const optionsKey = editingStudent ? `student:${editingStudent.id}` : 'create'
+    const curriculumOptionsKey = curriculumId
+        ? `${optionsKey}:curriculum:${curriculumId}`
+        : null
 
     useEffect(() => {
         if (!enabled) {
@@ -61,91 +92,71 @@ export function useStudentFormOptions(
         let cancelled = false
 
         const loadOptions = async () => {
+            const loadOption = async <Key extends keyof StudentFormOptions>(
+                key: Key,
+                request: Promise<StudentFormOptions[Key]>,
+            ) => {
+                const value = await request
+
+                if (!cancelled) {
+                    setOptions((current) => ({ ...current, [key]: value }))
+                }
+            }
+
             try {
-                setLoading(true)
+                setOptionsRequest({ key: optionsKey, loading: true })
                 setError(null)
                 const results = await Promise.allSettled([
-                    getTitles(
-                        editingStudent?.title_id
-                            ? [editingStudent.title_id]
-                            : undefined,
+                    loadOption(
+                        'titles',
+                        getTitles(includeId(editingStudent?.title_id)),
                     ),
-                    getCurriculums(
-                        editingStudent?.curriculum_id
-                            ? [editingStudent.curriculum_id]
-                            : undefined,
+                    loadOption(
+                        'curriculums',
+                        getCurriculums(
+                            includeId(editingStudent?.curriculum_id),
+                        ),
                     ),
-                    getSystemDepartments(
-                        editingStudent?.system_department_id
-                            ? [editingStudent.system_department_id]
-                            : undefined,
+                    loadOption(
+                        'systemDepartments',
+                        getSystemDepartments(
+                            includeId(editingStudent?.system_department_id),
+                        ),
                     ),
-                    getStudentStatuses(
-                        editingStudent?.student_status_id
-                            ? [editingStudent.student_status_id]
-                            : undefined,
+                    loadOption(
+                        'studentStatuses',
+                        getStudentStatuses(
+                            includeId(editingStudent?.student_status_id),
+                        ),
                     ),
-                    getStudySemesters(),
-                    getAdmissionChannels(
-                        editingStudent?.admission_channel_id
-                            ? [editingStudent.admission_channel_id]
-                            : undefined,
+                    loadOption('studySemesters', getStudySemesters()),
+                    loadOption(
+                        'admissionChannels',
+                        getAdmissionChannels(
+                            includeId(editingStudent?.admission_channel_id),
+                        ),
                     ),
-                    getHighSchoolOptions(
-                        editingStudent?.high_school_id
-                            ? [editingStudent.high_school_id]
-                            : undefined,
+                    loadOption(
+                        'highSchools',
+                        getHighSchoolOptions(
+                            includeId(editingStudent?.high_school_id),
+                        ),
                     ),
-                    getGuardianRelationships(
-                        editingStudent?.guardian_relationship_id
-                            ? [editingStudent.guardian_relationship_id]
-                            : undefined,
+                    loadOption(
+                        'guardianRelationships',
+                        getGuardianRelationships(
+                            includeId(
+                                editingStudent?.guardian_relationship_id,
+                            ),
+                        ),
                     ),
                 ])
 
-                if (!cancelled) {
-                    const [
-                        titles,
-                        curriculums,
-                        systemDepartments,
-                        studentStatuses,
-                        studySemesters,
-                        admissionChannels,
-                        highSchools,
-                        guardianRelationships,
-                    ] = results
-
-                    setOptions((current) => ({
-                        ...current,
-                        ...(titles.status === 'fulfilled'
-                            ? { titles: titles.value }
-                            : {}),
-                        ...(curriculums.status === 'fulfilled'
-                            ? { curriculums: curriculums.value }
-                            : {}),
-                        ...(systemDepartments.status === 'fulfilled'
-                            ? { systemDepartments: systemDepartments.value }
-                            : {}),
-                        ...(studentStatuses.status === 'fulfilled'
-                            ? { studentStatuses: studentStatuses.value }
-                            : {}),
-                        ...(studySemesters.status === 'fulfilled'
-                            ? { studySemesters: studySemesters.value }
-                            : {}),
-                        ...(admissionChannels.status === 'fulfilled'
-                            ? { admissionChannels: admissionChannels.value }
-                            : {}),
-                        ...(highSchools.status === 'fulfilled'
-                            ? { highSchools: highSchools.value }
-                            : {}),
-                        ...(guardianRelationships.status === 'fulfilled'
-                            ? { guardianRelationships: guardianRelationships.value }
-                            : {}),
-                    }))
-
-                    if (results.some((result) => result.status === 'rejected')) {
-                        throw new Error('Some form options failed to load')
-                    }
+                if (
+                    !cancelled &&
+                    results.some((result) => result.status === 'rejected')
+                ) {
+                    throw new Error('Some form options failed to load')
                 }
             } catch (error) {
                 if (!cancelled) {
@@ -157,7 +168,7 @@ export function useStudentFormOptions(
                 }
             } finally {
                 if (!cancelled) {
-                    setLoading(false)
+                    setOptionsRequest({ key: optionsKey, loading: false })
                 }
             }
         }
@@ -167,7 +178,7 @@ export function useStudentFormOptions(
         return () => {
             cancelled = true
         }
-    }, [editingStudent, enabled])
+    }, [editingStudent, enabled, optionsKey])
 
     useEffect(() => {
         if (!enabled || !curriculumId) {
@@ -178,12 +189,13 @@ export function useStudentFormOptions(
 
         const loadStudyPlans = async () => {
             try {
-                setStudyPlansLoading(true)
+                setStudyPlansRequest({
+                    key: curriculumOptionsKey,
+                    loading: true,
+                })
                 const studyPlans = await getStudyPlans(
                     curriculumId,
-                    editingStudent?.study_plan_id
-                        ? [editingStudent.study_plan_id]
-                        : undefined,
+                    includeId(editingStudent?.study_plan_id),
                 )
 
                 if (!cancelled) {
@@ -196,7 +208,10 @@ export function useStudentFormOptions(
                 }
             } finally {
                 if (!cancelled) {
-                    setStudyPlansLoading(false)
+                    setStudyPlansRequest({
+                        key: curriculumOptionsKey,
+                        loading: false,
+                    })
                 }
             }
         }
@@ -206,7 +221,7 @@ export function useStudentFormOptions(
         return () => {
             cancelled = true
         }
-    }, [curriculumId, editingStudent, enabled])
+    }, [curriculumId, curriculumOptionsKey, editingStudent, enabled])
 
     useEffect(() => {
         if (!enabled || !curriculumId) {
@@ -217,12 +232,13 @@ export function useStudentFormOptions(
 
         const loadSystemTeachers = async () => {
             try {
-                setSystemTeachersLoading(true)
+                setSystemTeachersRequest({
+                    key: curriculumOptionsKey,
+                    loading: true,
+                })
                 const systemTeachers = await getCurriculumPersonnel(
                     curriculumId,
-                    editingStudent?.teacher_id
-                        ? [editingStudent.teacher_id]
-                        : undefined,
+                    includeId(editingStudent?.teacher_id),
                 )
 
                 if (!cancelled) {
@@ -238,7 +254,10 @@ export function useStudentFormOptions(
                 }
             } finally {
                 if (!cancelled) {
-                    setSystemTeachersLoading(false)
+                    setSystemTeachersRequest({
+                        key: curriculumOptionsKey,
+                        loading: false,
+                    })
                 }
             }
         }
@@ -248,7 +267,7 @@ export function useStudentFormOptions(
         return () => {
             cancelled = true
         }
-    }, [curriculumId, editingStudent, enabled])
+    }, [curriculumId, curriculumOptionsKey, editingStudent, enabled])
 
     const clearStudyPlans = useCallback(() => {
         setOptions((current) => ({
@@ -260,9 +279,17 @@ export function useStudentFormOptions(
 
     return {
         options,
-        loading,
-        studyPlansLoading,
-        systemTeachersLoading,
+        loading: isRequestLoading(enabled, optionsKey, optionsRequest),
+        studyPlansLoading: isRequestLoading(
+            enabled,
+            curriculumOptionsKey,
+            studyPlansRequest,
+        ),
+        systemTeachersLoading: isRequestLoading(
+            enabled,
+            curriculumOptionsKey,
+            systemTeachersRequest,
+        ),
         error,
         clearStudyPlans,
     }
