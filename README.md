@@ -1,6 +1,8 @@
 # Education Web (Frontend)
 
-ระบบสารสนเทศนักศึกษา (Student Information System) ฝั่ง Frontend สำหรับอาจารย์ที่ปรึกษาและเจ้าหน้าที่ ใช้จัดการข้อมูลนักศึกษา, ที่ปรึกษา, การ import ข้อมูล, การซิงค์ข้อมูล และการคำนวณเกรด
+ระบบสารสนเทศนักศึกษา (Student Information System) ฝั่ง Frontend สำหรับผู้ดูแลระบบ
+อาจารย์ที่ปรึกษา และนิสิต ใช้จัดการข้อมูลนักศึกษา/อาจารย์ที่ปรึกษา นำเข้าข้อมูล
+ซิงค์ข้อมูล ดูผลการเรียน และคำนวณเกรด โดยใช้คู่กับ backend `education-api`
 
 ## เทคโนโลยีที่ใช้
 
@@ -33,7 +35,7 @@ npm run dev:student
 - Student (`student`): http://localhost:3002
 
 พอร์ต Staff จะเปิดหน้า Mock Login ก่อนเข้าใช้งาน ส่วนพอร์ต Student
-เข้าใช้งานเมนูสำหรับนิสิตได้ทันทีโดยไม่ต้อง Login
+เข้าใช้งานผ่านหน้า Mock Login สำหรับนิสิต โดยเลือกรายชื่อนิสิตจำลอง
 
 ### รันด้วย Docker แยก Staff และ Student
 
@@ -42,10 +44,10 @@ npm run docker:up
 ```
 
 - Staff (`admin`, `teacher`): http://localhost:3001
-- Student (`student`): http://localhost:3002
+- Student (`student`, Mock Login): http://localhost:3002
 
-พอร์ต Staff จะเปิดหน้า Mock Login ก่อนเข้าใช้งาน ส่วนพอร์ต Student
-เข้าใช้งานเมนูสำหรับนิสิตได้ทันทีโดยไม่ต้อง Login
+พอร์ต Staff จะเปิดหน้า Mock Login สำหรับบุคลากร ส่วนพอร์ต Student
+จะเปิดหน้า Mock Login ที่มีรายชื่อนิสิตจำลองให้เลือกก่อนเข้าใช้งาน
 
 ทั้งสอง service ใช้ source code ชุดเดียวกัน แต่ build ด้วย `VITE_APP_MODE`
 คนละค่า สามารถหยุดระบบด้วย `npm run docker:down` และกำหนด API URL ก่อนรันได้ด้วย
@@ -53,24 +55,36 @@ npm run docker:up
 
 ### สิ่งที่ต้องมี
 
-- Node.js และ npm
-- Backend API ที่รันอยู่ (ดูตัวอย่าง endpoint ที่ [FE_API_ENDPOINTS.txt](FE_API_ENDPOINTS.txt))
+- Node.js 20 ขึ้นไป และ npm
+- Backend `education-api` ที่รันอยู่และเข้าถึงได้จาก browser
 
 ### ติดตั้ง
 
 ```sh
-npm install
+npm ci
 ```
 
 ### ตั้งค่า Environment
 
-สร้างไฟล์ `.env.local` (หรือแก้ `.env`) แล้วกำหนดค่า:
+ไฟล์ `.env.staff` และ `.env.student` ที่อยู่ใน repository เป็นค่าเริ่มต้นสำหรับ
+`npm run dev:staff` และ `npm run dev:student` ตามลำดับ หากต้อง override เฉพาะเครื่อง
+ให้สร้าง `.env.staff.local` หรือ `.env.student.local` (ไฟล์ `*.local` ถูก ignore โดย Git)
 
-```sh
+```env
 VITE_API_URL=http://localhost:8000/api
+VITE_BASE_PATH=
+VITE_MOCK_LOGIN_ENABLED=true
+VITE_APP_MODE=staff
 ```
 
-Backend คาดหวัง response ในรูปแบบ `{ success, message, data }`
+| ตัวแปร | หน้าที่ |
+|---|---|
+| `VITE_API_URL` | Base URL ของ backend API |
+| `VITE_BASE_PATH` | Subpath ที่ deploy frontend; local ใช้ค่าว่าง |
+| `VITE_MOCK_LOGIN_ENABLED` | เปิดหน้า Mock Login สำหรับ staff; ใช้เฉพาะ dev/staging |
+| `VITE_APP_MODE` | เลือก bundle เป็น `staff` หรือ `student` |
+
+Backend โดยทั่วไปตอบกลับในรูปแบบ `{ success, message, data }`
 
 > ห้ามใส่ค่าลับ (secret) ใน `VITE_*` เพราะ environment variable ของ Vite จะถูก expose ออกไปยัง browser ทั้งหมด
 
@@ -80,9 +94,13 @@ Backend คาดหวัง response ในรูปแบบ `{ success, mess
 
 ```sh
 npm run dev       # เริ่ม dev server พร้อม HMR
+npm run dev:staff # staff app ที่ http://localhost:3001
+npm run dev:student # student app ที่ http://localhost:3002
 npm run lint      # ตรวจสอบโค้ดด้วย ESLint
 npm run build     # type-check (tsc -b) แล้ว build production
 npm run preview   # preview production build ที่ build แล้ว
+npm run docker:up # build และเปิด staff/student ด้วย Docker
+npm run docker:down # หยุด Docker services
 ```
 
 ก่อนส่งงาน ให้รัน `npm run lint` และ `npm run build` ให้ผ่านเสมอ (ปัจจุบันยังไม่มี automated test framework)
@@ -112,7 +130,11 @@ src/
 - Flow: `/auth/callback?token=...` รับ token แล้ว `/me` จะ hydrate ข้อมูลผู้ใช้และ role
 - Role ที่รองรับ: `admin`, `teacher`, `student`
 - กลุ่ม route ของนักศึกษา: `advisor` (teacher เท่านั้น), `department` และ `faculty` (teacher และ admin)
+- งานมอบหมายอาจารย์ นำเข้าข้อมูล ซิงค์ข้อมูล และจัดการ master data จำกัดเฉพาะ `admin`
 - การเข้าถึง route ถูกบังคับโดย `StudentRouteGuard` และ `ProtectedRoute` — เมนูที่ซ่อน/แสดงเป็นเพียงการแสดงผล ไม่ใช่การป้องกันสิทธิ์
+
+Mock Login มีไว้สำหรับ local/dev เท่านั้น Production ต้องตั้ง
+`VITE_MOCK_LOGIN_ENABLED=false` และใช้ token callback จากระบบ SSO จริง
 
 ## แนวทางการเขียนโค้ด
 
