@@ -6,6 +6,7 @@ Form,
 Input,
 Modal,
 Row,
+Select,
 } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
 import { useEffect } from 'react'
@@ -29,6 +30,10 @@ interface FormValues extends Omit<StudentFormValues, 'entry_year'> {
 }
 
 const BUDDHIST_ERA_OFFSET = 543
+const studyYearOptions = Array.from({ length: 8 }, (_, index) => ({
+    label: index + 1,
+    value: index + 1,
+}))
 
 export default function StudentFormModal({
 open,
@@ -71,6 +76,8 @@ useEffect(() => {
             curriculum_id: editingStudent.curriculum_id,
             study_plan_id: editingStudent.study_plan_id,
             entry_year: dayjs().year(editingStudent.entry_year_be),
+            study_year: editingStudent.study_year,
+            study_semester: editingStudent.study_semester,
             teacher_id: editingStudent.teacher_id,
             admission_channel_id: editingStudent.admission_channel_id,
             high_school_id: editingStudent.high_school_id,
@@ -340,6 +347,48 @@ return (
                                 placeholder="เลือกภาควิชา"
                                 options={toListOfValueOptions(
                                     dropdownData.systemDepartments,
+                                )}
+                            />
+                        </Form.Item>
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col xs={24} md={12}>
+                        <Form.Item
+                            label="ชั้นปี"
+                            name="study_year"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'กรุณาเลือกชั้นปี',
+                                },
+                            ]}
+                        >
+                            <Select
+                                allowClear
+                                placeholder="เลือกชั้นปี"
+                                options={studyYearOptions}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <Form.Item
+                            label="เทอม"
+                            name="study_semester"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'กรุณาเลือกเทอม',
+                                },
+                            ]}
+                        >
+                            <ListOfValueSelect<number>
+                                allowClear
+                                loading={optionsLoading}
+                                error={optionsError}
+                                placeholder="เลือกเทอม"
+                                options={toListOfValueOptions(
+                                    dropdownData.studySemesters,
                                 )}
                             />
                         </Form.Item>

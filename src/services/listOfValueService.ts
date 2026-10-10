@@ -74,6 +74,8 @@ export const getGuardianRelationships = (includeIds?: number[]) =>
     getListOfValues('relationships', { include_ids: includeIds })
 export const getStudentStatuses = (includeIds?: number[]) =>
     getListOfValues('student-statuses', { include_ids: includeIds })
+export const getStudySemesters = () =>
+    getListOfValues('study-semesters')
 export const getNoteTypes = (includeIds?: number[]) =>
     getListOfValues('note-types', { include_ids: includeIds })
 export const getImportTypes = (includeIds?: number[]) =>

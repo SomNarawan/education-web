@@ -7,6 +7,7 @@ import {
     getGuardianRelationships,
     getHighSchoolOptions,
     getSystemDepartments,
+    getStudySemesters,
     getStudentStatuses,
     getTitles,
 } from '../../../services/listOfValueService'
@@ -21,6 +22,7 @@ interface StudentFormOptions {
     systemDepartments: ListOfValue[]
     systemTeachers: ListOfValue<string>[]
     studentStatuses: ListOfValue[]
+    studySemesters: ListOfValue[]
     admissionChannels: ListOfValue[]
     highSchools: ListOfValue[]
     guardianRelationships: ListOfValue[]
@@ -33,6 +35,7 @@ const emptyOptions: StudentFormOptions = {
     systemDepartments: [],
     systemTeachers: [],
     studentStatuses: [],
+    studySemesters: [],
     admissionChannels: [],
     highSchools: [],
     guardianRelationships: [],
@@ -82,6 +85,7 @@ export function useStudentFormOptions(
                             ? [editingStudent.student_status_id]
                             : undefined,
                     ),
+                    getStudySemesters(),
                     getAdmissionChannels(
                         editingStudent?.admission_channel_id
                             ? [editingStudent.admission_channel_id]
@@ -105,6 +109,7 @@ export function useStudentFormOptions(
                         curriculums,
                         systemDepartments,
                         studentStatuses,
+                        studySemesters,
                         admissionChannels,
                         highSchools,
                         guardianRelationships,
@@ -123,6 +128,9 @@ export function useStudentFormOptions(
                             : {}),
                         ...(studentStatuses.status === 'fulfilled'
                             ? { studentStatuses: studentStatuses.value }
+                            : {}),
+                        ...(studySemesters.status === 'fulfilled'
+                            ? { studySemesters: studySemesters.value }
                             : {}),
                         ...(admissionChannels.status === 'fulfilled'
                             ? { admissionChannels: admissionChannels.value }

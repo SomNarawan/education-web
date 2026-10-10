@@ -3,6 +3,7 @@ export type ListOfValueType =
     | 'admission-channels'
     | 'relationships'
     | 'student-statuses'
+    | 'study-semesters'
     | 'note-types'
     | 'import-types'
     | 'high-schools'
