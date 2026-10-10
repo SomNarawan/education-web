@@ -1178,13 +1178,13 @@ body {
     gap: 20px;
 }
 
-.student-profile-page {
+.student-performance-page {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.student-performance-page {
+.student-profile-page {
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -1196,6 +1196,12 @@ body {
 
 .student-profile-page .page-title-section {
     margin-bottom: 0;
+}
+
+.student-profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .student-profile-summary-card,
@@ -1416,6 +1422,11 @@ body {
 
     .student-profile-page .page-title-section .ant-btn {
         width: 100%;
+    }
+
+    .student-profile-actions {
+        width: 100%;
+        flex-direction: column;
     }
 
     .student-profile-summary-card .ant-space {

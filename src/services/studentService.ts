@@ -39,6 +39,21 @@ export async function getStudentDetail(
     return response.data.data
 }
 
+export async function getStudentDetailByCode(
+    studentCode: string,
+): Promise<StudentDetailResponse | null> {
+    const normalizedStudentCode = studentCode.trim()
+
+    if (!normalizedStudentCode) return null
+
+    const students = await getStudents({ search_text: normalizedStudentCode })
+    const student = students.find(
+        (item) => item.student_code === normalizedStudentCode,
+    )
+
+    return student ? getStudentDetail(student.id) : null
+}
+
 export async function createStudent(
     data: CreateStudentRequest,
 ): Promise<StudentDetailResponse> {

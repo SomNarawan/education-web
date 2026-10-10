@@ -6,165 +6,136 @@ import {
     UserOutlined,
 } from '@ant-design/icons'
 import {
+    Alert,
     Avatar,
     Button,
     Card,
     Col,
     Descriptions,
+    Empty,
     Form,
     Input,
     Modal,
     Row,
+    Skeleton,
     Space,
     Tag,
     Typography,
     message,
 } from 'antd'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useCurrentStudent } from '../../hooks/useCurrentStudent'
+import {
+    getStudentDetailByCode,
+    updateStudent,
+} from '../../services/studentService'
+import type { StudentDetailResponse } from '../../types/StudentDetailResponse'
 
 const { Text } = Typography
 
-interface StudentProfile {
-    studentCode: string
-    studentIdCard: string
-    firstNameTh: string
-    lastNameTh: string
-    firstNameEn: string
-    lastNameEn: string
-    phone: string
-    email: string
-    entryYear: number
-    studyPeriod: string
-    studentStatus: string
-    admissionChannel: string
-    curriculum: string
-    studyPlan: string
-    department: string
-    faculty: string
-    advisor: string
-    highSchool: string
-    guardianFirstName: string
-    guardianLastName: string
-    guardianRelationship: string
-    guardianPhone: string
+interface StudentContactFormValues {
+    phone?: string
+    guardian_phone?: string
 }
 
-interface StudentProfileFormValues {
-    firstNameTh: string
-    lastNameTh: string
-    firstNameEn: string
-    lastNameEn: string
-    phone: string
-    email: string
-    guardianFirstName: string
-    guardianLastName: string
-    guardianRelationship: string
-    guardianPhone: string
+function displayValue(value: string | number | null | undefined) {
+    return value === null || value === undefined || value === '' ? '-' : value
 }
 
-const defaultStudentProfile: StudentProfile = {
-    studentCode: '6020501361',
-    studentIdCard: '1103700123456',
-    firstNameTh: 'นราวัลย์',
-    lastNameTh: 'เอี่ยมสอาด',
-    firstNameEn: 'Narawan',
-    lastNameEn: 'Iamsaard',
-    phone: '0812345678',
-    email: '6020501361@ku.th',
-    entryYear: 2566,
-    studyPeriod: 'ชั้นปีที่ 3 ภาคต้น',
-    studentStatus: 'กำลังศึกษา',
-    admissionChannel: 'โควตา',
-    curriculum: 'วิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมคอมพิวเตอร์',
-    studyPlan: 'แผนการเรียนปกติ',
-    department: 'ภาควิชาวิศวกรรมคอมพิวเตอร์',
-    faculty: 'คณะวิศวกรรมศาสตร์ กำแพงแสน',
-    advisor: 'อาจารย์สมชาย ใจดี',
-    highSchool: 'โรงเรียนสาธิตแห่งมหาวิทยาลัยเกษตรศาสตร์',
-    guardianFirstName: 'สมศักดิ์',
-    guardianLastName: 'ใจดี',
-    guardianRelationship: 'บิดา',
-    guardianPhone: '0898765432',
-}
-
-function maskStudentIdCard(studentIdCard: string) {
+function maskStudentIdCard(studentIdCard: string | null) {
+    if (!studentIdCard) return '-'
     if (!/^\d{13}$/.test(studentIdCard)) return studentIdCard
 
     return `${studentIdCard.slice(0, 1)}-${studentIdCard.slice(1, 5)}-xxxxx-xx-${studentIdCard.slice(-1)}`
 }
 
-function createInitialProfile(
-    studentCode?: string | null,
-    studentName?: string,
-): StudentProfile {
-    const resolvedStudentCode =
-        studentCode?.trim() ||
-        defaultStudentProfile.studentCode
-    const resolvedName = studentName
-    const [firstNameTh, ...lastNameParts] =
-        resolvedName
-            ?.replace(/^(นาย|นางสาว|นาง)/, '')
-            .trim()
-            .split(/\s+/) ?? []
-
-    return {
-        ...defaultStudentProfile,
-        studentCode: resolvedStudentCode,
-        firstNameTh: firstNameTh || defaultStudentProfile.firstNameTh,
-        lastNameTh:
-            lastNameParts.join(' ') || defaultStudentProfile.lastNameTh,
-        email: `${resolvedStudentCode}@ku.th`,
-    }
+function getCreditSummary(student: StudentDetailResponse) {
+    return [
+        student.required_credits,
+        student.passed_credits,
+        student.not_passed_credits,
+        student.overed_credits,
+    ]
+        .map(displayValue)
+        .join('/')
 }
 
 export default function StudentProfilePage() {
-    const { studentCode, user } = useCurrentStudent()
-    const [form] = Form.useForm<StudentProfileFormValues>()
+    const { studentCode } = useCurrentStudent()
+    const [form] = Form.useForm<StudentContactFormValues>()
+    const [student, setStudent] = useState<StudentDetailResponse | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [editing, setEditing] = useState(false)
-    const [profile, setProfile] = useState<StudentProfile>(() =>
-        createInitialProfile(studentCode, user?.name),
-    )
+    const [saving, setSaving] = useState(false)
 
-    const fullNameTh = `${profile.firstNameTh} ${profile.lastNameTh}`
-    const fullNameEn = `${profile.firstNameEn} ${profile.lastNameEn}`
-    const guardianFullName = `${profile.guardianFirstName} ${profile.guardianLastName}`
+    const loadStudent = useCallback(async () => {
+        if (!studentCode) {
+            setStudent(null)
+            setError('ไม่พบรหัสนิสิตจากข้อมูลผู้ใช้')
+            setLoading(false)
+            return
+        }
 
-    const openEditModal = () => {
+        try {
+            setLoading(true)
+            setError(null)
+
+            const data = await getStudentDetailByCode(studentCode)
+
+            if (!data) {
+                setStudent(null)
+                setError(`ไม่พบข้อมูลนิสิตรหัส ${studentCode}`)
+                return
+            }
+
+            setStudent(data)
+        } catch (loadError) {
+            console.error('Unable to load student profile', loadError)
+            setStudent(null)
+            setError('โหลดข้อมูลส่วนตัวไม่สำเร็จ')
+            message.error('โหลดข้อมูลส่วนตัวไม่สำเร็จ')
+        } finally {
+            setLoading(false)
+        }
+    }, [studentCode])
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void loadStudent()
+    }, [loadStudent])
+
+    const openContactForm = () => {
+        if (!student) return
+
         form.setFieldsValue({
-            firstNameTh: profile.firstNameTh,
-            lastNameTh: profile.lastNameTh,
-            firstNameEn: profile.firstNameEn,
-            lastNameEn: profile.lastNameEn,
-            phone: profile.phone,
-            email: profile.email,
-            guardianFirstName: profile.guardianFirstName,
-            guardianLastName: profile.guardianLastName,
-            guardianRelationship: profile.guardianRelationship,
-            guardianPhone: profile.guardianPhone,
+            phone: student.phone ?? undefined,
+            guardian_phone: student.guardian_phone ?? undefined,
         })
         setEditing(true)
     }
 
-    const saveProfile = async () => {
+    const saveContact = async () => {
+        if (!student) return
+
         const values = await form.validateFields()
 
-        setProfile((current) => ({
-            ...current,
-            ...values,
-            firstNameTh: values.firstNameTh.trim(),
-            lastNameTh: values.lastNameTh.trim(),
-            firstNameEn: values.firstNameEn.trim(),
-            lastNameEn: values.lastNameEn.trim(),
-            phone: values.phone.trim(),
-            email: values.email.trim(),
-            guardianFirstName: values.guardianFirstName.trim(),
-            guardianLastName: values.guardianLastName.trim(),
-            guardianRelationship: values.guardianRelationship.trim(),
-            guardianPhone: values.guardianPhone.trim(),
-        }))
-        setEditing(false)
-        message.success('แก้ไขข้อมูลส่วนตัวเรียบร้อยแล้ว')
+        try {
+            setSaving(true)
+            const updatedStudent = await updateStudent(student.id, {
+                phone: values.phone?.trim() || null,
+                guardian_phone: values.guardian_phone?.trim() || null,
+            })
+
+            setStudent(updatedStudent)
+            setEditing(false)
+            message.success('แก้ไขข้อมูลส่วนตัวเรียบร้อยแล้ว')
+        } catch (saveError) {
+            console.error('Unable to update student contact', saveError)
+            message.error('แก้ไขข้อมูลส่วนตัวไม่สำเร็จ')
+        } finally {
+            setSaving(false)
+        }
     }
 
     return (
@@ -174,358 +145,315 @@ export default function StudentProfilePage() {
                     <h1>ข้อมูลส่วนตัว</h1>
                     <p>ตรวจสอบข้อมูลประจำตัว ข้อมูลการศึกษา และข้อมูลผู้ปกครอง</p>
                 </div>
-                <Button
-                    type="primary"
-                    size="large"
-                    icon={<EditOutlined />}
-                    onClick={openEditModal}
-                >
-                    แก้ไขข้อมูล
-                </Button>
+                <div className="student-profile-actions">
+                    <Button
+                        type="primary"
+                        icon={<EditOutlined />}
+                        disabled={!student || loading}
+                        onClick={openContactForm}
+                    >
+                        แก้ไข
+                    </Button>
+                </div>
             </div>
 
-            <Card className="student-profile-summary-card">
-                <Space size={20} align="center">
-                    <Avatar size={72} icon={<UserOutlined />} />
-                    <div className="student-profile-summary-text">
-                        <h2>{fullNameTh}</h2>
-                        <Text type="secondary">{fullNameEn}</Text>
-                        <Space wrap>
-                            <Tag color="blue">{profile.studentCode}</Tag>
-                            <Tag color="green">{profile.studentStatus}</Tag>
-                        </Space>
-                    </div>
-                </Space>
-            </Card>
+            {error ? (
+                <Alert
+                    type="error"
+                    showIcon
+                    message={error}
+                    action={
+                        <Button size="small" onClick={() => void loadStudent()}>
+                            ลองใหม่
+                        </Button>
+                    }
+                />
+            ) : null}
 
-            <Row gutter={[20, 20]}>
-                <Col xs={24} xl={12}>
-                    <Card
-                        className="student-profile-card"
-                        title={
-                            <Space>
-                                <IdcardOutlined />
-                                <span>ข้อมูลนิสิต</span>
+            <Skeleton loading={loading} active paragraph={{ rows: 14 }}>
+                {student ? (
+                    <>
+                        <Card className="student-profile-summary-card">
+                            <Space size={20} align="center">
+                                <Avatar size={72} icon={<UserOutlined />} />
+                                <div className="student-profile-summary-text">
+                                    <h2>{displayValue(student.full_name_th)}</h2>
+                                    <Text type="secondary">
+                                        {displayValue(student.full_name_en)}
+                                    </Text>
+                                    <Space wrap>
+                                        <Tag color="blue">
+                                            {displayValue(student.student_code)}
+                                        </Tag>
+                                        <Tag color="green">
+                                            {displayValue(
+                                                student.student_status_name,
+                                            )}
+                                        </Tag>
+                                    </Space>
+                                </div>
                             </Space>
-                        }
-                    >
-                        <Descriptions
-                            column={1}
-                            items={[
-                                {
-                                    key: 'studentCode',
-                                    label: 'รหัสนิสิต',
-                                    children: profile.studentCode,
-                                },
-                                {
-                                    key: 'studentIdCard',
-                                    label: 'เลขบัตรประชาชน',
-                                    children: maskStudentIdCard(
-                                        profile.studentIdCard,
-                                    ),
-                                },
-                                {
-                                    key: 'fullNameTh',
-                                    label: 'ชื่อ-นามสกุล ภาษาไทย',
-                                    children: fullNameTh,
-                                },
-                                {
-                                    key: 'fullNameEn',
-                                    label: 'ชื่อ-นามสกุล ภาษาอังกฤษ',
-                                    children: fullNameEn,
-                                },
-                                {
-                                    key: 'phone',
-                                    label: 'เบอร์โทรศัพท์',
-                                    children: profile.phone,
-                                },
-                                {
-                                    key: 'email',
-                                    label: 'อีเมล',
-                                    children: profile.email,
-                                },
-                                {
-                                    key: 'highSchool',
-                                    label: 'โรงเรียนเดิม',
-                                    children: profile.highSchool,
-                                },
-                            ]}
-                        />
-                    </Card>
-                </Col>
+                        </Card>
 
-                <Col xs={24} xl={12}>
-                    <Card
-                        className="student-profile-card"
-                        title={
-                            <Space>
-                                <ReadOutlined />
-                                <span>ข้อมูลการศึกษา</span>
-                            </Space>
-                        }
-                    >
-                        <Descriptions
-                            column={1}
-                            items={[
-                                {
-                                    key: 'entryYear',
-                                    label: 'ปีเข้าเรียน',
-                                    children: profile.entryYear,
-                                },
-                                {
-                                    key: 'studyPeriod',
-                                    label: 'ชั้นปีปัจจุบัน',
-                                    children: profile.studyPeriod,
-                                },
-                                {
-                                    key: 'admissionChannel',
-                                    label: 'ช่องทางการรับเข้า',
-                                    children: profile.admissionChannel,
-                                },
-                                {
-                                    key: 'curriculum',
-                                    label: 'หลักสูตร',
-                                    children: profile.curriculum,
-                                },
-                                {
-                                    key: 'studyPlan',
-                                    label: 'แผนการเรียน',
-                                    children: profile.studyPlan,
-                                },
-                                {
-                                    key: 'department',
-                                    label: 'ภาควิชา',
-                                    children: profile.department,
-                                },
-                                {
-                                    key: 'faculty',
-                                    label: 'คณะ',
-                                    children: profile.faculty,
-                                },
-                                {
-                                    key: 'advisor',
-                                    label: 'อาจารย์ที่ปรึกษา',
-                                    children: profile.advisor,
-                                },
-                            ]}
-                        />
-                    </Card>
-                </Col>
+                        <Row gutter={[20, 20]}>
+                            <Col xs={24} xl={12}>
+                                <Card
+                                    className="student-profile-card"
+                                    title={
+                                        <Space>
+                                            <IdcardOutlined />
+                                            <span>ข้อมูลนิสิต</span>
+                                        </Space>
+                                    }
+                                >
+                                    <Descriptions
+                                        column={1}
+                                        items={[
+                                            {
+                                                key: 'studentCode',
+                                                label: 'รหัสนิสิต',
+                                                children: displayValue(
+                                                    student.student_code,
+                                                ),
+                                            },
+                                            {
+                                                key: 'studentIdCard',
+                                                label: 'เลขบัตรประชาชน',
+                                                children: maskStudentIdCard(
+                                                    student.student_id_card,
+                                                ),
+                                            },
+                                            {
+                                                key: 'fullNameTh',
+                                                label: 'ชื่อ-นามสกุล ภาษาไทย',
+                                                children: displayValue(
+                                                    student.full_name_th,
+                                                ),
+                                            },
+                                            {
+                                                key: 'fullNameEn',
+                                                label: 'ชื่อ-นามสกุล ภาษาอังกฤษ',
+                                                children: displayValue(
+                                                    student.full_name_en,
+                                                ),
+                                            },
+                                            {
+                                                key: 'phone',
+                                                label: 'เบอร์โทรศัพท์',
+                                                children: displayValue(
+                                                    student.phone,
+                                                ),
+                                            },
+                                            {
+                                                key: 'email',
+                                                label: 'อีเมล',
+                                                children: displayValue(
+                                                    student.email,
+                                                ),
+                                            },
+                                            {
+                                                key: 'highSchool',
+                                                label: 'โรงเรียนเดิม',
+                                                children: displayValue(
+                                                    student.high_school_name,
+                                                ),
+                                            },
+                                            {
+                                                key: 'highSchoolAddress',
+                                                label: 'ที่อยู่โรงเรียน',
+                                                children: displayValue(
+                                                    student.high_school_address,
+                                                ),
+                                            },
+                                        ]}
+                                    />
+                                </Card>
+                            </Col>
 
-                <Col xs={24}>
-                    <Card
-                        className="student-profile-card"
-                        title={
-                            <Space>
-                                <TeamOutlined />
-                                <span>ข้อมูลผู้ปกครอง</span>
-                            </Space>
-                        }
-                    >
-                        <Descriptions
-                            column={{ xs: 1, sm: 3 }}
-                            items={[
-                                {
-                                    key: 'guardianName',
-                                    label: 'ชื่อ-นามสกุล',
-                                    children: guardianFullName,
-                                },
-                                {
-                                    key: 'guardianRelationship',
-                                    label: 'ความสัมพันธ์',
-                                    children: profile.guardianRelationship,
-                                },
-                                {
-                                    key: 'guardianPhone',
-                                    label: 'เบอร์โทรศัพท์',
-                                    children: profile.guardianPhone,
-                                },
-                            ]}
-                        />
-                    </Card>
-                </Col>
-            </Row>
+                            <Col xs={24} xl={12}>
+                                <Card
+                                    className="student-profile-card"
+                                    title={
+                                        <Space>
+                                            <ReadOutlined />
+                                            <span>ข้อมูลการศึกษา</span>
+                                        </Space>
+                                    }
+                                >
+                                    <Descriptions
+                                        column={1}
+                                        items={[
+                                            {
+                                                key: 'entryYear',
+                                                label: 'ปีเข้าเรียน',
+                                                children: displayValue(
+                                                    student.entry_year_be,
+                                                ),
+                                            },
+                                            {
+                                                key: 'studyPeriod',
+                                                label: 'ชั้นปีปัจจุบัน',
+                                                children: displayValue(
+                                                    student.study_period,
+                                                ),
+                                            },
+                                            {
+                                                key: 'admissionChannel',
+                                                label: 'ช่องทางการรับเข้า',
+                                                children: displayValue(
+                                                    student.admission_channel_name,
+                                                ),
+                                            },
+                                            {
+                                                key: 'curriculum',
+                                                label: 'หลักสูตร',
+                                                children: displayValue(
+                                                    student.curriculum_code,
+                                                ),
+                                            },
+                                            {
+                                                key: 'studyPlan',
+                                                label: 'แผนการเรียน',
+                                                children: displayValue(
+                                                    student.study_plan_name_th,
+                                                ),
+                                            },
+                                            {
+                                                key: 'department',
+                                                label: 'ภาควิชา',
+                                                children: displayValue(
+                                                    student.department_name,
+                                                ),
+                                            },
+                                            {
+                                                key: 'faculty',
+                                                label: 'คณะ',
+                                                children: displayValue(
+                                                    student.faculty_name,
+                                                ),
+                                            },
+                                            {
+                                                key: 'advisor',
+                                                label: 'อาจารย์ที่ปรึกษา',
+                                                children: displayValue(
+                                                    student.teacher_full_name,
+                                                ),
+                                            },
+                                            {
+                                                key: 'credits',
+                                                label: 'หน่วยกิต (ทั้งหมด/ผ่าน/ไม่ผ่าน/เกิน)',
+                                                children: getCreditSummary(student),
+                                            },
+                                            {
+                                                key: 'gpa',
+                                                label: 'GPA',
+                                                children: displayValue(student.gpa),
+                                            },
+                                            {
+                                                key: 'gpax',
+                                                label: 'GPAX',
+                                                children: displayValue(student.gpax),
+                                            },
+                                        ]}
+                                    />
+                                </Card>
+                            </Col>
+
+                            <Col xs={24}>
+                                <Card
+                                    className="student-profile-card"
+                                    title={
+                                        <Space>
+                                            <TeamOutlined />
+                                            <span>ข้อมูลผู้ปกครอง</span>
+                                        </Space>
+                                    }
+                                >
+                                    <Descriptions
+                                        column={{ xs: 1, sm: 3 }}
+                                        items={[
+                                            {
+                                                key: 'guardianName',
+                                                label: 'ชื่อ-นามสกุล',
+                                                children: displayValue(
+                                                    student.guardian_full_name,
+                                                ),
+                                            },
+                                            {
+                                                key: 'guardianRelationship',
+                                                label: 'ความสัมพันธ์',
+                                                children: displayValue(
+                                                    student.guardian_relationship_name,
+                                                ),
+                                            },
+                                            {
+                                                key: 'guardianPhone',
+                                                label: 'เบอร์โทรศัพท์',
+                                                children: displayValue(
+                                                    student.guardian_phone,
+                                                ),
+                                            },
+                                        ]}
+                                    />
+                                </Card>
+                            </Col>
+                        </Row>
+                    </>
+                ) : !error ? (
+                    <Empty description="ไม่พบข้อมูลนิสิต" />
+                ) : null}
+            </Skeleton>
 
             <Modal
                 title="แก้ไขข้อมูลส่วนตัว"
                 open={editing}
-                width={760}
                 okText="บันทึก"
                 cancelText="ยกเลิก"
-                onOk={saveProfile}
-                onCancel={() => setEditing(false)}
+                confirmLoading={saving}
+                cancelButtonProps={{ disabled: saving }}
+                closable={!saving}
+                maskClosable={!saving}
+                onOk={() => void saveContact()}
+                onCancel={() => {
+                    if (!saving) setEditing(false)
+                }}
             >
-                <Form
-                    form={form}
-                    layout="vertical"
-                    requiredMark="optional"
-                >
-                    <Row gutter={16}>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="ชื่อภาษาไทย"
-                                name="firstNameTh"
-                                rules={[
-                                    {
-                                        required: true,
-                                        whitespace: true,
-                                        message: 'กรุณากรอกชื่อภาษาไทย',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={50} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="นามสกุลภาษาไทย"
-                                name="lastNameTh"
-                                rules={[
-                                    {
-                                        required: true,
-                                        whitespace: true,
-                                        message: 'กรุณากรอกนามสกุลภาษาไทย',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={50} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="ชื่อภาษาอังกฤษ"
-                                name="firstNameEn"
-                                rules={[
-                                    {
-                                        required: true,
-                                        whitespace: true,
-                                        message: 'กรุณากรอกชื่อภาษาอังกฤษ',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={50} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="นามสกุลภาษาอังกฤษ"
-                                name="lastNameEn"
-                                rules={[
-                                    {
-                                        required: true,
-                                        whitespace: true,
-                                        message: 'กรุณากรอกนามสกุลภาษาอังกฤษ',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={50} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="เบอร์โทรศัพท์"
-                                name="phone"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'กรุณากรอกเบอร์โทรศัพท์',
-                                    },
-                                    {
-                                        pattern: /^0\d{8,9}$/,
-                                        message: 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={10} inputMode="tel" />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="อีเมล"
-                                name="email"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'กรุณากรอกอีเมล',
-                                    },
-                                    {
-                                        type: 'email',
-                                        message: 'รูปแบบอีเมลไม่ถูกต้อง',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={100} />
-                            </Form.Item>
-                        </Col>
-                    </Row>
+                <Form form={form} layout="vertical">
+                    <Form.Item
+                        label="เบอร์โทรศัพท์นิสิต"
+                        name="phone"
+                        rules={[
+                            {
+                                pattern: /^0\d{8,9}$/,
+                                message: 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง',
+                            },
+                        ]}
+                    >
+                        <Input
+                            allowClear
+                            maxLength={10}
+                            inputMode="tel"
+                            placeholder="กรอกเบอร์โทรศัพท์นิสิต"
+                        />
+                    </Form.Item>
 
-                    <Typography.Title level={5}>ข้อมูลผู้ปกครอง</Typography.Title>
-                    <Row gutter={16}>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="ชื่อผู้ปกครอง"
-                                name="guardianFirstName"
-                                rules={[
-                                    {
-                                        required: true,
-                                        whitespace: true,
-                                        message: 'กรุณากรอกชื่อผู้ปกครอง',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={50} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="นามสกุลผู้ปกครอง"
-                                name="guardianLastName"
-                                rules={[
-                                    {
-                                        required: true,
-                                        whitespace: true,
-                                        message: 'กรุณากรอกนามสกุลผู้ปกครอง',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={50} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="ความสัมพันธ์"
-                                name="guardianRelationship"
-                                rules={[
-                                    {
-                                        required: true,
-                                        whitespace: true,
-                                        message: 'กรุณากรอกความสัมพันธ์',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={30} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                label="เบอร์โทรศัพท์ผู้ปกครอง"
-                                name="guardianPhone"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message:
-                                            'กรุณากรอกเบอร์โทรศัพท์ผู้ปกครอง',
-                                    },
-                                    {
-                                        pattern: /^0\d{8,9}$/,
-                                        message: 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง',
-                                    },
-                                ]}
-                            >
-                                <Input maxLength={10} inputMode="tel" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
+                    <Form.Item
+                        label="เบอร์โทรศัพท์ผู้ปกครอง"
+                        name="guardian_phone"
+                        rules={[
+                            {
+                                pattern: /^0\d{8,9}$/,
+                                message: 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง',
+                            },
+                        ]}
+                    >
+                        <Input
+                            allowClear
+                            maxLength={10}
+                            inputMode="tel"
+                            placeholder="กรอกเบอร์โทรศัพท์ผู้ปกครอง"
+                        />
+                    </Form.Item>
                 </Form>
             </Modal>
         </div>
