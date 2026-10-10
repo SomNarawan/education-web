@@ -48,22 +48,24 @@ interface StudentImportPickerProps {
     onImportComplete: () => void | Promise<void>
 }
 
+interface StudentImportFormValues {
+    departmentId: number
+    curriculumId: number
+    studyPlanId: number
+}
+
 export default function StudentImportPicker({
     onImportComplete,
 }: StudentImportPickerProps) {
     const { logout } = useAuth()
     const importLock = useRef(false)
+    const [selectionForm] = Form.useForm<StudentImportFormValues>()
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [fileError, setFileError] = useState<string | null>(null)
     const [curriculums, setCurriculums] = useState<Curriculum[]>([])
     const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([])
     const [departments, setDepartments] = useState<ListOfValue[]>([])
-    const [selectedDepartmentId, setSelectedDepartmentId] = useState<
-        number | undefined
-    >()
     const [selectedCurriculumId, setSelectedCurriculumId] = useState<
-        number | undefined
-    >()
-    const [selectedStudyPlanId, setSelectedStudyPlanId] = useState<
         number | undefined
     >()
     const [curriculumsLoading, setCurriculumsLoading] = useState(false)
@@ -169,9 +171,9 @@ export default function StudentImportPicker({
 
     const handleCurriculumChange = (curriculumId?: number) => {
         setSelectedCurriculumId(curriculumId)
-        setSelectedStudyPlanId(undefined)
         setStudyPlans([])
         setStudyPlansLoading(false)
+        selectionForm.setFieldValue('studyPlanId', undefined)
     }
 
     const handleDownloadTemplate = async () => {
@@ -195,26 +197,28 @@ export default function StudentImportPicker({
 
     const handleImport = async () => {
         const validationError = validateStudentImportFile(selectedFile)
+        setFileError(validationError)
 
-        if (validationError) {
-            message.error(validationError)
+        let values: StudentImportFormValues
+
+        try {
+            values = await selectionForm.validateFields()
+        } catch {
             return
         }
 
-        if (!selectedFile) return
+        if (validationError || !selectedFile) {
+            return
+        }
 
         const curriculum = curriculums.find(
-            (item) => item.id === selectedCurriculumId,
+            (item) => item.id === values.curriculumId,
         )
         const studyPlan = studyPlans.find(
-            (item) => item.id === selectedStudyPlanId,
+            (item) => item.id === values.studyPlanId,
         )
-        if (!selectedDepartmentId || !curriculum || !studyPlan) {
-            message.error(
-                'กรุณาเลือกภาควิชา หลักสูตร และแผนการเรียน',
-            )
-            return
-        }
+
+        if (!curriculum || !studyPlan) return
 
         await runStudentImportOnce(importLock, async () => {
             let refreshHistory = false
@@ -224,7 +228,7 @@ export default function StudentImportPicker({
                 setUploadPercent(0)
                 const result = await importStudents(
                     selectedFile,
-                    selectedDepartmentId,
+                    values.departmentId,
                     curriculum.id,
                     curriculum.name_th,
                     studyPlan.id,
@@ -280,11 +284,12 @@ export default function StudentImportPicker({
         const validationError = validateStudentImportFile(file)
 
         if (validationError) {
-            message.error(validationError)
+            setFileError(validationError)
             return Upload.LIST_IGNORE
         }
 
         setSelectedFile(file)
+        setFileError(null)
         setUploadPercent(0)
         return false
     }
@@ -302,38 +307,54 @@ export default function StudentImportPicker({
     return (
         <div className="student-import-inline-picker">
             <Form
+                form={selectionForm}
                 layout={'vertical'}
                 requiredMark={renderRequiredFormMark}
             >
                 <Row gutter={[16, 16]}>
                     <Col xs={24} md={8}>
-                        <Form.Item label={'ภาควิชา'} required>
-                            <ListOfValueSelect
+                        <Form.Item
+                            label={'ภาควิชา'}
+                            name="departmentId"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'กรุณาเลือกภาควิชา',
+                                },
+                            ]}
+                        >
+                            <ListOfValueSelect<number>
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
                                 loading={departmentsLoading}
                                 disabled={importing}
                                 placeholder={'เลือกภาควิชา'}
-                                value={selectedDepartmentId}
                                 options={departments.map((department) => ({
                                     label: department.name_th,
                                     value: department.id,
                                 }))}
-                                onChange={setSelectedDepartmentId}
                             />
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>
-                        <Form.Item label={'หลักสูตร'} required>
-                            <ListOfValueSelect
+                        <Form.Item
+                            label={'หลักสูตร'}
+                            name="curriculumId"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'กรุณาเลือกหลักสูตร',
+                                },
+                            ]}
+                        >
+                            <ListOfValueSelect<number>
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
                                 loading={curriculumsLoading}
                                 disabled={importing}
                                 placeholder={'เลือกหลักสูตร'}
-                                value={selectedCurriculumId}
                                 options={curriculums.map((curriculum) => ({
                                     label: curriculum.name_th,
                                     value: curriculum.id,
@@ -343,8 +364,17 @@ export default function StudentImportPicker({
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>
-                        <Form.Item label={'แผนการเรียน'} required>
-                            <ListOfValueSelect
+                        <Form.Item
+                            label={'แผนการเรียน'}
+                            name="studyPlanId"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'กรุณาเลือกแผนการเรียน',
+                                },
+                            ]}
+                        >
+                            <ListOfValueSelect<number>
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
@@ -355,29 +385,43 @@ export default function StudentImportPicker({
                                         ? 'เลือกแผนการเรียน'
                                         : 'กรุณาเลือกหลักสูตรก่อน'
                                 }
-                                value={selectedStudyPlanId}
                                 options={studyPlans.map((studyPlan) => ({
                                     label: studyPlan.name_th,
                                     value: studyPlan.id,
                                 }))}
-                                onChange={setSelectedStudyPlanId}
                             />
                         </Form.Item>
                     </Col>
                 </Row>
-            </Form>
 
-            <Upload.Dragger {...uploadProps}>
-                <p className="ant-upload-drag-icon">
-                    <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">
-                    เลือกไฟล์ หรือลากไฟล์มาวางเพื่อ Import นักศึกษา
-                </p>
-                <p className="ant-upload-hint">
-                    รองรับเฉพาะไฟล์ .xlsx ขนาดไม่เกิน 20 MB
-                </p>
-            </Upload.Dragger>
+                <Form.Item
+                label="ไฟล์นำเข้านิสิต"
+                required
+                validateStatus={fileError ? 'error' : undefined}
+                help={fileError}
+                style={{ marginBottom: 0 }}
+            >
+                <div
+                    className={
+                        fileError
+                            ? 'student-import-upload-field student-import-upload-field-error'
+                            : 'student-import-upload-field'
+                    }
+                >
+                    <Upload.Dragger {...uploadProps}>
+                        <p className="ant-upload-drag-icon">
+                            <InboxOutlined />
+                        </p>
+                        <p className="ant-upload-text">
+                            เลือกไฟล์ หรือลากไฟล์มาวางเพื่อ Import นักศึกษา
+                        </p>
+                        <p className="ant-upload-hint">
+                            รองรับเฉพาะไฟล์ .xlsx ขนาดไม่เกิน 20 MB
+                        </p>
+                    </Upload.Dragger>
+                </div>
+                </Form.Item>
+            </Form>
 
             {selectedFile && (
                 <div
@@ -426,13 +470,7 @@ export default function StudentImportPicker({
                     size="large"
                     icon={<UploadOutlined />}
                     loading={importing}
-                    disabled={
-                        !selectedFile ||
-                        !selectedDepartmentId ||
-                        !selectedCurriculumId ||
-                        !selectedStudyPlanId ||
-                        importing
-                    }
+                    disabled={importing}
                     onClick={() => void handleImport()}
                 >
                     {importing ? 'กำลังประมวลผล' : 'Import นักศึกษา'}

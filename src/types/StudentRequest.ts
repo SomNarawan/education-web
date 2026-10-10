@@ -38,6 +38,7 @@ export interface ListStudentsRequest {
     faculty_id?: number
     student_status_id?: number
     search_text?: string
+    search_note_type_id?: number
     search_note?: string
 }
 

@@ -693,6 +693,11 @@ body {
     background: #f8fbff;
 }
 
+.student-import-upload-field-error .ant-upload-drag,
+.student-import-upload-field-error .ant-upload-drag:hover {
+    border-color: #ff4d4f;
+}
+
 .student-import-actions {
     display: flex;
     justify-content: flex-end;

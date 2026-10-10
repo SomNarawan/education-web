@@ -66,6 +66,10 @@ interface ApiErrorBody {
     errors?: Record<string, string | string[]>
 }
 
+interface GradeImportFormValues {
+    curriculumId: number
+}
+
 function validateGradeImportFile(file: File | null): string | null {
     if (!file) return 'กรุณาเลือกไฟล์ผลการเรียนที่ต้องการนำเข้า'
 
@@ -118,11 +122,10 @@ function getProgressStatus(status: GradeImportStatus) {
 }
 
 export default function GradeImport() {
+    const [selectionForm] = Form.useForm<GradeImportFormValues>()
     const [curriculums, setCurriculums] = useState<Curriculum[]>([])
-    const [selectedCurriculumId, setSelectedCurriculumId] = useState<
-        number | undefined
-    >()
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [fileError, setFileError] = useState<string | null>(null)
     const [history, setHistory] = useState<GradeImportHistory[]>([])
     const [curriculumsLoading, setCurriculumsLoading] = useState(false)
     const [historyLoading, setHistoryLoading] = useState(false)
@@ -198,11 +201,12 @@ export default function GradeImport() {
         const validationError = validateGradeImportFile(file)
 
         if (validationError) {
-            message.error(validationError)
+            setFileError(validationError)
             return Upload.LIST_IGNORE
         }
 
         setSelectedFile(file)
+        setFileError(null)
         return false
     }
 
@@ -224,20 +228,25 @@ export default function GradeImport() {
 
     const handleImport = async () => {
         const validationError = validateGradeImportFile(selectedFile)
+        setFileError(validationError)
 
-        if (validationError) {
-            message.error(validationError)
+        let values: GradeImportFormValues
+
+        try {
+            values = await selectionForm.validateFields()
+        } catch {
+            return
+        }
+
+        if (validationError || !selectedFile) {
             return
         }
 
         const curriculum = curriculums.find(
-            (item) => item.id === selectedCurriculumId,
+            (item) => item.id === values.curriculumId,
         )
 
-        if (!curriculum || !selectedFile) {
-            message.error('กรุณาเลือกหลักสูตรและไฟล์ให้ครบถ้วน')
-            return
-        }
+        if (!curriculum) return
 
         try {
             setImporting(true)
@@ -358,40 +367,67 @@ export default function GradeImport() {
 
             <Card className="student-import-card">
                 <div className="student-import-inline-picker">
-                    <Form layout="vertical" requiredMark={renderRequiredFormMark}>
+                    <Form
+                        form={selectionForm}
+                        layout="vertical"
+                        requiredMark={renderRequiredFormMark}
+                    >
                         <Row gutter={[16, 16]}>
                             <Col xs={24} md={12}>
-                                <Form.Item label="หลักสูตร" required>
-                                    <ListOfValueSelect
+                                <Form.Item
+                                    label="หลักสูตร"
+                                    name="curriculumId"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'กรุณาเลือกหลักสูตร',
+                                        },
+                                    ]}
+                                >
+                                    <ListOfValueSelect<number>
                                         allowClear
                                         showSearch
                                         optionFilterProp="label"
                                         loading={curriculumsLoading}
                                         disabled={importing}
                                         placeholder="เลือกหลักสูตร"
-                                        value={selectedCurriculumId}
                                         options={curriculums.map((item) => ({
                                             label: item.name_th,
                                             value: item.id,
                                         }))}
-                                        onChange={setSelectedCurriculumId}
                                     />
                                 </Form.Item>
                             </Col>
                         </Row>
-                    </Form>
 
-                    <Upload.Dragger {...uploadProps}>
-                        <p className="ant-upload-drag-icon">
-                            <InboxOutlined />
-                        </p>
-                        <p className="ant-upload-text">
-                            เลือกไฟล์ หรือลากไฟล์มาวางเพื่อนำเข้าเกรด
-                        </p>
-                        <p className="ant-upload-hint">
-                            รองรับเฉพาะไฟล์ .xlsx ขนาดไม่เกิน 20 MB
-                        </p>
-                    </Upload.Dragger>
+                        <Form.Item
+                        label="ไฟล์นำเข้าเกรด"
+                        required
+                        validateStatus={fileError ? 'error' : undefined}
+                        help={fileError}
+                        style={{ marginBottom: 0 }}
+                    >
+                        <div
+                            className={
+                                fileError
+                                    ? 'student-import-upload-field student-import-upload-field-error'
+                                    : 'student-import-upload-field'
+                            }
+                        >
+                            <Upload.Dragger {...uploadProps}>
+                                <p className="ant-upload-drag-icon">
+                                    <InboxOutlined />
+                                </p>
+                                <p className="ant-upload-text">
+                                    เลือกไฟล์ หรือลากไฟล์มาวางเพื่อนำเข้าเกรด
+                                </p>
+                                <p className="ant-upload-hint">
+                                    รองรับเฉพาะไฟล์ .xlsx ขนาดไม่เกิน 20 MB
+                                </p>
+                            </Upload.Dragger>
+                        </div>
+                        </Form.Item>
+                    </Form>
 
                     {selectedFile && (
                         <div className="student-import-selected-file" role="status">
@@ -434,11 +470,7 @@ export default function GradeImport() {
                             size="large"
                             icon={<UploadOutlined />}
                             loading={importing}
-                            disabled={
-                                !selectedCurriculumId ||
-                                !selectedFile ||
-                                importing
-                            }
+                            disabled={importing}
                             onClick={() => void handleImport()}
                         >
                             {importing ? 'กำลังอัปโหลด' : 'Import เกรด'}

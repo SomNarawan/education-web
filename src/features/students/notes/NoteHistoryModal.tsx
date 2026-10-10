@@ -32,7 +32,7 @@ export default function NoteHistoryModal({
             ),
         },
         {
-            title: 'Remark',
+            title: 'รายละเอียด Note',
             dataIndex: 'remark',
             render: (value, record) => (
                 <Text delete={!!record.deleted_at}>{value || '-'}</Text>

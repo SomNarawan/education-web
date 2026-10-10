@@ -1,4 +1,4 @@
-import { Button, Input, Spin, message, Typography } from 'antd'
+import { Button, Form, Input, Spin, message, Typography } from 'antd'
 const { Text } = Typography
 import {
     PlusOutlined,
@@ -29,10 +29,19 @@ import type { StudentGroup } from '../../../types/StudentRoute'
 import type { ListOfValue } from '../../../types/ListOfValue'
 import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
 import { toListOfValueOptions } from '../../../utils/listOfValue'
+import { OTHER_NOTE_NAME } from '../notes/noteConstants'
 
 type NoteSearchType = number | undefined
 
-const OTHER_NOTE_NAME = 'อื่นๆ'
+interface FacultyStudentSearchFormValues {
+    searchText: string
+}
+
+interface NoteSearchFormValues {
+    departmentId?: number
+    noteText?: string
+}
+
 const DEFAULT_STUDENT_STATUS = 1
 
 export default function StudentListPage() {
@@ -47,6 +56,8 @@ function StudentList() {
     }>()
 
     const { currentRole, user } = useAuth()
+    const [facultySearchForm] = Form.useForm<FacultyStudentSearchFormValues>()
+    const [noteSearchForm] = Form.useForm<NoteSearchFormValues>()
 
     const authTeacherId = user?.teacherId ?? undefined
     const authDepartmentId = user?.departmentId ?? undefined
@@ -113,11 +124,13 @@ function StudentList() {
 
     const loadStudents = useCallback(
         async ({
+            noteTypeId,
             noteText,
             searchText,
             studentStatusId,
             departmentId: selectedDepartmentIdForSearch,
         }: {
+            noteTypeId?: number
             noteText?: string
             searchText?: string
             studentStatusId?: number | null
@@ -170,6 +183,7 @@ function StudentList() {
                     teacher_id: teacherIdForSearch,
                     department_id: departmentId,
                     faculty_id: facultyId,
+                    search_note_type_id: noteTypeId,
                     search_note: noteText,
                     search_text: searchText,
                     student_status_id: statusIdForSearch,
@@ -291,13 +305,15 @@ function StudentList() {
         return selectedNoteType?.name_th
     }
 
-    const handleSearchNote = () => {
-        if (isAdmin && isDepartmentListPage && !selectedDepartmentId) {
-            message.warning('กรุณาเลือกภาควิชา')
+    const handleSearchNote = async () => {
+        try {
+            await noteSearchForm.validateFields()
+        } catch {
             return
         }
 
         loadStudents({
+            noteTypeId: noteSearchType,
             noteText: getNoteSearchValue(),
             studentStatusId: selectedStudentStatusId,
             departmentId: selectedDepartmentId,
@@ -307,6 +323,7 @@ function StudentList() {
     const handleClearNoteSearch = () => {
         setNoteSearchType(undefined)
         setNoteSearchText('')
+        noteSearchForm.resetFields()
         setSelectedStudentStatusId(DEFAULT_STUDENT_STATUS)
 
         if (isAdmin && isDepartmentListPage) {
@@ -320,14 +337,16 @@ function StudentList() {
         })
     }
 
-    const handleSearchStudent = () => {
-        const value = studentSearchText.trim()
+    const handleSearchStudent = async () => {
+        let values: FacultyStudentSearchFormValues
 
-        if (!value) {
-            message.warning('กรุณากรอกคำค้นหา')
+        try {
+            values = await facultySearchForm.validateFields()
+        } catch {
             return
         }
 
+        const value = values.searchText.trim()
         setHasFacultySearched(true)
 
         loadStudents({
@@ -337,6 +356,7 @@ function StudentList() {
 
     const handleClearStudentSearch = () => {
         setStudentSearchText('')
+        facultySearchForm.resetFields()
         setHasFacultySearched(false)
         setStudents([])
 
@@ -414,6 +434,7 @@ function StudentList() {
             }
 
             await loadStudents({
+                noteTypeId: noteSearchType,
                 noteText: getNoteSearchValue(),
                 studentStatusId: selectedStudentStatusId,
                 departmentId: selectedDepartmentId,
@@ -494,20 +515,33 @@ function StudentList() {
                     </div>
 
                     <div style={{ marginBottom: 20 }}>
-                        <Input
-                            allowClear
-                            size="large"
-                            placeholder="ค้นหาจากรหัสนิสิต / ชื่อ-นามสกุล / เลขบัตรประชาชน"
-                            value={studentSearchText}
-                            maxLength={255}
-                            onChange={(e) =>
-                                setStudentSearchText(e.target.value)
-                            }
-                            onPressEnter={handleSearchStudent}
-                            style={{
-                                width: '100%',
-                            }}
-                        />
+                        <Form form={facultySearchForm} component={false}>
+                            <Form.Item
+                                name="searchText"
+                                rules={[
+                                    {
+                                        required: true,
+                                        whitespace: true,
+                                        message: 'กรุณากรอกคำค้นหา',
+                                    },
+                                ]}
+                                style={{ marginBottom: 0 }}
+                            >
+                                <Input
+                                    allowClear
+                                    size="large"
+                                    placeholder="ค้นหาจากรหัสนิสิต / ชื่อ-นามสกุล / เลขบัตรประชาชน"
+                                    maxLength={255}
+                                    onChange={(e) =>
+                                        setStudentSearchText(e.target.value)
+                                    }
+                                    onPressEnter={() =>
+                                        void handleSearchStudent()
+                                    }
+                                    style={{ width: '100%' }}
+                                />
+                            </Form.Item>
+                        </Form>
                     </div>
 
                     <div
@@ -521,7 +555,7 @@ function StudentList() {
                             type="primary"
                             icon={<SearchOutlined />}
                             size="large"
-                            onClick={handleSearchStudent}
+                            onClick={() => void handleSearchStudent()}
                         >
                             ค้นหา
                         </Button>
@@ -546,126 +580,164 @@ function StudentList() {
                         justifyContent: 'center',
                     }}
                 >
-                    <div
-                        style={{
-                            width: '100%',
-                            maxWidth: 650,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 16,
-                        }}
-                    >
+                    <Form form={noteSearchForm} component={false}>
                         <div
                             style={{
-                                textAlign: 'center',
-                                marginBottom: 4,
+                                width: '100%',
+                                maxWidth: 650,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 16,
                             }}
                         >
-                            <Text strong style={{ fontSize: 18 }}>
-                                ค้นหาข้อมูลนิสิต
-                            </Text>
-                        </div>
+                            <div
+                                style={{
+                                    textAlign: 'center',
+                                    marginBottom: 4,
+                                }}
+                            >
+                                <Text strong style={{ fontSize: 18 }}>
+                                    ค้นหาข้อมูลนิสิต
+                                </Text>
+                            </div>
 
-                        {isAdmin && isDepartmentListPage && (
+                            {isAdmin && isDepartmentListPage && (
+                                <div>
+                                    <Text strong>ภาควิชา</Text>
+                                    <Form.Item
+                                        name="departmentId"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'กรุณาเลือกภาควิชา',
+                                            },
+                                        ]}
+                                        style={{
+                                            marginBottom: 0,
+                                            marginTop: 6,
+                                        }}
+                                    >
+                                        <ListOfValueSelect<number>
+                                            allowClear
+                                            showSearch
+                                            loading={searchDropdownLoading}
+                                            error={searchDropdownError}
+                                            placeholder="เลือกภาควิชา"
+                                            options={departmentOptions}
+                                            style={{ width: '100%' }}
+                                            optionFilterProp="label"
+                                            onChange={setSelectedDepartmentId}
+                                        />
+                                    </Form.Item>
+                                </div>
+                            )}
+
                             <div>
-                                <Text strong>ภาควิชา</Text>
+                                <Text strong>สถานะนิสิต</Text>
                                 <ListOfValueSelect
                                     allowClear
                                     showSearch
                                     loading={searchDropdownLoading}
                                     error={searchDropdownError}
-                                    placeholder="เลือกภาควิชา"
-                                    value={selectedDepartmentId}
-                                    options={departmentOptions}
+                                    placeholder="เลือกสถานะนิสิต"
+                                    value={selectedStudentStatusId}
+                                    options={studentStatusOptions}
                                     style={{ width: '100%', marginTop: 6 }}
                                     optionFilterProp="label"
-                                    onChange={setSelectedDepartmentId}
+                                    onChange={setSelectedStudentStatusId}
                                 />
                             </div>
-                        )}
 
-                        <div>
-                            <Text strong>สถานะนิสิต</Text>
-                            <ListOfValueSelect
-                                allowClear
-                                showSearch
-                                loading={searchDropdownLoading}
-                                error={searchDropdownError}
-                                placeholder="เลือกสถานะนิสิต"
-                                value={selectedStudentStatusId}
-                                options={studentStatusOptions}
-                                style={{ width: '100%', marginTop: 6 }}
-                                optionFilterProp="label"
-                                onChange={setSelectedStudentStatusId}
-                            />
-                        </div>
-
-                        <div>
-                            <Text strong>ประเภท Note</Text>
-                            <ListOfValueSelect
-                                allowClear
-                                showSearch
-                                loading={noteTypesLoading}
-                                error={noteTypesError}
-                                placeholder="เลือกประเภท Note"
-                                value={noteSearchType}
-                                options={toListOfValueOptions(noteTypes)}
-                                style={{ width: '100%', marginTop: 6 }}
-                                onChange={(value) => {
-                                    setNoteSearchType(value)
-
-                                    const isOther = noteTypes.some(
-                                        (noteType) =>
-                                            noteType.id === value &&
-                                            noteType.name_th ===
-                                                OTHER_NOTE_NAME,
-                                    )
-
-                                    if (!isOther) {
-                                        setNoteSearchText('')
-                                    }
-                                }}
-                            />
-                        </div>
-
-                        {isOtherNoteType && (
                             <div>
-                                <Text strong>รายละเอียด Note</Text>
-                                <Input
+                                <Text strong>ประเภท Note</Text>
+                                <ListOfValueSelect
                                     allowClear
-                                    placeholder="กรอกรายละเอียด Note"
-                                    value={noteSearchText}
-                                    maxLength={255}
+                                    showSearch
+                                    loading={noteTypesLoading}
+                                    error={noteTypesError}
+                                    placeholder="เลือกประเภท Note"
+                                    value={noteSearchType}
+                                    options={toListOfValueOptions(noteTypes)}
                                     style={{ width: '100%', marginTop: 6 }}
-                                    onChange={(e) =>
-                                        setNoteSearchText(e.target.value)
-                                    }
-                                    onPressEnter={handleSearchNote}
+                                    onChange={(value) => {
+                                        setNoteSearchType(value)
+
+                                        const isOther = noteTypes.some(
+                                            (noteType) =>
+                                                noteType.id === value &&
+                                                noteType.name_th ===
+                                                    OTHER_NOTE_NAME,
+                                        )
+
+                                        if (!isOther) {
+                                            setNoteSearchText('')
+                                            noteSearchForm.setFieldValue(
+                                                'noteText',
+                                                undefined,
+                                            )
+                                        }
+                                    }}
                                 />
                             </div>
-                        )}
 
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'center',
-                                gap: 12,
-                                marginTop: 8,
-                            }}
-                        >
-                            <Button
-                                type="primary"
-                                icon={<SearchOutlined />}
-                                onClick={handleSearchNote}
+                            {isOtherNoteType && (
+                                <div>
+                                    <Text strong>รายละเอียด Note</Text>
+                                    <Form.Item
+                                        name="noteText"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                whitespace: true,
+                                                message:
+                                                    'กรุณากรอกรายละเอียด Note',
+                                            },
+                                        ]}
+                                        style={{
+                                            marginBottom: 0,
+                                            marginTop: 6,
+                                        }}
+                                    >
+                                        <Input
+                                            allowClear
+                                            placeholder="กรอกรายละเอียด Note"
+                                            maxLength={255}
+                                            style={{ width: '100%' }}
+                                            onChange={(e) =>
+                                                setNoteSearchText(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            onPressEnter={() =>
+                                                void handleSearchNote()
+                                            }
+                                        />
+                                    </Form.Item>
+                                </div>
+                            )}
+
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    gap: 12,
+                                    marginTop: 8,
+                                }}
                             >
-                                ค้นหา
-                            </Button>
+                                <Button
+                                    type="primary"
+                                    icon={<SearchOutlined />}
+                                    onClick={() => void handleSearchNote()}
+                                >
+                                    ค้นหา
+                                </Button>
 
-                            <Button onClick={handleClearNoteSearch}>
-                                ล้างค่า
-                            </Button>
+                                <Button onClick={handleClearNoteSearch}>
+                                    ล้างค่า
+                                </Button>
+                            </div>
                         </div>
-                    </div>
+                    </Form>
                 </div>
             )}
 

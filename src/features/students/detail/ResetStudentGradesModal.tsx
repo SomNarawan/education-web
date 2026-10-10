@@ -22,6 +22,11 @@ const semesterLabels: Record<number, string> = {
 
 type ResetScope = 'all' | 'semester'
 
+interface ResetPeriodFormValues {
+    studyYear: number
+    semester: number
+}
+
 export type ResetStudentGradesSelection =
     | { scope: 'all' }
     | { scope: 'semester'; studyYear: number; semester: number }
@@ -48,6 +53,7 @@ export default function ResetStudentGradesModal({
     onConfirm,
 }: ResetStudentGradesModalProps) {
     const [scope, setScope] = useState<ResetScope>('all')
+    const [periodForm] = Form.useForm<ResetPeriodFormValues>()
     const [studyYear, setStudyYear] = useState<number>()
     const [semester, setSemester] = useState<number>()
 
@@ -100,6 +106,7 @@ export default function ResetStudentGradesModal({
         setScope('all')
         setStudyYear(undefined)
         setSemester(undefined)
+        periodForm.resetFields()
     }
 
     const handleCancel = () => {
@@ -109,9 +116,19 @@ export default function ResetStudentGradesModal({
 
     const handleConfirm = async () => {
         if (scope === 'semester') {
-            if (studyYear === undefined || semester === undefined) return
+            let values: ResetPeriodFormValues
 
-            const confirmed = await onConfirm({ scope, studyYear, semester })
+            try {
+                values = await periodForm.validateFields()
+            } catch {
+                return
+            }
+
+            const confirmed = await onConfirm({
+                scope,
+                studyYear: values.studyYear,
+                semester: values.semester,
+            })
 
             if (confirmed) resetSelection()
             return
@@ -129,10 +146,6 @@ export default function ResetStudentGradesModal({
               ? `ปีที่ ${studyYear} ${semesterLabels[semester]}`
               : 'ปีและภาคเรียนที่เลือก'
 
-    const isConfirmDisabled =
-        scope === 'semester' &&
-        (studyYear === undefined || semester === undefined)
-
     return (
         <Modal
             open={open}
@@ -144,7 +157,7 @@ export default function ResetStudentGradesModal({
             }
             okText="ยืนยันการรีเซ็ต"
             cancelText="ยกเลิก"
-            okButtonProps={{ danger: true, disabled: isConfirmDisabled }}
+            okButtonProps={{ danger: true }}
             confirmLoading={loading}
             maskClosable={!loading}
             closable={!loading}
@@ -167,7 +180,7 @@ export default function ResetStudentGradesModal({
                 {studentCode} {studentName}
             </Paragraph>
 
-            <Form layout="vertical">
+            <Form form={periodForm} layout="vertical">
                 <Form.Item label="ขอบเขตที่ต้องการรีเซ็ต" required>
                     <Radio.Group
                         value={scope}
@@ -176,6 +189,7 @@ export default function ResetStudentGradesModal({
                             setScope(nextScope)
                             setStudyYear(undefined)
                             setSemester(undefined)
+                            periodForm.resetFields()
                         }}
                     >
                         <Space direction="vertical" size={12}>
@@ -207,26 +221,48 @@ export default function ResetStudentGradesModal({
                 {scope === 'semester' && (
                     <Row gutter={12}>
                         <Col xs={24} sm={12}>
-                            <Form.Item label="ปีที่" required>
+                            <Form.Item
+                                label="ปีที่"
+                                name="studyYear"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'กรุณาเลือกปีที่',
+                                    },
+                                ]}
+                            >
                                 <Select
                                     placeholder="เลือกปี"
-                                    value={studyYear}
                                     options={studyYearOptions}
                                     onChange={(value) => {
                                         setStudyYear(value)
                                         setSemester(undefined)
+                                        periodForm.setFieldValue(
+                                            'semester',
+                                            undefined,
+                                        )
                                     }}
                                 />
                             </Form.Item>
                         </Col>
                         <Col xs={24} sm={12}>
-                            <Form.Item label="เทอม" required>
+                            <Form.Item
+                                label="เทอม"
+                                name="semester"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'กรุณาเลือกเทอม',
+                                    },
+                                ]}
+                            >
                                 <Select
                                     placeholder="เลือกเทอม"
-                                    value={semester}
                                     options={semesterOptions}
                                     disabled={studyYear === undefined}
-                                    onChange={setSemester}
+                                    onChange={(value) => {
+                                        setSemester(value)
+                                    }}
                                 />
                             </Form.Item>
                         </Col>

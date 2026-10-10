@@ -10,6 +10,7 @@ import {
     Checkbox,
     Col,
     Descriptions,
+    Form,
     Modal,
     Row,
     Select,
@@ -106,6 +107,10 @@ interface GradeCalculationResult {
     courses: CalculatedCourse[]
 }
 
+interface GradeCalculationFormValues {
+    grades?: Record<string, string>
+}
+
 function calculatePreviousSummary(results: SemesterAcademicResult[]) {
     const credits = results.reduce(
         (total, semester) => total + semester.credits,
@@ -157,9 +162,8 @@ export default function GradeCalculatorPage() {
             .filter((course) => course.source !== 'other')
             .map((course) => course.code),
     )
-    const [expectedGrades, setExpectedGrades] = useState<
-        Record<string, string>
-    >({})
+    const [gradeForm] = Form.useForm<GradeCalculationFormValues>()
+    const expectedGrades = Form.useWatch('grades', gradeForm) ?? {}
     const [calculationResult, setCalculationResult] =
         useState<GradeCalculationResult | null>(null)
     const [historyOpen, setHistoryOpen] = useState(false)
@@ -199,7 +203,7 @@ export default function GradeCalculatorPage() {
                 .filter((course) => course.source !== 'other')
                 .map((course) => course.code),
         )
-        setExpectedGrades({})
+        gradeForm.resetFields()
         setCalculationResult(null)
     }
 
@@ -209,13 +213,9 @@ export default function GradeCalculatorPage() {
                 ? [...new Set([...currentCodes, courseCode])]
                 : currentCodes.filter((code) => code !== courseCode),
         )
-        setExpectedGrades((currentGrades) => {
-            if (checked) return currentGrades
-
-            const nextGrades = { ...currentGrades }
-            delete nextGrades[courseCode]
-            return nextGrades
-        })
+        if (!checked) {
+            gradeForm.setFieldValue(['grades', courseCode], undefined)
+        }
         setCalculationResult(null)
     }
 
@@ -230,32 +230,25 @@ export default function GradeCalculatorPage() {
             ...currentCodes.filter((code) => !otherCourseCodes.has(code)),
             ...courseCodes,
         ])
-        setExpectedGrades((currentGrades) =>
-            Object.fromEntries(
-                Object.entries(currentGrades).filter(
-                    ([courseCode]) =>
-                        !otherCourseCodes.has(courseCode) ||
-                        courseCodes.includes(courseCode),
-                ),
-            ),
-        )
+        otherCourseCodes.forEach((courseCode) => {
+            if (!courseCodes.includes(courseCode)) {
+                gradeForm.setFieldValue(['grades', courseCode], undefined)
+            }
+        })
         setCalculationResult(null)
     }
 
-    const handleCalculate = () => {
+    const handleCalculate = async () => {
         if (selectedCourses.length === 0) {
             message.warning('กรุณาเลือกอย่างน้อย 1 รายวิชา')
             return
         }
 
-        const courseWithoutGrade = selectedCourses.find(
-            (course) => !expectedGrades[course.code],
-        )
-
-        if (courseWithoutGrade) {
-            message.warning(
-                `กรุณาระบุเกรดคาดการณ์ของวิชา ${courseWithoutGrade.code}`,
+        try {
+            await gradeForm.validateFields(
+                selectedCourses.map((course) => ['grades', course.code]),
             )
+        } catch {
             return
         }
 
@@ -350,24 +343,31 @@ export default function GradeCalculatorPage() {
                 </>
             ),
             key: 'grade',
-            width: 145,
+            width: 175,
             render: (_, course) => (
-                <Select
-                    aria-label={`เกรดคาดการณ์วิชา ${course.code}`}
-                    placeholder="เลือกเกรด"
-                    value={expectedGrades[course.code]}
-                    options={gradeOptions.map(({ label, value }) => ({
-                        label,
-                        value,
-                    }))}
-                    onChange={(grade) => {
-                        setExpectedGrades((currentGrades) => ({
-                            ...currentGrades,
-                            [course.code]: grade,
-                        }))
-                        setCalculationResult(null)
-                    }}
-                />
+                <Form.Item
+                    name={['grades', course.code]}
+                    rules={[
+                        {
+                            required: true,
+                            message: 'กรุณาเลือกเกรด',
+                        },
+                    ]}
+                    preserve={false}
+                    style={{ marginBottom: 0 }}
+                >
+                    <Select
+                        aria-label={`เกรดคาดการณ์วิชา ${course.code}`}
+                        placeholder="เลือกเกรด"
+                        options={gradeOptions.map(({ label, value }) => ({
+                            label,
+                            value,
+                        }))}
+                        onChange={() => {
+                            setCalculationResult(null)
+                        }}
+                    />
+                </Form.Item>
             ),
         },
         {
@@ -677,16 +677,18 @@ export default function GradeCalculatorPage() {
                 className="grade-calculator-card"
                 title={`รายวิชาที่เลือก (${selectedCourses.length} วิชา)`}
             >
-                <Table<PredictionCourse>
-                    className="grade-prediction-table"
-                    rowKey="code"
-                    columns={selectedCourseColumns}
-                    dataSource={selectedCourses}
-                    locale={{ emptyText: 'ยังไม่ได้เลือกรายวิชา' }}
-                    pagination={false}
-                    size="small"
-                    tableLayout="fixed"
-                />
+                <Form form={gradeForm} component={false}>
+                    <Table<PredictionCourse>
+                        className="grade-prediction-table"
+                        rowKey="code"
+                        columns={selectedCourseColumns}
+                        dataSource={selectedCourses}
+                        locale={{ emptyText: 'ยังไม่ได้เลือกรายวิชา' }}
+                        pagination={false}
+                        size="small"
+                        tableLayout="fixed"
+                    />
+                </Form>
                 <div className="grade-calculator-actions">
                     <Space>
                         <Button onClick={resetPrediction}>คืนค่าเริ่มต้น</Button>
@@ -695,7 +697,7 @@ export default function GradeCalculatorPage() {
                             size="large"
                             icon={<CalculatorOutlined />}
                             disabled={selectedCourses.length === 0}
-                            onClick={handleCalculate}
+                            onClick={() => void handleCalculate()}
                         >
                             คำนวณผลการเรียน
                         </Button>

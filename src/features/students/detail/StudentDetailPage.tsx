@@ -3,6 +3,7 @@ import {
     Button,
     Card,
     Col,
+    Form,
     Row,
     Skeleton,
     message,
@@ -32,6 +33,12 @@ import { toListOfValueOptions } from '../../../utils/listOfValue'
 import { useAuth } from '../../../hooks/useAuth'
 import ResetStudentGradesModal from './ResetStudentGradesModal'
 import type { ResetStudentGradesSelection } from './ResetStudentGradesModal'
+import { OTHER_NOTE_NAME } from '../notes/noteConstants'
+
+interface NoteFormValues {
+    note_type_id: number
+    remark?: string
+}
 
 export default function StudentDetailPage() {
     const { id } = useParams()
@@ -43,8 +50,7 @@ export default function StudentDetailPage() {
     const [resettingGrades, setResettingGrades] = useState(false)
     const [gradeDataVersion, setGradeDataVersion] = useState(0)
 
-    const [noteTypeId, setNoteTypeId] = useState<number>()
-    const [remark, setRemark] = useState('')
+    const [noteForm] = Form.useForm<NoteFormValues>()
     const [noteTypes, setNoteTypes] = useState<ListOfValue[]>([])
     const [noteTypesLoading, setNoteTypesLoading] = useState(false)
     const [noteTypesError, setNoteTypesError] = useState<string | null>(null)
@@ -67,11 +73,12 @@ export default function StudentDetailPage() {
         gradeDataVersion,
     )
 
+    const noteTypeId = Form.useWatch('note_type_id', noteForm)
     const selectedNoteType = noteTypes.find(
         (noteType) => noteType.id === noteTypeId
     )
 
-    const isOtherNoteType = selectedNoteType?.name_th === 'อื่นๆ'
+    const isOtherNoteType = selectedNoteType?.name_th === OTHER_NOTE_NAME
 
     const creditSummary = student
         ? [
@@ -140,33 +147,30 @@ export default function StudentDetailPage() {
     }
 
     const handleAddNote = async () => {
+        if (!student?.id) {
+            message.error('ไม่พบข้อมูลนิสิต')
+            return
+        }
+
+        let values: NoteFormValues
+
         try {
-            if (!student?.id) {
-                message.error('ไม่พบข้อมูลนิสิต')
-                return
-            }
+            values = await noteForm.validateFields()
+        } catch {
+            return
+        }
 
-            if (!noteTypeId) {
-                message.warning('กรุณาเลือก Note')
-                return
-            }
-
-            if (isOtherNoteType && !remark.trim()) {
-                message.warning('กรุณากรอก Remark')
-                return
-            }
-
+        try {
             setSavingNote(true)
 
             await createNote({
                 student_id: student.id,
-                note_type_id: noteTypeId,
-                remark: isOtherNoteType ? remark.trim() : null,
+                note_type_id: values.note_type_id,
+                remark: isOtherNoteType ? values.remark?.trim() : null,
             })
 
             message.success('บันทึก Note สำเร็จ')
-            setNoteTypeId(undefined)
-            setRemark('')
+            noteForm.resetFields()
 
             if (noteHistoryOpen) {
                 await loadNotes()
@@ -400,49 +404,75 @@ export default function StudentDetailPage() {
                                         </Button>
                                     }
                                 >
-                                    <Row gutter={12} align="middle">
-                                        <Col flex="320px">
-                                            <ListOfValueSelect
-                                                placeholder="เลือก Note"
-                                                value={noteTypeId}
-                                                loading={noteTypesLoading}
-                                                error={noteTypesError}
-                                                onChange={(value) => {
-                                                    setNoteTypeId(value)
-                                                    setRemark('')
-                                                }}
-                                                style={{ width: '100%' }}
-                                                options={toListOfValueOptions(
-                                                    noteTypes,
-                                                )}
-                                            />
-                                        </Col>
+                                    <Form form={noteForm} component={false}>
+                                        <Row gutter={12} align="middle">
+                                            <Col flex="320px">
+                                                <Form.Item
+                                                    name="note_type_id"
+                                                    rules={[
+                                                        {
+                                                            required: true,
+                                                            message:
+                                                                'กรุณาเลือก Note',
+                                                        },
+                                                    ]}
+                                                    style={{ marginBottom: 0 }}
+                                                >
+                                                    <ListOfValueSelect
+                                                        placeholder="เลือก Note"
+                                                        loading={noteTypesLoading}
+                                                        error={noteTypesError}
+                                                        onChange={() => {
+                                                            noteForm.setFieldValue(
+                                                                'remark',
+                                                                undefined,
+                                                            )
+                                                        }}
+                                                        style={{ width: '100%' }}
+                                                        options={toListOfValueOptions(
+                                                            noteTypes,
+                                                        )}
+                                                    />
+                                                </Form.Item>
+                                            </Col>
 
-                                        <Col flex="120px">
-                                            <Button
-                                                type="primary"
-                                                onClick={handleAddNote}
-                                                loading={savingNote}
-                                                block
-                                            >
-                                                เพิ่ม Note
-                                            </Button>
-                                        </Col>
-                                    </Row>
-
-                                    {isOtherNoteType && (
-                                        <Row style={{ marginTop: 12 }}>
-                                            <Col span={24}>
-                                                <TextArea
-                                                    placeholder="กรอก Remark"
-                                                    value={remark}
-                                                    onChange={(e) => setRemark(e.target.value)}
-                                                    rows={4}
-                                                    maxLength={255}
-                                                />
+                                            <Col flex="120px">
+                                                <Button
+                                                    type="primary"
+                                                    onClick={handleAddNote}
+                                                    loading={savingNote}
+                                                    block
+                                                >
+                                                    เพิ่ม Note
+                                                </Button>
                                             </Col>
                                         </Row>
-                                    )}
+
+                                        {isOtherNoteType && (
+                                            <Row style={{ marginTop: 12 }}>
+                                                <Col span={24}>
+                                                    <Form.Item
+                                                        name="remark"
+                                                        rules={[
+                                                            {
+                                                                required: true,
+                                                                whitespace: true,
+                                                                message:
+                                                                    'กรุณากรอกรายละเอียด Note',
+                                                            },
+                                                        ]}
+                                                        style={{ marginBottom: 0 }}
+                                                    >
+                                                        <TextArea
+                                                            placeholder="กรอกรายละเอียด Note"
+                                                            rows={4}
+                                                            maxLength={255}
+                                                        />
+                                                    </Form.Item>
+                                                </Col>
+                                            </Row>
+                                        )}
+                                    </Form>
                                 </Card>
                             </Col>
 
