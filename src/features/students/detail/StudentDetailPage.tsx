@@ -83,7 +83,7 @@ export default function StudentDetailPage() {
 
     const creditSummary = student
         ? [
-              student.required_credits,
+              student.registered_credits,
               student.passed_credits,
               student.not_passed_credits,
               student.overed_credits,

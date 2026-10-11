@@ -107,14 +107,14 @@ export default function StudentTable({
             align: 'center',
             width: 260,
             render: (_, record) => {
-                const requiredCredits = record.required_credits ?? '-'
+                const registeredCredits = record.registered_credits ?? '-'
                 const passedCredits = record.passed_credits ?? '-'
                 const notPassedCredits = record.not_passed_credits ?? '-'
                 const overedCredits = record.overed_credits ?? '-'
 
                 return (
                     <Space>
-                        <Tag color="default">{requiredCredits}</Tag>
+                        <Tag color="default">{registeredCredits}</Tag>
                         <Tag color="green">{passedCredits}</Tag>
                         <Tag color="red">{notPassedCredits}</Tag>
                         <Tag color="orange">{overedCredits}</Tag>

@@ -12,6 +12,7 @@ export interface StudentListResponse {
     curriculum_plan_name: string | null
 
     required_credits: number | null
+    registered_credits: number | null
     passed_credits: number | null
     not_passed_credits: number | null
     overed_credits: number | null
