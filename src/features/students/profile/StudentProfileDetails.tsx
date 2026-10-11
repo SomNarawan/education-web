@@ -17,6 +17,7 @@ import {
 import type { DescriptionsProps } from 'antd'
 import type { ReactNode } from 'react'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
+import GuardianPhoneHistory from '../GuardianPhoneHistory'
 
 const { Text } = Typography
 
@@ -33,14 +34,14 @@ interface ProfileCardProps {
     column?: DescriptionsProps['column']
 }
 
-function displayValue(value: string | number | null | undefined) {
+function displayValue(value: ReactNode) {
     return value === null || value === undefined || value === '' ? '-' : value
 }
 
 function createItem(
     key: string,
     label: string,
-    value: string | number | null | undefined,
+    value: ReactNode,
 ): DescriptionItem {
     return {
         key,
@@ -137,7 +138,14 @@ export default function StudentProfileDetails({
             'ความสัมพันธ์',
             student.guardian_relationship_name,
         ),
-        createItem('guardianPhone', 'เบอร์โทรศัพท์', student.guardian_phone),
+        createItem(
+            'guardianPhone',
+            'เบอร์โทรศัพท์',
+            <GuardianPhoneHistory
+                currentPhone={student.guardian_phone}
+                histories={student.guardian_phone_histories}
+            />,
+        ),
     ]
 
     return (

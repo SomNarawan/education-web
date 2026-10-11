@@ -1,3 +1,12 @@
+export interface GuardianPhoneHistory {
+    id: number
+    student_id: number
+    old_phone: string | null
+    new_phone: string | null
+    updated_by: string
+    updated_at: string
+}
+
 export interface StudentDetailResponse {
     id: number
     student_code: string | null
@@ -40,6 +49,7 @@ export interface StudentDetailResponse {
     guardian_relationship_id: number | null
     guardian_relationship_name: string | null
     guardian_phone: string | null
+    guardian_phone_histories: GuardianPhoneHistory[]
 
     high_school_id: number | null
     high_school_name: string | null

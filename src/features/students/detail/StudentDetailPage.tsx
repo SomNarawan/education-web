@@ -34,6 +34,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import ResetStudentGradesModal from './ResetStudentGradesModal'
 import type { ResetStudentGradesSelection } from './ResetStudentGradesModal'
 import { OTHER_NOTE_NAME } from '../notes/noteConstants'
+import GuardianPhoneHistory from '../GuardianPhoneHistory'
 
 interface NoteFormValues {
     note_type_id: number
@@ -309,7 +310,16 @@ export default function StudentDetailPage() {
                                             />
                                             <DetailItem
                                                 label="เบอร์โทรศัพท์ผู้ปกครอง"
-                                                value={student.guardian_phone}
+                                                value={
+                                                    <GuardianPhoneHistory
+                                                        currentPhone={
+                                                            student.guardian_phone
+                                                        }
+                                                        histories={
+                                                            student.guardian_phone_histories
+                                                        }
+                                                    />
+                                                }
                                             />
                                             <DetailItem
                                                 label="สถานะนิสิต"
