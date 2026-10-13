@@ -1,6 +1,8 @@
-export type CurriculumCategoryType = 'category' | 'subcategory' | 'group'
-
-export type CurriculumCategoryApiType = CurriculumCategoryType | 'subject'
+export type CurriculumCategoryType =
+    | 'category'
+    | 'subcategory'
+    | 'group'
+    | 'subject'
 
 export type CurriculumCourseSourceType =
     | 'manual'
@@ -18,18 +20,6 @@ export interface CurriculumCategory {
     name_short_en: string | null
     course_source_type?: CurriculumCourseSourceType | null
     children: CurriculumCategory[]
-}
-
-export interface CurriculumCategoryApiNode {
-    id: number
-    category_type: CurriculumCategoryApiType
-    code: string | null
-    name_th: string | null
-    name_short_th: string | null
-    name_en: string | null
-    name_short_en: string | null
-    course_source_type?: CurriculumCourseSourceType | null
-    children: CurriculumCategoryApiNode[]
 }
 
 export interface CurriculumEnrollment {
