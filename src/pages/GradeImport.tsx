@@ -356,7 +356,7 @@ export default function GradeImport() {
                 align: 'center',
                 fixed: 'right',
                 render: (value: string | null, record) =>
-                    value ? (
+                    value && !canDownloadImportResult(record) ? (
                         <Button
                             type="text"
                             danger
