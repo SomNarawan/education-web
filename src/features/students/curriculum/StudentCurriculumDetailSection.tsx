@@ -11,7 +11,6 @@ import CustomTable from '../../../components/custom/CustomTable'
 import type {
     CurriculumCategory,
     CurriculumCourseRow,
-    CurriculumEnrollmentRecord,
 } from '../../../types/CurriculumDetail'
 import type {
     CourseTableProps,
@@ -20,10 +19,6 @@ import type {
     TreeSelection,
 } from './StudentCurriculumDetailSection.types'
 import { useStudentCurriculumDetail } from './useStudentCurriculumDetail'
-
-function getCourseCategory(row: CurriculumEnrollmentRecord) {
-    return row.course_category || row.curriculum_division || 'ไม่ระบุหมวดวิชา'
-}
 
 const columns: ColumnsType<CurriculumCourseRow> = [
     {
@@ -106,81 +101,111 @@ function getCategoryName(category: CurriculumCategory) {
     )
 }
 
+function normalizeCourseValue(value: string | null | undefined) {
+    return value?.trim().toLowerCase() ?? ''
+}
+
+function getSubjectRowKeys(
+    subject: CurriculumCategory,
+    rows: CurriculumCourseRow[],
+): Set<string> {
+    const subjectCode = normalizeCourseValue(subject.code)
+    const subjectNames = new Set(
+        [
+            subject.name_th,
+            subject.name_short_th,
+            subject.name_en,
+            subject.name_short_en,
+        ]
+            .map(normalizeCourseValue)
+            .filter(Boolean),
+    )
+
+    const matchingRowKeys = rows
+        .filter((row) => {
+            const matchesCode =
+                subjectCode !== '' &&
+                normalizeCourseValue(row.course_code) === subjectCode
+            const normalizedCourseName = normalizeCourseValue(row.course_name)
+            const matchesName =
+                normalizedCourseName !== '' &&
+                subjectNames.has(normalizedCourseName)
+
+            return matchesCode || matchesName
+        })
+        .map((row) => row.key)
+
+    return new Set(matchingRowKeys)
+}
+
+function isSubject(node: CurriculumCategory) {
+    return node.category_type === 'subject'
+}
+
+function addRowKeys(target: Set<string>, source: Set<string>) {
+    source.forEach((key) => target.add(key))
+}
+
 function buildCurriculumTree(
     categories: CurriculumCategory[],
     rows: CurriculumCourseRow[],
 ): CurriculumTreeData {
     const rowKeysByNode = new Map<number, Set<string>>()
     const pathByNode = new Map<number, string[]>()
-    let generalEducationId: number | undefined
-    const getCategoryRows = (
-        category: CurriculumCategory,
-        candidateRows: CurriculumCourseRow[],
-    ) => {
-        const names = [category.name_th, category.name_en].filter(
-            (name): name is string => Boolean(name?.trim()),
-        )
 
-        return candidateRows.filter((row) => {
-            if (category.course_source_type === 'non_course_requirement') {
-                return names.includes(row.course_requirement ?? '')
-            }
-
-            if (category.category_type === 'group') {
-                return names.includes(row.course_group ?? '')
-            }
-
-            if (category.category_type === 'subcategory') {
-                return names.includes(row.course_sub_category ?? '')
-            }
-
-            return (
-                names.includes(getCourseCategory(row)) ||
-                names.includes(row.course_sub_category ?? '')
-            )
-        })
-    }
     const buildCategoryNode = (
         category: CurriculumCategory,
-        candidateRows: CurriculumCourseRow[],
         parentPath: string[] = [],
-    ): CurriculumTreeData['nodes'][number] => {
+    ): {
+        node: CurriculumTreeData['nodes'][number]
+        rowKeys: Set<string>
+    } => {
         const categoryName = getCategoryName(category)
         const nodePath = [...parentPath, categoryName]
-        if (
-            category.code === 'GE' ||
-            category.name_th === 'หมวดวิชาศึกษาทั่วไป'
-        ) {
-            generalEducationId = category.id
-        }
-        const categoryRows = getCategoryRows(category, candidateRows)
-        const childNodes = category.children.map((child) =>
-            buildCategoryNode(child, categoryRows, nodePath),
-        )
+        const rowKeys = new Set<string>()
+        const childNodes: CurriculumTreeData['nodes'] = []
 
-        rowKeysByNode.set(
-            category.id,
-            new Set(categoryRows.map((row) => row.key)),
-        )
+        for (const child of category.children) {
+            if (isSubject(child)) {
+                addRowKeys(rowKeys, getSubjectRowKeys(child, rows))
+                continue
+            }
+
+            const childResult = buildCategoryNode(child, nodePath)
+            childNodes.push(childResult.node)
+            addRowKeys(rowKeys, childResult.rowKeys)
+        }
+
         pathByNode.set(category.id, nodePath)
+        rowKeysByNode.set(category.id, rowKeys)
 
         return {
-            key: category.id,
-            title: categoryName,
-            icon:
-                category.category_type === 'category' ? (
-                    <BookOutlined />
-                ) : (
-                    <FolderOutlined />
-                ),
-            children: childNodes,
+            node: {
+                key: category.id,
+                title: categoryName,
+                icon:
+                    parentPath.length === 0 ? (
+                        <BookOutlined />
+                    ) : (
+                        <FolderOutlined />
+                    ),
+                children: childNodes,
+            },
+            rowKeys,
         }
     }
-    const nodes = categories.map((category) =>
-        buildCategoryNode(category, rows),
-    )
 
-    return { nodes, rowKeysByNode, pathByNode, generalEducationId }
+    const nodes = categories
+        .filter((category) => !isSubject(category))
+        .map((category) => buildCategoryNode(category).node)
+    const firstNodeId = nodes.length > 0 ? Number(nodes[0].key) : undefined
+
+    return {
+        nodes,
+        rowKeysByNode,
+        pathByNode,
+        defaultNodeId: firstNodeId,
+    }
 }
 
 export default function StudentCurriculumDetailSection({
@@ -200,7 +225,7 @@ export default function StudentCurriculumDetailSection({
         treeSelection?.studentCode === studentCode &&
         curriculumTree.rowKeysByNode.has(treeSelection.categoryId)
             ? treeSelection.categoryId
-            : curriculumTree.generalEducationId
+            : curriculumTree.defaultNodeId
 
     const displayedRows = useMemo(() => {
         if (!selectedCategoryId) {

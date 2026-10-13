@@ -15,7 +15,7 @@ export interface CurriculumTreeData {
     nodes: DataNode[]
     rowKeysByNode: Map<number, Set<string>>
     pathByNode: Map<number, string[]>
-    generalEducationId?: number
+    defaultNodeId?: number
 }
 
 export interface TreeSelection {

@@ -1,11 +1,7 @@
 import axios from 'axios'
 import api from '../config/axios'
 import type { ApiErrorResponse, ApiResponse } from '../types/ApiResponse'
-import type {
-    CurriculumCategory,
-    CurriculumCategoryApiNode,
-    CurriculumCategoryType,
-} from '../types/CurriculumDetail'
+import type { CurriculumCategory } from '../types/CurriculumDetail'
 import type { CurriculumPlanCourseList } from '../types/CurriculumPlanCourse'
 import { invalidateListOfValueCache } from './listOfValueService'
 import type {
@@ -144,56 +140,14 @@ export async function getCurriculumCategories(
     studyPlanId: number,
 ): Promise<CurriculumCategory[]> {
     try {
-        const response = await api.get<ApiResponse<CurriculumCategoryApiNode[]>>(
+        const response = await api.get<ApiResponse<CurriculumCategory[]>>(
             '/curriculum-categories',
             {
                 params: { study_plan_id: studyPlanId },
             },
         )
 
-        const categoryTypes: CurriculumCategoryType[] = [
-            'category',
-            'subcategory',
-            'group',
-        ]
-        const mapCategory = (
-            node: CurriculumCategoryApiNode,
-        ): CurriculumCategory | null => {
-            if (!categoryTypes.includes(node.category_type as CurriculumCategoryType)) {
-                return null
-            }
-
-            const categoryType = node.category_type as CurriculumCategoryType
-
-            return {
-                id: node.id,
-                category_type: categoryType,
-                code: node.code,
-                name_th: node.name_th,
-                name_short_th: node.name_short_th,
-                name_en: node.name_en,
-                name_short_en: node.name_short_en,
-                course_source_type: node.course_source_type ?? null,
-                children:
-                    categoryType === 'group'
-                        ? []
-                        : node.children
-                              .map(mapCategory)
-                              .filter(
-                                  (
-                                      category,
-                                  ): category is CurriculumCategory =>
-                                      category !== null,
-                              ),
-            }
-        }
-
         return response.data.data
-            .map(mapCategory)
-            .filter(
-                (category): category is CurriculumCategory =>
-                    category !== null,
-            )
     } catch (error) {
         if (axios.isAxiosError<ApiErrorResponse>(error)) {
             if (error.response?.status === 422) {
