@@ -7,6 +7,7 @@ import { Button, Empty, Modal, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import CustomTable from '../../../components/custom/CustomTable'
+import { canDownloadImportResult } from '../../imports/importUtils'
 import { getSystemDepartments } from '../../../services/listOfValueService'
 import type {
     StudentImportHistory,
@@ -49,13 +50,8 @@ function getDownloadButton(record: StudentImportHistory) {
         }
     }
 
-    const canDownload =
-        record.status === 'completed' ||
-        record.status === 'completed_with_errors' ||
-        record.status === 'failed'
-
     return {
-        disabled: !canDownload,
+        disabled: !canDownloadImportResult(record),
         label: 'ดาวน์โหลดผลลัพธ์',
         icon: <DownloadOutlined />,
     }

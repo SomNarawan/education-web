@@ -6,10 +6,8 @@ import type {
     StudentImportHistory,
     StudentImportResult,
 } from '../types/StudentImport'
-import {
-    getStudentImportFileName,
-    parseStudentImportSummary,
-} from '../features/students/import/studentImportUtils'
+import { getDownloadFileName } from '../features/imports/importUtils'
+import { parseStudentImportSummary } from '../features/students/import/studentImportUtils'
 
 export async function getStudentImportHistory(): Promise<
     StudentImportHistory[]
@@ -62,7 +60,7 @@ export async function downloadStudentImportResult(
 
     return {
         blob: response.data,
-        fileName: getStudentImportFileName(
+        fileName: getDownloadFileName(
             response.headers,
             `student_import_result_${importId}.xlsx`,
         ),
@@ -78,7 +76,7 @@ export async function downloadStudentImportTemplate(): Promise<
 
     return {
         blob: response.data,
-        fileName: getStudentImportFileName(
+        fileName: getDownloadFileName(
             response.headers,
             'Import Student Template.xlsx',
         ),

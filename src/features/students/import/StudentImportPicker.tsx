@@ -22,6 +22,11 @@ import type { UploadProps } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
 import { renderRequiredFormMark } from '../../../components/custom/RequiredFormMark'
+import {
+    downloadBlob,
+    parseImportError,
+    validateXlsxImportFile,
+} from '../../imports/importUtils'
 import { useAuth } from '../../../hooks/useAuth'
 import {
     getCurriculums,
@@ -34,12 +39,7 @@ import {
 } from '../../../services/studentImportService'
 import type { Curriculum, StudyPlan } from '../../../types/MasterData'
 import type { ListOfValue } from '../../../types/ListOfValue'
-import {
-    downloadStudentImportBlob,
-    parseStudentImportError,
-    runStudentImportOnce,
-    validateStudentImportFile,
-} from './studentImportUtils'
+import { runStudentImportOnce } from './studentImportUtils'
 
 const excelMimeType =
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -180,11 +180,14 @@ export default function StudentImportPicker({
         try {
             setTemplateDownloading(true)
             const result = await downloadStudentImportTemplate()
-            downloadStudentImportBlob(result.blob, result.fileName)
+            downloadBlob(result.blob, result.fileName)
             message.success('ดาวน์โหลดไฟล์ Template สำเร็จ')
         } catch (error) {
             console.error('Unable to download student import template', error)
-            const parsedError = await parseStudentImportError(error)
+            const parsedError = await parseImportError(
+                error,
+                'ดาวน์โหลดไฟล์ Template นักศึกษาไม่สำเร็จ',
+            )
             message.error(parsedError.message)
 
             if (parsedError.status === 401) {
@@ -196,7 +199,10 @@ export default function StudentImportPicker({
     }
 
     const handleImport = async () => {
-        const validationError = validateStudentImportFile(selectedFile)
+        const validationError = validateXlsxImportFile(
+            selectedFile,
+            'กรุณาเลือกไฟล์ .xlsx ที่ต้องการนำเข้า',
+        )
         setFileError(validationError)
 
         let values: StudentImportFormValues
@@ -263,7 +269,10 @@ export default function StudentImportPicker({
                 refreshHistory = true
             } catch (error) {
                 console.error('Unable to import students', error)
-                const parsedError = await parseStudentImportError(error)
+                const parsedError = await parseImportError(
+                    error,
+                    'นำเข้านักศึกษาไม่สำเร็จ',
+                )
                 message.error(parsedError.message)
                 refreshHistory = parsedError.status !== 401
 
@@ -281,7 +290,10 @@ export default function StudentImportPicker({
     }
 
     const beforeUpload: UploadProps['beforeUpload'] = (file) => {
-        const validationError = validateStudentImportFile(file)
+        const validationError = validateXlsxImportFile(
+            file,
+            'กรุณาเลือกไฟล์ .xlsx ที่ต้องการนำเข้า',
+        )
 
         if (validationError) {
             setFileError(validationError)

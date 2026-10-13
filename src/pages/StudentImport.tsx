@@ -4,24 +4,16 @@ import { useCallback, useEffect, useState } from 'react'
 import StudentImportHistoryTable from '../features/students/import/StudentImportHistoryTable'
 import StudentImportPicker from '../features/students/import/StudentImportPicker'
 import {
-    downloadStudentImportBlob,
-    parseStudentImportError,
-} from '../features/students/import/studentImportUtils'
+    canDownloadImportResult,
+    downloadBlob,
+    getImportResultDownloadErrorMessage,
+    parseImportError,
+} from '../features/imports/importUtils'
 import {
     downloadStudentImportResult,
     getStudentImportHistory,
 } from '../services/studentImportService'
 import type { StudentImportHistory } from '../types/StudentImport'
-
-function getDownloadErrorMessage(status: number | undefined, message: string) {
-    const statusMessages: Record<number, string> = {
-        401: 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
-        404: 'ไม่พบไฟล์ผลลัพธ์ของรายการ Import นี้',
-        422: 'ไฟล์ผลลัพธ์ยังไม่พร้อมให้ดาวน์โหลด กรุณาลองใหม่ภายหลัง',
-    }
-
-    return statusMessages[status ?? 0] ?? message
-}
 
 export default function StudentImport() {
     const [history, setHistory] = useState<StudentImportHistory[]>([])
@@ -39,7 +31,10 @@ export default function StudentImport() {
             setHistory(importHistory)
         } catch (error) {
             console.error('Unable to load student import history', error)
-            const parsedError = await parseStudentImportError(error)
+            const parsedError = await parseImportError(
+                error,
+                'โหลดประวัติการ Import นักศึกษาไม่สำเร็จ',
+            )
             setHistoryError(parsedError.message)
         } finally {
             setHistoryLoading(false)
@@ -54,27 +49,23 @@ export default function StudentImport() {
 
     const handleDownload = useCallback(
         async (record: StudentImportHistory) => {
-            if (
-                record.total_count === 0 ||
-                ![
-                    'completed',
-                    'completed_with_errors',
-                    'failed',
-                ].includes(record.status)
-            ) {
+            if (!canDownloadImportResult(record)) {
                 return
             }
 
             try {
                 setDownloadingId(record.id)
                 const result = await downloadStudentImportResult(record.id)
-                downloadStudentImportBlob(result.blob, result.fileName)
+                downloadBlob(result.blob, result.fileName)
                 message.success('ดาวน์โหลดไฟล์ผลลัพธ์สำเร็จ')
             } catch (error) {
                 console.error('Unable to download student import result', error)
-                const parsedError = await parseStudentImportError(error)
+                const parsedError = await parseImportError(
+                    error,
+                    'ดาวน์โหลดไฟล์ผลลัพธ์ไม่สำเร็จ',
+                )
                 message.error(
-                    getDownloadErrorMessage(
+                    getImportResultDownloadErrorMessage(
                         parsedError.status,
                         parsedError.message,
                     ),

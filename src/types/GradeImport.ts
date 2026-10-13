@@ -23,3 +23,8 @@ export interface GradeImportHistory {
     status: GradeImportStatus
     error_message: string | null
 }
+
+export interface GradeImportDownload {
+    blob: Blob
+    fileName: string
+}

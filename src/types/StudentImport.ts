@@ -39,14 +39,3 @@ export interface StudentImportDownload {
     blob: Blob
     fileName: string
 }
-
-export interface StudentImportApiErrorBody {
-    message?: string
-    errors?: Record<string, string | string[]> | null
-}
-
-export interface StudentImportError {
-    message: string
-    validationErrors: string[]
-    status?: number
-}

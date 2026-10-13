@@ -5,6 +5,7 @@ import {
     ExclamationCircleOutlined,
     FileExcelOutlined,
     InboxOutlined,
+    LoadingOutlined,
     ReloadOutlined,
     UploadOutlined,
 } from '@ant-design/icons'
@@ -31,13 +32,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import ListOfValueSelect from '../components/custom/ListOfValueSelect'
 import { renderRequiredFormMark } from '../components/custom/RequiredFormMark'
 import {
+    canDownloadImportResult,
+    downloadBlob,
+    getImportResultDownloadErrorMessage,
+    parseImportError,
+    validateXlsxImportFile,
+} from '../features/imports/importUtils'
+import {
     downloadGradeImportTemplate,
+    downloadGradeImportResult,
     getGradeImportHistory,
     importGrades,
 } from '../services/gradeImportService'
-import {
-    downloadStudentImportBlob,
-} from '../features/students/import/studentImportUtils'
 import { getCurriculums } from '../services/listOfValueService'
 import type {
     GradeImportHistory,
@@ -46,7 +52,6 @@ import type {
 import type { Curriculum } from '../types/MasterData'
 import { formatThaiDateTime } from '../utils/dateFormat'
 
-const MAX_GRADE_IMPORT_FILE_SIZE = 20 * 1024 * 1024
 const excelMimeType =
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
@@ -68,20 +73,6 @@ interface ApiErrorBody {
 
 interface GradeImportFormValues {
     curriculumId: number
-}
-
-function validateGradeImportFile(file: File | null): string | null {
-    if (!file) return 'กรุณาเลือกไฟล์ผลการเรียนที่ต้องการนำเข้า'
-
-    if (!/\.xlsx$/i.test(file.name)) {
-        return 'รองรับเฉพาะไฟล์นามสกุล .xlsx เท่านั้น'
-    }
-
-    if (file.size > MAX_GRADE_IMPORT_FILE_SIZE) {
-        return 'ไฟล์ต้องมีขนาดไม่เกิน 20 MB'
-    }
-
-    return null
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -131,6 +122,7 @@ export default function GradeImport() {
     const [historyLoading, setHistoryLoading] = useState(false)
     const [importing, setImporting] = useState(false)
     const [templateDownloading, setTemplateDownloading] = useState(false)
+    const [downloadingId, setDownloadingId] = useState<number | null>(null)
     const [errorRecord, setErrorRecord] = useState<GradeImportHistory | null>(
         null,
     )
@@ -198,7 +190,10 @@ export default function GradeImport() {
     }, [hasRunningJobs, loadHistory])
 
     const beforeUpload: UploadProps['beforeUpload'] = (file) => {
-        const validationError = validateGradeImportFile(file)
+        const validationError = validateXlsxImportFile(
+            file,
+            'กรุณาเลือกไฟล์ผลการเรียนที่ต้องการนำเข้า',
+        )
 
         if (validationError) {
             setFileError(validationError)
@@ -214,7 +209,7 @@ export default function GradeImport() {
         try {
             setTemplateDownloading(true)
             const blob = await downloadGradeImportTemplate()
-            downloadStudentImportBlob(blob, 'Import Grade Template.xlsx')
+            downloadBlob(blob, 'Import Grade Template.xlsx')
             message.success('ดาวน์โหลดไฟล์ Template สำเร็จ')
         } catch (error) {
             console.error('Unable to download grade import template', error)
@@ -227,7 +222,10 @@ export default function GradeImport() {
     }
 
     const handleImport = async () => {
-        const validationError = validateGradeImportFile(selectedFile)
+        const validationError = validateXlsxImportFile(
+            selectedFile,
+            'กรุณาเลือกไฟล์ผลการเรียนที่ต้องการนำเข้า',
+        )
         setFileError(validationError)
 
         let values: GradeImportFormValues
@@ -267,6 +265,36 @@ export default function GradeImport() {
             setImporting(false)
         }
     }
+
+    const handleDownload = useCallback(
+        async (record: GradeImportHistory) => {
+            if (!canDownloadImportResult(record)) {
+                return
+            }
+
+            try {
+                setDownloadingId(record.id)
+                const result = await downloadGradeImportResult(record.id)
+                downloadBlob(result.blob, result.fileName)
+                message.success('ดาวน์โหลดไฟล์ผลลัพธ์สำเร็จ')
+            } catch (error) {
+                console.error('Unable to download grade import result', error)
+                const parsedError = await parseImportError(
+                    error,
+                    'ดาวน์โหลดไฟล์ผลลัพธ์ไม่สำเร็จ',
+                )
+                message.error(
+                    getImportResultDownloadErrorMessage(
+                        parsedError.status,
+                        parsedError.message,
+                    ),
+                )
+            } finally {
+                setDownloadingId(null)
+            }
+        },
+        [],
+    )
 
     const columns = useMemo<ColumnsType<GradeImportHistory>>(
         () => [
@@ -340,8 +368,43 @@ export default function GradeImport() {
                         '-'
                     ),
             },
+            {
+                title: 'ผลลัพธ์',
+                key: 'result',
+                width: 190,
+                align: 'center',
+                fixed: 'right',
+                render: (_, record) => {
+                    const isRunning =
+                        record.status === 'queued' ||
+                        record.status === 'processing'
+                    const canDownload = canDownloadImportResult(record)
+
+                    return (
+                        <Button
+                            type="link"
+                            icon={
+                                isRunning ? (
+                                    <LoadingOutlined />
+                                ) : (
+                                    <DownloadOutlined />
+                                )
+                            }
+                            disabled={!canDownload}
+                            loading={downloadingId === record.id}
+                            onClick={() => void handleDownload(record)}
+                        >
+                            {isRunning
+                                ? 'กำลังประมวลผล'
+                                : canDownload
+                                  ? 'ดาวน์โหลดผลลัพธ์'
+                                  : 'ไม่มีไฟล์ผลลัพธ์'}
+                        </Button>
+                    )
+                },
+            },
         ],
-        [],
+        [downloadingId, handleDownload],
     )
 
     const uploadProps: UploadProps = {
@@ -503,7 +566,7 @@ export default function GradeImport() {
                     loading={historyLoading}
                     pagination={{ pageSize: 10, showSizeChanger: false }}
                     tableLayout="fixed"
-                    scroll={{ x: 1140 }}
+                    scroll={{ x: 1330 }}
                     locale={{
                         emptyText: (
                             <Empty
