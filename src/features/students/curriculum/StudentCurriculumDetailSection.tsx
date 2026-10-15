@@ -19,6 +19,7 @@ import type {
     TreeSelection,
 } from './StudentCurriculumDetailSection.types'
 import { useStudentCurriculumDetail } from './useStudentCurriculumDetail'
+import { getCurriculumCategoryRows } from './getCurriculumCategoryRows'
 
 const columns: ColumnsType<CurriculumCourseRow> = [
     {
@@ -101,49 +102,8 @@ function getCategoryName(category: CurriculumCategory) {
     )
 }
 
-function normalizeCourseValue(value: string | null | undefined) {
-    return value?.trim().toLowerCase() ?? ''
-}
-
-function getSubjectRowKeys(
-    subject: CurriculumCategory,
-    rows: CurriculumCourseRow[],
-): Set<string> {
-    const subjectCode = normalizeCourseValue(subject.code)
-    const subjectNames = new Set(
-        [
-            subject.name_th,
-            subject.name_short_th,
-            subject.name_en,
-            subject.name_short_en,
-        ]
-            .map(normalizeCourseValue)
-            .filter(Boolean),
-    )
-
-    const matchingRowKeys = rows
-        .filter((row) => {
-            const matchesCode =
-                subjectCode !== '' &&
-                normalizeCourseValue(row.course_code) === subjectCode
-            const normalizedCourseName = normalizeCourseValue(row.course_name)
-            const matchesName =
-                normalizedCourseName !== '' &&
-                subjectNames.has(normalizedCourseName)
-
-            return matchesCode || matchesName
-        })
-        .map((row) => row.key)
-
-    return new Set(matchingRowKeys)
-}
-
 function isSubject(node: CurriculumCategory) {
     return node.category_type === 'subject'
-}
-
-function addRowKeys(target: Set<string>, source: Set<string>) {
-    source.forEach((key) => target.add(key))
 }
 
 function buildCurriculumTree(
@@ -155,49 +115,46 @@ function buildCurriculumTree(
 
     const buildCategoryNode = (
         category: CurriculumCategory,
+        candidateRows: CurriculumCourseRow[],
         parentPath: string[] = [],
-    ): {
-        node: CurriculumTreeData['nodes'][number]
-        rowKeys: Set<string>
-    } => {
+    ): CurriculumTreeData['nodes'][number] => {
         const categoryName = getCategoryName(category)
         const nodePath = [...parentPath, categoryName]
-        const rowKeys = new Set<string>()
-        const childNodes: CurriculumTreeData['nodes'] = []
-
-        for (const child of category.children) {
-            if (isSubject(child)) {
-                addRowKeys(rowKeys, getSubjectRowKeys(child, rows))
-                continue
-            }
-
-            const childResult = buildCategoryNode(child, nodePath)
-            childNodes.push(childResult.node)
-            addRowKeys(rowKeys, childResult.rowKeys)
-        }
+        const categoryRows = getCurriculumCategoryRows(category, candidateRows)
+        const rowKeys = new Set(categoryRows.map((row) => row.key))
+        // A structural heading can have no matching rows of its own.
+        const childCandidateRows = categoryRows.length > 0 ? categoryRows : candidateRows
+        const childNodes = category.children
+            .filter((child) => !isSubject(child))
+            .map((child) => {
+                const childNode = buildCategoryNode(
+                    child,
+                    childCandidateRows,
+                    nodePath,
+                )
+                rowKeysByNode.get(child.id)?.forEach((key) => rowKeys.add(key))
+                return childNode
+            })
 
         pathByNode.set(category.id, nodePath)
         rowKeysByNode.set(category.id, rowKeys)
 
         return {
-            node: {
-                key: category.id,
-                title: categoryName,
-                icon:
-                    parentPath.length === 0 ? (
-                        <BookOutlined />
-                    ) : (
-                        <FolderOutlined />
-                    ),
-                children: childNodes,
-            },
-            rowKeys,
+            key: category.id,
+            title: categoryName,
+            icon:
+                parentPath.length === 0 ? (
+                    <BookOutlined />
+                ) : (
+                    <FolderOutlined />
+                ),
+            children: childNodes,
         }
     }
 
     const nodes = categories
         .filter((category) => !isSubject(category))
-        .map((category) => buildCategoryNode(category).node)
+        .map((category) => buildCategoryNode(category, rows))
     const firstNodeId = nodes.length > 0 ? Number(nodes[0].key) : undefined
 
     return {
