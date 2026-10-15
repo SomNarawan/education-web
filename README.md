@@ -53,6 +53,24 @@ npm run docker:up
 คนละค่า สามารถหยุดระบบด้วย `npm run docker:down` และกำหนด API URL ก่อนรันได้ด้วย
 ตัวแปร `VITE_API_URL` (ค่าเริ่มต้นคือ `http://localhost:8000/api`)
 
+### Deploy บน server (2 ที่)
+
+- เว็บเจ้าหน้าที่ (office.eng.kps.ku.ac.th, :3008) — build จาก `docker-compose.yml` ใน
+  `education-api` (ต้องมีโฟลเดอร์ `education-web` อยู่ข้าง ๆ) ดูขั้นตอนใน README ของ `education-api`
+- เว็บนิสิต (eng.kps.ku.ac.th, :3007):
+
+  ```sh
+  docker compose -f docker-compose.public.yml up -d --build
+  ```
+
+  เบราว์เซอร์เรียก `<base path>/api/*` ของเว็บนิสิตเอง แล้ว nginx ใน container ส่งต่อไปที่
+  `WEB_PUBLIC_API_UPSTREAM` (ค่าเริ่มต้น `https://office.eng.kps.ku.ac.th/kukps-eng-education-ssd-api`)
+  ค่าที่เปลี่ยนได้: `WEB_PUBLIC_API_UPSTREAM`, `WEB_PUBLIC_BASE_PATH`,
+  `WEB_PUBLIC_MOCK_LOGIN_ENABLED`, `WEB_PUBLIC_EXTERNAL_PORT`
+
+ตรวจสถานะ: `<เว็บ>/healthz` (container เว็บ) และ
+`https://eng.kps.ku.ac.th/kukps-eng-education-ssd-public/api/health` (ทั้งเส้นทาง เว็บนิสิต → API → ฐานข้อมูล)
+
 ### สิ่งที่ต้องมี
 
 - Node.js 20 ขึ้นไป และ npm
