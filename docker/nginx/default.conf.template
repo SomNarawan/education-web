@@ -1,4 +1,4 @@
-# The base-path rewrite and service name placeholders below are filled in by the Dockerfile.
+# The base-path rewrite and service name placeholders below are filled in by Dockerfile.private / Dockerfile.public.
 # /etc/nginx/api-proxy/ is filled in at container start by docker/nginx/40-api-proxy.sh.
 
 gzip on;

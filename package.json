@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:staff": "vite --mode staff --port 3001",
-    "dev:student": "vite --mode student --port 3002",
+    "dev:staff": "vite --mode private --port 3001",
+    "dev:student": "vite --mode public --port 3002",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
