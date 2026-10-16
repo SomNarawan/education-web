@@ -3,11 +3,11 @@ services:
     image: education-web-staff
     build:
       context: .
+      dockerfile: Dockerfile.private
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
         VITE_MOCK_LOGIN_ENABLED: ${VITE_MOCK_LOGIN_ENABLED:-true}
         VITE_BASE_PATH: ""
-        VITE_APP_MODE: staff
     ports:
       - "3001:80"
 
@@ -15,10 +15,10 @@ services:
     image: education-web-student
     build:
       context: .
+      dockerfile: Dockerfile.public
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
         VITE_MOCK_LOGIN_ENABLED: "false"
         VITE_BASE_PATH: ""
-        VITE_APP_MODE: student
     ports:
       - "3002:80"

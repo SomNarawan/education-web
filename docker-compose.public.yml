@@ -20,8 +20,8 @@ services:
     image: kukps-eng-education-ssd-web-public:latest
     build:
       context: .
+      dockerfile: Dockerfile.public
       args:
-        VITE_APP_MODE: student
         VITE_BASE_PATH: ${WEB_PUBLIC_BASE_PATH:-/kukps-eng-education-ssd-public}
         VITE_API_URL: ${WEB_PUBLIC_BASE_PATH:-/kukps-eng-education-ssd-public}/api
         # TODO: set to false once real SSO is wired up

@@ -4,7 +4,7 @@ export type AppMode = 'staff' | 'student'
 
 export const appMode: AppMode =
     import.meta.env.VITE_APP_MODE === 'student' ||
-    import.meta.env.MODE === 'student'
+    import.meta.env.MODE === 'public'
         ? 'student'
         : 'staff'
 

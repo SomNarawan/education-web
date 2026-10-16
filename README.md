@@ -49,15 +49,16 @@ npm run docker:up
 พอร์ต Staff จะเปิดหน้า Mock Login สำหรับบุคลากร ส่วนพอร์ต Student
 จะเปิดหน้า Mock Login ที่มีรายชื่อนิสิตจำลองให้เลือกก่อนเข้าใช้งาน
 
-ทั้งสอง service ใช้ source code ชุดเดียวกัน แต่ build ด้วย `VITE_APP_MODE`
-คนละค่า สามารถหยุดระบบด้วย `npm run docker:down` และกำหนด API URL ก่อนรันได้ด้วย
+ทั้งสอง service ใช้ source code ชุดเดียวกัน แต่ build ด้วย Dockerfile คนละไฟล์
+(`Dockerfile.private` และ `Dockerfile.public` ซึ่งกำหนด `VITE_APP_MODE` ไว้ในตัว)
+สามารถหยุดระบบด้วย `npm run docker:down` และกำหนด API URL ก่อนรันได้ด้วย
 ตัวแปร `VITE_API_URL` (ค่าเริ่มต้นคือ `http://localhost:8000/api`)
 
 ### Deploy บน server (2 ที่)
 
-- เว็บเจ้าหน้าที่ (office.eng.kps.ku.ac.th, :3008) — build จาก `docker-compose.yml` ใน
+- เว็บเจ้าหน้าที่ (office.eng.kps.ku.ac.th, :3008) — build จาก `Dockerfile.private` ผ่าน `docker-compose.yml` ใน
   `education-api` (ต้องมีโฟลเดอร์ `education-web` อยู่ข้าง ๆ) ดูขั้นตอนใน README ของ `education-api`
-- เว็บนิสิต (eng.kps.ku.ac.th, :3007):
+- เว็บนิสิต (eng.kps.ku.ac.th, :3007) — build จาก `Dockerfile.public`:
 
   ```sh
   docker compose -f docker-compose.public.yml up -d --build
@@ -89,9 +90,9 @@ npm ci
 
 ### ตั้งค่า Environment
 
-ไฟล์ `.env.staff` และ `.env.student` ที่อยู่ใน repository เป็นค่าเริ่มต้นสำหรับ
+ไฟล์ `.env.private` และ `.env.public` ที่อยู่ใน repository เป็นค่าเริ่มต้นสำหรับ
 `npm run dev:staff` และ `npm run dev:student` ตามลำดับ หากต้อง override เฉพาะเครื่อง
-ให้สร้าง `.env.staff.local` หรือ `.env.student.local` (ไฟล์ `*.local` ถูก ignore โดย Git)
+ให้สร้าง `.env.private.local` หรือ `.env.public.local` (ไฟล์ `*.local` ถูก ignore โดย Git)
 
 ```env
 VITE_API_URL=http://localhost:8000/api
