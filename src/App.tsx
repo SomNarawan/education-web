@@ -79,7 +79,26 @@ function AppModeRoute({ mode, children }: AppModeRouteProps) {
     return appMode === mode ? children : <Navigate to="/" replace />
 }
 
+// The router renders nothing outside its basename (e.g. http://host:3007/ on a
+// site built with a base path), so send the browser under the base path.
+function isUnderBasename(pathname: string): boolean {
+    return (
+        !basename ||
+        pathname === basename ||
+        pathname.startsWith(`${basename}/`)
+    )
+}
+
 export default function App() {
+    const { pathname, search, hash } = window.location
+
+    if (!isUnderBasename(pathname)) {
+        window.location.replace(
+            `${basename}${pathname === '/' ? '/' : pathname}${search}${hash}`,
+        )
+        return <PageLoading />
+    }
+
     return (
         <BrowserRouter basename={basename}>
             <Suspense fallback={<PageLoading />}>
