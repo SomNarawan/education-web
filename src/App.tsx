@@ -46,21 +46,9 @@ const StudentMockLoginPage = lazy(
     () => import('./pages/student/StudentMockLoginPage'),
 )
 
-function normalizeBasePath(value?: string): string | undefined {
-    if (!value) return undefined
-
-    const trimmed = value.trim()
-
-    if (!trimmed) return undefined
-
-    const withLeadingSlash = trimmed.startsWith('/')
-        ? trimmed
-        : `/${trimmed}`
-
-    return withLeadingSlash.replace(/\/+$/, '') || undefined
-}
-
-const basename = normalizeBasePath(import.meta.env.VITE_BASE_PATH)
+// Vite's resolved `base` ('/' or '/<base path>/'), so the router always matches
+// the path the assets were built for.
+const basename = import.meta.env.BASE_URL.replace(/\/+$/, '') || undefined
 
 function PageLoading() {
     return (
@@ -81,12 +69,14 @@ function AppModeRoute({ mode, children }: AppModeRouteProps) {
 
 // The router renders nothing outside its basename (e.g. http://host:3007/ on a
 // site built with a base path), so send the browser under the base path.
+// Case-insensitive like React Router's own basename matching.
 function isUnderBasename(pathname: string): boolean {
-    return (
-        !basename ||
-        pathname === basename ||
-        pathname.startsWith(`${basename}/`)
-    )
+    if (!basename) return true
+
+    const path = pathname.toLowerCase()
+    const base = basename.toLowerCase()
+
+    return path === base || path.startsWith(`${base}/`)
 }
 
 export default function App() {

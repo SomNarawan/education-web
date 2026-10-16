@@ -68,6 +68,11 @@ npm run docker:up
   ค่าที่เปลี่ยนได้: `WEB_PUBLIC_API_UPSTREAM`, `WEB_PUBLIC_BASE_PATH`,
   `WEB_PUBLIC_MOCK_LOGIN_ENABLED`, `WEB_PUBLIC_EXTERNAL_PORT`
 
+ทั้งสองเว็บ build ด้วย base path (`VITE_BASE_PATH`) จึงต้องเปิดผ่าน URL ที่มี base path เช่น
+`http://localhost:3008/kukps-eng-education-ssd/` หากเปิดโดยไม่มี base path (เช่น `http://localhost:3008/`)
+หน้าเว็บจะ redirect ไปที่ base path ให้เอง ค่า `VITE_*` ถูกฝังตอน build เมื่อแก้โค้ดหรือค่าเหล่านี้
+ต้อง `up -d --build` ใหม่ทั้งสอง stack (เว็บนิสิตที่นี่ และเว็บเจ้าหน้าที่ใน `education-api`)
+
 ตรวจสถานะ: `<เว็บ>/healthz` (container เว็บ) และ
 `https://eng.kps.ku.ac.th/kukps-eng-education-ssd-public/api/health` (ทั้งเส้นทาง เว็บนิสิต → API → ฐานข้อมูล)
 
