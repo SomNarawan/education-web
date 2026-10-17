@@ -1,17 +1,12 @@
+import { CalculatorOutlined, DeleteOutlined } from '@ant-design/icons'
 import {
-    CalculatorOutlined,
-    DeleteOutlined,
-    EyeOutlined,
-    HistoryOutlined,
-} from '@ant-design/icons'
-import {
+    Alert,
     Button,
     Card,
     Checkbox,
     Col,
-    Descriptions,
+    Empty,
     Form,
-    Modal,
     Row,
     Select,
     Space,
@@ -22,41 +17,71 @@ import {
     message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { appMode } from '../../config/appMode'
 import { useCurrentStudent } from '../../hooks/useCurrentStudent'
-import { formatThaiDateTime } from '../../utils/dateFormat'
 import {
-    gradeOptions,
-    mockCalculationHistories,
-    mockPredictionCourses,
-    mockStudentProfiles,
-} from './gradeCalculatorMockData'
+    getStudentAcademicOverview,
+    getStudentUnattemptedCourses,
+} from '../../services/studentAcademicOverviewService'
+import {
+    getStudentDetailByCode,
+    getStudents,
+} from '../../services/studentService'
 import type {
-    CalculationHistoryCourse,
-    CourseSource,
-    GradeCalculationHistory,
-    PredictionCourse,
-    SemesterAcademicResult,
-} from './gradeCalculatorMockData'
+    StudentAcademicHistory,
+    StudentAcademicOverview,
+    StudentUnattemptedCoursesData,
+} from '../../types/StudentAcademicOverview'
+import { gradeOptions } from './gradeOptions'
 
 const { Text } = Typography
 
-const predictedAcademicYearLabel = 'ปีที่ 3'
-const predictedSemesterLabel = 'ภาคต้น'
-const predictedTermLabel = `${predictedAcademicYearLabel} ${predictedSemesterLabel}`
-const currentAcademicTermLabel = 'ปีที่ 2 ภาคปลาย'
+type CourseSource = 'backlog' | 'next-semester' | 'other'
 
-const semesterLabels: Record<number, string> = {
-    1: 'ภาคต้น',
-    2: 'ภาคปลาย',
-    3: 'ภาคฤดูร้อน',
+interface StudentOption {
+    id: number
+    studentCode: string
+    fullName: string
+}
+
+interface PredictionCourse {
+    id: string
+    code: string
+    name: string
+    credits: number
+    source: CourseSource
+    reason: string
+}
+
+interface CalculatedCourse extends PredictionCourse {
+    grade: string
+    gradePoints: number
+}
+
+interface GradeCalculationResult {
+    termGpa: number
+    cumulativeCredits: number
+    cumulativeGpa: number
+    courses: CalculatedCourse[]
+}
+
+interface GradeCalculationFormValues {
+    grades?: Record<string, string>
 }
 
 const sourceLabels: Record<CourseSource, { label: string; color: string }> = {
     backlog: { label: 'วิชาคงค้าง', color: 'error' },
     'next-semester': { label: 'วิชาที่ต้องลง', color: 'processing' },
     other: { label: 'วิชาอื่น', color: 'default' },
+}
+
+function formatTerm(year: number, semester: string) {
+    return `ชั้นปี ${year} ${semester}`
+}
+
+function formatDecimal(value: number | null) {
+    return value === null ? '-' : value.toFixed(2)
 }
 
 function getGpaChangePresentation(change: number) {
@@ -76,165 +101,254 @@ function getGpaChangePresentation(change: number) {
     }
 }
 
-function getStudyYear(academicYear: number, firstAcademicYear: number) {
-    return Math.max(1, academicYear - firstAcademicYear + 1)
-}
-
-function formatStudyTerm(
-    academicYear: number,
-    semester: number,
-    firstAcademicYear: number,
-) {
-    const semesterLabel =
-        semesterLabels[semester] ?? `ภาคการเรียนที่ ${semester}`
-
-    return `ปีที่ ${getStudyYear(academicYear, firstAcademicYear)} ${semesterLabel}`
-}
-
-interface SemesterResultRow extends SemesterAcademicResult {
-    cumulativeGpa: number
-}
-
-interface CalculatedCourse extends PredictionCourse {
-    grade: string
-    gradePoints: number
-}
-
-interface GradeCalculationResult {
-    termGpa: number
-    cumulativeCredits: number
-    cumulativeGpa: number
-    courses: CalculatedCourse[]
-}
-
-interface GradeCalculationFormValues {
-    grades?: Record<string, string>
-}
-
-function calculatePreviousSummary(results: SemesterAcademicResult[]) {
-    const credits = results.reduce(
-        (total, semester) => total + semester.credits,
-        0,
-    )
-    const qualityPoints = results.reduce(
-        (total, semester) => total + semester.gpa * semester.credits,
-        0,
-    )
-
-    return {
-        credits,
-        qualityPoints,
-        cumulativeGpa: credits > 0 ? qualityPoints / credits : 0,
-    }
-}
-
-function createSemesterRows(
-    results: SemesterAcademicResult[],
-): SemesterResultRow[] {
-    let cumulativeCredits = 0
-    let cumulativeQualityPoints = 0
-
-    return results.map((semester) => {
-        cumulativeCredits += semester.credits
-        cumulativeQualityPoints += semester.gpa * semester.credits
+function buildPredictionCourses(
+    overview: StudentAcademicOverview,
+    unattempted: StudentUnattemptedCoursesData,
+): PredictionCourse[] {
+    const backlog = overview.pending_courses.map((course, index) => ({
+        id: `backlog-${course.course_code ?? 'course'}-${index}`,
+        code: course.course_code ?? '-',
+        name: course.course_name_th ?? '-',
+        credits: course.credit ?? 0,
+        source: 'backlog' as const,
+        reason: course.previous_grade
+            ? `ผลการเรียนเดิม ${course.previous_grade}`
+            : 'ยังไม่มีผลการเรียน',
+    }))
+    const nextSemester = overview.next_term.courses.map((course, index) => {
+        const category =
+            course.course_group ??
+            course.course_sub_category ??
+            course.course_category
 
         return {
-            ...semester,
-            cumulativeGpa: cumulativeQualityPoints / cumulativeCredits,
+            id: `next-semester-${course.course_code ?? 'course'}-${index}`,
+            code: course.course_code ?? '-',
+            name: course.course_name_th ?? '-',
+            credits: course.credit ?? 0,
+            source: 'next-semester' as const,
+            reason: category ?? 'รายวิชาตามแผนการเรียน',
         }
     })
+    const other = unattempted.courses.map((course, index) => {
+        const category =
+            course.course_group ??
+            course.course_sub_category ??
+            course.course_category
+
+        return {
+            id: `other-${course.course_code ?? 'course'}-${index}`,
+            code: course.course_code ?? '-',
+            name: course.course_name_th ?? '-',
+            credits: course.credit ?? 0,
+            source: 'other' as const,
+            reason: category ?? 'รายวิชาในแผนการเรียน',
+        }
+    })
+
+    return [...backlog, ...nextSemester, ...other]
 }
 
 export default function GradeCalculatorPage() {
     const { currentRole, studentCode } = useCurrentStudent()
     const isStudent = appMode === 'student' || currentRole === 'student'
-    const ownStudentProfile =
-        mockStudentProfiles.find(
-            (profile) => profile.studentCode === studentCode,
-        ) ?? mockStudentProfiles[0]
-    const [selectedStudentCode, setSelectedStudentCode] = useState(
-        isStudent
-            ? ownStudentProfile.studentCode
-            : mockStudentProfiles[0].studentCode,
+    const [studentOptions, setStudentOptions] = useState<StudentOption[]>([])
+    const [selectedStudentId, setSelectedStudentId] = useState<number | null>(
+        null,
     )
-    const [selectedCourseCodes, setSelectedCourseCodes] = useState<string[]>(
-        mockPredictionCourses
-            .filter((course) => course.source !== 'other')
-            .map((course) => course.code),
-    )
-    const [gradeForm] = Form.useForm<GradeCalculationFormValues>()
-    const expectedGrades = Form.useWatch('grades', gradeForm) ?? {}
+    const [overview, setOverview] =
+        useState<StudentAcademicOverview | null>(null)
+    const [unattempted, setUnattempted] =
+        useState<StudentUnattemptedCoursesData | null>(null)
+    const [loadingStudents, setLoadingStudents] = useState(true)
+    const [loadingOverview, setLoadingOverview] = useState(false)
+    const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([])
     const [calculationResult, setCalculationResult] =
         useState<GradeCalculationResult | null>(null)
-    const [historyOpen, setHistoryOpen] = useState(false)
-    const [selectedHistory, setSelectedHistory] =
-        useState<GradeCalculationHistory | null>(null)
+    const [gradeForm] = Form.useForm<GradeCalculationFormValues>()
+    const expectedGrades = Form.useWatch('grades', gradeForm) ?? {}
 
-    const selectedProfile =
-        (isStudent
-            ? ownStudentProfile
-            : mockStudentProfiles.find(
-                  (profile) => profile.studentCode === selectedStudentCode,
-              )) ?? mockStudentProfiles[0]
-    const previousSummary = useMemo(
-        () => calculatePreviousSummary(selectedProfile.semesterResults),
-        [selectedProfile],
+    useEffect(() => {
+        let cancelled = false
+
+        const loadStudentOptions = async () => {
+            try {
+                setLoadingStudents(true)
+
+                if (isStudent) {
+                    const student = await getStudentDetailByCode(studentCode)
+
+                    if (cancelled) return
+
+                    if (!student) {
+                        setStudentOptions([])
+                        setSelectedStudentId(null)
+                        return
+                    }
+
+                    setStudentOptions([
+                        {
+                            id: student.id,
+                            studentCode: student.student_code ?? studentCode,
+                            fullName: student.full_name_th,
+                        },
+                    ])
+                    setSelectedStudentId(student.id)
+                    return
+                }
+
+                const students = await getStudents()
+
+                if (cancelled) return
+
+                const options = students.map((student) => ({
+                    id: student.id,
+                    studentCode: student.student_code ?? '-',
+                    fullName: student.full_name_th,
+                }))
+                setStudentOptions(options)
+                setSelectedStudentId((currentId) =>
+                    currentId && options.some(({ id }) => id === currentId)
+                        ? currentId
+                        : (options[0]?.id ?? null),
+                )
+            } catch (error) {
+                if (cancelled) return
+
+                console.error(error)
+                setStudentOptions([])
+                setSelectedStudentId(null)
+                message.error('โหลดรายชื่อนิสิตไม่สำเร็จ')
+            } finally {
+                if (!cancelled) {
+                    setLoadingStudents(false)
+                }
+            }
+        }
+
+        void loadStudentOptions()
+
+        return () => {
+            cancelled = true
+        }
+    }, [isStudent, studentCode])
+
+    useEffect(() => {
+        if (!selectedStudentId) {
+            return
+        }
+
+        let cancelled = false
+
+        const loadOverview = async () => {
+            try {
+                setLoadingOverview(true)
+                const [data, unattemptedData] = await Promise.all([
+                    getStudentAcademicOverview(selectedStudentId),
+                    getStudentUnattemptedCourses(selectedStudentId),
+                ])
+
+                if (cancelled) return
+
+                const courses = buildPredictionCourses(data, unattemptedData)
+                setOverview(data)
+                setUnattempted(unattemptedData)
+                setSelectedCourseIds(
+                    courses
+                        .filter((course) => course.source !== 'other')
+                        .map((course) => course.id),
+                )
+                gradeForm.resetFields()
+                setCalculationResult(null)
+            } catch (error) {
+                if (cancelled) return
+
+                console.error(error)
+                setOverview(null)
+                setUnattempted(null)
+                setSelectedCourseIds([])
+                message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
+            } finally {
+                if (!cancelled) {
+                    setLoadingOverview(false)
+                }
+            }
+        }
+
+        void loadOverview()
+
+        return () => {
+            cancelled = true
+        }
+    }, [gradeForm, selectedStudentId])
+
+    const predictionCourses = useMemo(
+        () =>
+            overview && unattempted
+                ? buildPredictionCourses(overview, unattempted)
+                : [],
+        [overview, unattempted],
     )
-    const semesterRows = useMemo(
-        () => createSemesterRows(selectedProfile.semesterResults),
-        [selectedProfile],
-    )
-    const firstAcademicYear =
-        selectedProfile.semesterResults[0]?.academicYear ?? 0
     const selectedCourses = useMemo(
         () =>
-            mockPredictionCourses.filter((course) =>
-                selectedCourseCodes.includes(course.code),
+            predictionCourses.filter((course) =>
+                selectedCourseIds.includes(course.id),
             ),
-        [selectedCourseCodes],
+        [predictionCourses, selectedCourseIds],
     )
-    const studentHistories = mockCalculationHistories.filter(
-        (history) => history.studentCode === selectedProfile.studentCode,
+    const selectedStudent = studentOptions.find(
+        (student) => student.id === selectedStudentId,
+    )
+    const currentGpax = overview?.gpax ?? 0
+    const currentCredits = overview?.cumulative_credits ?? 0
+    const currentQualityPoints = currentGpax * currentCredits
+    const predictedTermLabel = overview
+        ? formatTerm(overview.next_term.year, overview.next_term.semester)
+        : 'ภาคการศึกษาถัดไป'
+    const otherCourseIds = selectedCourseIds.filter((courseId) =>
+        predictionCourses.some(
+            (course) => course.id === courseId && course.source === 'other',
+        ),
     )
 
     const resetPrediction = () => {
-        setSelectedCourseCodes(
-            mockPredictionCourses
+        setSelectedCourseIds(
+            predictionCourses
                 .filter((course) => course.source !== 'other')
-                .map((course) => course.code),
+                .map((course) => course.id),
         )
         gradeForm.resetFields()
         setCalculationResult(null)
     }
 
-    const handleCourseToggle = (courseCode: string, checked: boolean) => {
-        setSelectedCourseCodes((currentCodes) =>
-            checked
-                ? [...new Set([...currentCodes, courseCode])]
-                : currentCodes.filter((code) => code !== courseCode),
+    const handleOtherCoursesChange = (courseIds: string[]) => {
+        const availableOtherIds = new Set(
+            predictionCourses
+                .filter((course) => course.source === 'other')
+                .map((course) => course.id),
         )
-        if (!checked) {
-            gradeForm.setFieldValue(['grades', courseCode], undefined)
-        }
+
+        setSelectedCourseIds((currentIds) => [
+            ...currentIds.filter((courseId) => !availableOtherIds.has(courseId)),
+            ...courseIds,
+        ])
+        availableOtherIds.forEach((courseId) => {
+            if (!courseIds.includes(courseId)) {
+                gradeForm.setFieldValue(['grades', courseId], undefined)
+            }
+        })
         setCalculationResult(null)
     }
 
-    const handleOtherCoursesChange = (courseCodes: string[]) => {
-        const otherCourseCodes = new Set(
-            mockPredictionCourses
-                .filter((course) => course.source === 'other')
-                .map((course) => course.code),
+    const handleCourseToggle = (courseId: string, checked: boolean) => {
+        setSelectedCourseIds((currentIds) =>
+            checked
+                ? [...new Set([...currentIds, courseId])]
+                : currentIds.filter((id) => id !== courseId),
         )
-
-        setSelectedCourseCodes((currentCodes) => [
-            ...currentCodes.filter((code) => !otherCourseCodes.has(code)),
-            ...courseCodes,
-        ])
-        otherCourseCodes.forEach((courseCode) => {
-            if (!courseCodes.includes(courseCode)) {
-                gradeForm.setFieldValue(['grades', courseCode], undefined)
-            }
-        })
+        if (!checked) {
+            gradeForm.setFieldValue(['grades', courseId], undefined)
+        }
         setCalculationResult(null)
     }
 
@@ -246,14 +360,14 @@ export default function GradeCalculatorPage() {
 
         try {
             await gradeForm.validateFields(
-                selectedCourses.map((course) => ['grades', course.code]),
+                selectedCourses.map((course) => ['grades', course.id]),
             )
         } catch {
             return
         }
 
         const calculatedCourses = selectedCourses.map((course) => {
-            const grade = expectedGrades[course.code]
+            const grade = expectedGrades[course.id]
             const gradePoint =
                 gradeOptions.find((option) => option.value === grade)?.points ??
                 0
@@ -268,35 +382,41 @@ export default function GradeCalculatorPage() {
             (total, course) => total + course.credits,
             0,
         )
+
+        if (termCredits <= 0) {
+            message.warning('รายวิชาที่เลือกไม่มีหน่วยกิตสำหรับคำนวณ')
+            return
+        }
+
         const termQualityPoints = calculatedCourses.reduce(
             (total, course) => total + course.gradePoints,
             0,
         )
-        const cumulativeCredits = previousSummary.credits + termCredits
+        const cumulativeCredits = currentCredits + termCredits
 
         setCalculationResult({
             termGpa: termQualityPoints / termCredits,
             cumulativeCredits,
             cumulativeGpa:
-                (previousSummary.qualityPoints + termQualityPoints) /
-                cumulativeCredits,
+                cumulativeCredits > 0
+                    ? (currentQualityPoints + termQualityPoints) /
+                      cumulativeCredits
+                    : 0,
             courses: calculatedCourses,
         })
     }
 
-    const semesterColumns: ColumnsType<SemesterResultRow> = [
+    const semesterColumns: ColumnsType<StudentAcademicHistory> = [
         {
             title: 'ชั้นปี',
-            dataIndex: 'academicYear',
+            dataIndex: 'year',
             align: 'center',
-            render: (value: number) => getStudyYear(value, firstAcademicYear),
+            render: (value: number) => `ชั้นปี ${value}`,
         },
         {
             title: 'ภาคการเรียน',
             dataIndex: 'semester',
             align: 'center',
-            render: (value: number) =>
-                semesterLabels[value] ?? `ภาคที่ ${value}`,
         },
         { title: 'หน่วยกิต', dataIndex: 'credits', align: 'center' },
         {
@@ -307,19 +427,19 @@ export default function GradeCalculatorPage() {
         },
         {
             title: 'GPAX สะสม',
-            dataIndex: 'cumulativeGpa',
+            dataIndex: 'gpax',
             align: 'center',
             render: (value: number) => value.toFixed(2),
         },
     ]
 
     const selectedCourseColumns: ColumnsType<PredictionCourse> = [
-        { title: 'รหัสวิชา', dataIndex: 'code', width: 110 },
+        { title: 'รหัสวิชา', dataIndex: 'code', width: 115 },
         { title: 'ชื่อรายวิชา', dataIndex: 'name' },
         {
             title: 'ประเภท',
             dataIndex: 'source',
-            width: 130,
+            width: 135,
             align: 'center',
             render: (source: CourseSource) => (
                 <Tag color={sourceLabels[source].color}>
@@ -346,13 +466,8 @@ export default function GradeCalculatorPage() {
             width: 175,
             render: (_, course) => (
                 <Form.Item
-                    name={['grades', course.code]}
-                    rules={[
-                        {
-                            required: true,
-                            message: 'กรุณาเลือกเกรด',
-                        },
-                    ]}
+                    name={['grades', course.id]}
+                    rules={[{ required: true, message: 'กรุณาเลือกเกรด' }]}
                     preserve={false}
                     style={{ marginBottom: 0 }}
                 >
@@ -363,9 +478,7 @@ export default function GradeCalculatorPage() {
                             label,
                             value,
                         }))}
-                        onChange={() => {
-                            setCalculationResult(null)
-                        }}
+                        onChange={() => setCalculationResult(null)}
                     />
                 </Form.Item>
             ),
@@ -380,7 +493,7 @@ export default function GradeCalculatorPage() {
                     danger
                     icon={<DeleteOutlined />}
                     aria-label={`นำวิชา ${course.code} ออก`}
-                    onClick={() => handleCourseToggle(course.code, false)}
+                    onClick={() => handleCourseToggle(course.id, false)}
                 />
             ),
         },
@@ -399,147 +512,61 @@ export default function GradeCalculatorPage() {
         },
     ]
 
-    const historyColumns: ColumnsType<GradeCalculationHistory> = [
-        {
-            title: 'วันที่คำนวณ',
-            dataIndex: 'calculatedAt',
-            width: 150,
-            render: (value: string) => formatThaiDateTime(value),
-        },
-        {
-            title: 'ภาคการเรียน',
-            key: 'semester',
-            width: 110,
-            align: 'center',
-            render: (_, history) =>
-                formatStudyTerm(
-                    history.academicYear,
-                    history.semester,
-                    firstAcademicYear,
-                ),
-        },
-        {
-            title: 'จำนวนวิชา',
-            dataIndex: 'courses',
-            width: 100,
-            align: 'center',
-            render: (courses: GradeCalculationHistory['courses']) =>
-                `${courses.length} วิชา`,
-        },
-        {
-            title: 'GPA คาดการณ์',
-            dataIndex: 'predictedTermGpa',
-            width: 120,
-            align: 'center',
-            render: (value: number) => value.toFixed(2),
-        },
-        {
-            title: 'GPAX คาดการณ์',
-            dataIndex: 'predictedCumulativeGpa',
-            width: 125,
-            align: 'center',
-            render: (value: number) => value.toFixed(2),
-        },
-        {
-            title: 'GPAX เปลี่ยนแปลง',
-            key: 'gpaChange',
-            width: 125,
-            align: 'center',
-            render: (_, history) => {
-                const change = getGpaChangePresentation(
-                    history.predictedCumulativeGpa - history.previousGpa,
-                )
-
-                return <Text style={{ color: change.color }}>{change.text}</Text>
-            },
-        },
-        {
-            title: 'รายละเอียด',
-            key: 'view',
-            width: 90,
-            align: 'center',
-            render: (_, history) => (
-                <Button
-                    icon={<EyeOutlined />}
-                    aria-label="ดูรายละเอียดประวัติการคำนวณ"
-                    style={{
-                        borderColor: '#1677ff',
-                        color: '#1677ff',
-                    }}
-                    onClick={() => setSelectedHistory(history)}
-                />
-            ),
-        },
-    ]
-
-    const historyCourseColumns: ColumnsType<CalculationHistoryCourse> = [
-        { title: 'รหัสวิชา', dataIndex: 'code', width: 110 },
-        { title: 'ชื่อรายวิชา', dataIndex: 'name' },
-        {
-            title: 'หน่วยกิต',
-            dataIndex: 'credits',
-            width: 90,
-            align: 'center',
-        },
-        {
-            title: 'เกรด',
-            dataIndex: 'grade',
-            width: 80,
-            align: 'center',
-        },
-    ]
-
     const renderCourseGroup = (
         title: string,
         description: string,
         source: CourseSource,
-    ) => (
-        <section className={`grade-course-group grade-course-group-${source}`}>
-            <div className="grade-course-group-heading">
-                <h3>{title}</h3>
-                <span>{description}</span>
-            </div>
-            <div className="grade-course-choice-list">
-                {mockPredictionCourses
-                    .filter((course) => course.source === source)
-                    .map((course) => (
-                        <Checkbox
-                            key={course.code}
-                            checked={selectedCourseCodes.includes(course.code)}
-                            onChange={(event) =>
-                                handleCourseToggle(
-                                    course.code,
-                                    event.target.checked,
-                                )
-                            }
-                        >
-                            <span className="grade-course-choice-content">
-                                <strong>
-                                    {course.code} — {course.name}
-                                </strong>
-                                <span>
-                                    {course.credits} หน่วยกิต · {course.reason}
-                                </span>
-                            </span>
-                        </Checkbox>
-                    ))}
-            </div>
-        </section>
-    )
+    ) => {
+        const courses = predictionCourses.filter(
+            (course) => course.source === source,
+        )
 
-    const otherCourseCodes = selectedCourseCodes.filter((courseCode) =>
-        mockPredictionCourses.some(
-            (course) =>
-                course.code === courseCode && course.source === 'other',
-        ),
-    )
-    const latestSemester =
-        selectedProfile.semesterResults[
-            selectedProfile.semesterResults.length - 1
-        ]
+        return (
+            <section
+                className={`grade-course-group grade-course-group-${source}`}
+            >
+                <div className="grade-course-group-heading">
+                    <h3>{title}</h3>
+                    <span>{description}</span>
+                </div>
+                {courses.length === 0 ? (
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="ไม่พบรายวิชา"
+                    />
+                ) : (
+                    <div className="grade-course-choice-list">
+                        {courses.map((course) => (
+                            <Checkbox
+                                key={course.id}
+                                checked={selectedCourseIds.includes(course.id)}
+                                onChange={(event) =>
+                                    handleCourseToggle(
+                                        course.id,
+                                        event.target.checked,
+                                    )
+                                }
+                            >
+                                <span className="grade-course-choice-content">
+                                    <strong>
+                                        {course.code} — {course.name}
+                                    </strong>
+                                    <span>
+                                        {course.credits} หน่วยกิต ·{' '}
+                                        {course.reason}
+                                    </span>
+                                </span>
+                            </Checkbox>
+                        ))}
+                    </div>
+                )}
+            </section>
+        )
+    }
+
     const calculatedGpaChange = getGpaChangePresentation(
         calculationResult
-            ? calculationResult.cumulativeGpa - previousSummary.cumulativeGpa
+            ? calculationResult.cumulativeGpa - currentGpax
             : 0,
     )
 
@@ -553,36 +580,38 @@ export default function GradeCalculatorPage() {
                         ในภาคการศึกษาถัดไป
                     </p>
                 </div>
-                <Button
-                    size="large"
-                    icon={<HistoryOutlined />}
-                    onClick={() => setHistoryOpen(true)}
-                >
-                    ประวัติการคำนวณ
-                </Button>
             </div>
 
-            <Card className="grade-calculator-card" title="ข้อมูลสำหรับคำนวณ">
+            <Card
+                className="grade-calculator-card"
+                title="ข้อมูลสำหรับคำนวณ"
+                loading={loadingStudents}
+            >
                 <div className="grade-calculator-controls">
                     <label>
                         <Text strong>นิสิต</Text>
                         {isStudent ? (
                             <Text className="grade-calculator-readonly-value">
-                                {selectedProfile.studentCode} —{' '}
-                                {selectedProfile.fullName}
+                                {selectedStudent
+                                    ? `${selectedStudent.studentCode} — ${selectedStudent.fullName}`
+                                    : 'ไม่พบข้อมูลนิสิต'}
                             </Text>
                         ) : (
                             <Select
                                 showSearch
                                 optionFilterProp="label"
-                                value={selectedStudentCode}
-                                options={mockStudentProfiles.map((profile) => ({
-                                    label: `${profile.studentCode} — ${profile.fullName}`,
-                                    value: profile.studentCode,
+                                value={selectedStudentId}
+                                placeholder="ค้นหาและเลือกนิสิต"
+                                options={studentOptions.map((student) => ({
+                                    label: `${student.studentCode} — ${student.fullName}`,
+                                    value: student.id,
                                 }))}
-                                onChange={(studentCode) => {
-                                    setSelectedStudentCode(studentCode)
-                                    resetPrediction()
+                                onChange={(studentId) => {
+                                    setSelectedStudentId(studentId)
+                                    setOverview(null)
+                                    setUnattempted(null)
+                                    setSelectedCourseIds([])
+                                    setCalculationResult(null)
                                 }}
                             />
                         )}
@@ -590,120 +619,175 @@ export default function GradeCalculatorPage() {
                     <label>
                         <Text strong>ชั้นปีที่คาดการณ์</Text>
                         <Text className="grade-calculator-readonly-value">
-                            {predictedAcademicYearLabel}
+                            {overview ? `ชั้นปี ${overview.next_term.year}` : '-'}
                         </Text>
                     </label>
                     <label>
                         <Text strong>ภาคการเรียนที่คาดการณ์</Text>
                         <Text className="grade-calculator-readonly-value">
-                            {predictedSemesterLabel}
+                            {overview?.next_term.semester ?? '-'}
                         </Text>
                     </label>
                 </div>
             </Card>
 
+            {!loadingStudents && !selectedStudentId && (
+                <Alert
+                    type="warning"
+                    showIcon
+                    message="ไม่พบข้อมูลนิสิตสำหรับคำนวณผลการเรียน"
+                />
+            )}
+
             <Card
                 className="grade-calculator-card"
                 title="ผลการเรียนรวมจากภาคการศึกษาที่ผ่านมา"
+                loading={loadingOverview}
             >
-                <div className="grade-summary-grid">
-                    <Statistic
-                        title="GPAX ปัจจุบัน"
-                        value={previousSummary.cumulativeGpa}
-                        precision={2}
-                    />
-                    <Statistic
-                        title="หน่วยกิตสะสม"
-                        value={previousSummary.credits}
-                        suffix="หน่วยกิต"
-                    />
-                    <Statistic
-                        title="GPA ภาคการเรียนล่าสุด"
-                        value={latestSemester.gpa}
-                        precision={2}
-                    />
-                    <Statistic
-                        title="ชั้นปีปัจจุบัน"
-                        value={currentAcademicTermLabel}
-                    />
-                </div>
-                <Table<SemesterResultRow>
-                    rowKey="id"
-                    columns={semesterColumns}
-                    dataSource={semesterRows}
-                    pagination={false}
-                    size="small"
-                    tableLayout="fixed"
-                />
+                {overview ? (
+                    <>
+                        {(overview.missing_sections.length > 0 ||
+                            (unattempted?.missing_sections.length ?? 0) > 0) && (
+                            <Alert
+                                className="grade-calculator-data-alert"
+                                type="warning"
+                                showIcon
+                                message="ข้อมูลผลการเรียนบางส่วนยังไม่พร้อมใช้งาน"
+                            />
+                        )}
+                        <div className="grade-summary-grid">
+                            <Statistic
+                                title="GPAX ปัจจุบัน"
+                                value={formatDecimal(overview.gpax)}
+                            />
+                            <Statistic
+                                title="หน่วยกิตสะสม"
+                                value={overview.cumulative_credits ?? '-'}
+                                suffix={
+                                    overview.cumulative_credits === null
+                                        ? undefined
+                                        : 'หน่วยกิต'
+                                }
+                            />
+                            <Statistic
+                                title="GPA ภาคการเรียนล่าสุด"
+                                value={formatDecimal(overview.latest_gpa)}
+                            />
+                            <Statistic
+                                title="ชั้นปีและภาคการเรียนปัจจุบัน"
+                                value={formatTerm(
+                                    overview.current_term.year,
+                                    overview.current_term.semester,
+                                )}
+                            />
+                            <Statistic
+                                title="ภาคการศึกษาล่าสุดที่มีผลการเรียน"
+                                value={
+                                    overview.latest_completed_term
+                                        ? formatTerm(
+                                              overview.latest_completed_term
+                                                  .year,
+                                              overview.latest_completed_term
+                                                  .semester,
+                                          )
+                                        : '-'
+                                }
+                            />
+                        </div>
+                        <Table<StudentAcademicHistory>
+                            rowKey={(row) =>
+                                `${row.academic_year}-${row.semester_order}`
+                            }
+                            columns={semesterColumns}
+                            dataSource={overview.academic_history}
+                            locale={{ emptyText: 'ไม่พบประวัติผลการเรียน' }}
+                            pagination={false}
+                            size="small"
+                            tableLayout="fixed"
+                        />
+                    </>
+                ) : (
+                    !loadingOverview && (
+                        <Empty description="กรุณาเลือกนิสิตเพื่อดูข้อมูล" />
+                    )
+                )}
             </Card>
 
-            <Card
-                className="grade-calculator-card"
-                title={`วางแผนรายวิชา ${predictedTermLabel}`}
-            >
-                <div className="grade-course-groups">
-                    {renderCourseGroup(
-                        'วิชาคงค้าง',
-                        'รายวิชาที่ยังไม่ผ่านหรือถอนรายวิชา',
-                        'backlog',
-                    )}
-                    {renderCourseGroup(
-                        'วิชาที่ต้องลงในเทอมถัดไป',
-                        'รายวิชาตามแผนการเรียนที่แนะนำ',
-                        'next-semester',
-                    )}
-                </div>
-                <div className="grade-other-course-field">
-                    <Text strong>เพิ่มวิชาอื่น</Text>
-                    <Select
-                        mode="multiple"
-                        allowClear
-                        showSearch
-                        optionFilterProp="label"
-                        placeholder="ค้นหาและเลือกวิชาอื่นเพิ่มเติม"
-                        value={otherCourseCodes}
-                        options={mockPredictionCourses
-                            .filter((course) => course.source === 'other')
-                            .map((course) => ({
-                                label: `${course.code} — ${course.name} (${course.credits} หน่วยกิต)`,
-                                value: course.code,
-                            }))}
-                        onChange={handleOtherCoursesChange}
-                    />
-                </div>
-            </Card>
+            {overview && (
+                <>
+                    <Card
+                        className="grade-calculator-card"
+                        title={`วางแผนรายวิชา ${predictedTermLabel}`}
+                    >
+                        <div className="grade-course-groups">
+                            {renderCourseGroup(
+                                'วิชาคงค้าง',
+                                'รายวิชาที่ยังไม่ผ่านหรือยังไม่มีผลการเรียน',
+                                'backlog',
+                            )}
+                            {renderCourseGroup(
+                                'วิชาที่ต้องลงในเทอมถัดไป',
+                                'เฉพาะรายวิชา subject ตามแผนการเรียน',
+                                'next-semester',
+                            )}
+                        </div>
+                        <div className="grade-other-course-field">
+                            <Text strong>เพิ่มวิชาอื่น</Text>
+                            <Select
+                                mode="multiple"
+                                allowClear
+                                showSearch
+                                optionFilterProp="label"
+                                placeholder="ค้นหาและเลือกวิชาที่ยังไม่เคยเรียน"
+                                value={otherCourseIds}
+                                options={predictionCourses
+                                    .filter(
+                                        (course) => course.source === 'other',
+                                    )
+                                    .map((course) => ({
+                                        label: `${course.code} — ${course.name} (${course.credits} หน่วยกิต · ${course.reason})`,
+                                        value: course.id,
+                                    }))}
+                                onChange={handleOtherCoursesChange}
+                            />
+                        </div>
+                    </Card>
 
-            <Card
-                className="grade-calculator-card"
-                title={`รายวิชาที่เลือก (${selectedCourses.length} วิชา)`}
-            >
-                <Form form={gradeForm} component={false}>
-                    <Table<PredictionCourse>
-                        className="grade-prediction-table"
-                        rowKey="code"
-                        columns={selectedCourseColumns}
-                        dataSource={selectedCourses}
-                        locale={{ emptyText: 'ยังไม่ได้เลือกรายวิชา' }}
-                        pagination={false}
-                        size="small"
-                        tableLayout="fixed"
-                    />
-                </Form>
-                <div className="grade-calculator-actions">
-                    <Space>
-                        <Button onClick={resetPrediction}>คืนค่าเริ่มต้น</Button>
-                        <Button
-                            type="primary"
-                            size="large"
-                            icon={<CalculatorOutlined />}
-                            disabled={selectedCourses.length === 0}
-                            onClick={() => void handleCalculate()}
-                        >
-                            คำนวณผลการเรียน
-                        </Button>
-                    </Space>
-                </div>
-            </Card>
+                    <Card
+                        className="grade-calculator-card"
+                        title={`รายวิชาที่เลือก (${selectedCourses.length} วิชา)`}
+                    >
+                        <Form form={gradeForm} component={false}>
+                            <Table<PredictionCourse>
+                                className="grade-prediction-table"
+                                rowKey="id"
+                                columns={selectedCourseColumns}
+                                dataSource={selectedCourses}
+                                locale={{ emptyText: 'ยังไม่ได้เลือกรายวิชา' }}
+                                pagination={false}
+                                size="small"
+                                tableLayout="fixed"
+                            />
+                        </Form>
+                        <div className="grade-calculator-actions">
+                            <Space>
+                                <Button onClick={resetPrediction}>
+                                    คืนค่าเริ่มต้น
+                                </Button>
+                                <Button
+                                    type="primary"
+                                    size="large"
+                                    icon={<CalculatorOutlined />}
+                                    disabled={selectedCourses.length === 0}
+                                    onClick={() => void handleCalculate()}
+                                >
+                                    คำนวณผลการเรียน
+                                </Button>
+                            </Space>
+                        </div>
+                    </Card>
+                </>
+            )}
 
             {calculationResult && (
                 <Card
@@ -727,7 +811,7 @@ export default function GradeCalculatorPage() {
                                 valueStyle={{
                                     color:
                                         calculationResult.cumulativeGpa >=
-                                        previousSummary.cumulativeGpa
+                                        currentGpax
                                             ? '#52c41a'
                                             : '#fa8c16',
                                 }}
@@ -751,12 +835,12 @@ export default function GradeCalculatorPage() {
                         </Col>
                     </Row>
                     <div className="grade-result-comparison">
-                        GPAX ปัจจุบัน {previousSummary.cumulativeGpa.toFixed(2)}
+                        GPAX ปัจจุบัน {currentGpax.toFixed(2)}
                         {' → '} GPAX คาดการณ์{' '}
                         {calculationResult.cumulativeGpa.toFixed(2)}
                     </div>
                     <Table<CalculatedCourse>
-                        rowKey="code"
+                        rowKey="id"
                         columns={resultColumns}
                         dataSource={calculationResult.courses}
                         pagination={false}
@@ -765,120 +849,6 @@ export default function GradeCalculatorPage() {
                     />
                 </Card>
             )}
-
-            <Modal
-                title={`ประวัติการคำนวณ — ${selectedProfile.studentCode} ${selectedProfile.fullName}`}
-                open={historyOpen}
-                width={1000}
-                footer={
-                    <Button onClick={() => setHistoryOpen(false)}>ปิด</Button>
-                }
-                onCancel={() => setHistoryOpen(false)}
-            >
-                <Table<GradeCalculationHistory>
-                    rowKey="id"
-                    columns={historyColumns}
-                    dataSource={studentHistories}
-                    locale={{ emptyText: 'ยังไม่มีประวัติการคำนวณ' }}
-                    pagination={false}
-                    size="small"
-                    tableLayout="fixed"
-                />
-            </Modal>
-
-            <Modal
-                title="รายละเอียดประวัติการคำนวณ"
-                open={Boolean(selectedHistory)}
-                width={1000}
-                footer={
-                    <Button onClick={() => setSelectedHistory(null)}>ปิด</Button>
-                }
-                onCancel={() => setSelectedHistory(null)}
-            >
-                {selectedHistory && (
-                    <>
-                        <Descriptions
-                            bordered
-                            size="small"
-                            column={{ xs: 1, sm: 12 }}
-                            items={[
-                                {
-                                    key: 'semester',
-                                    label: 'ภาคการเรียน',
-                                    children: formatStudyTerm(
-                                        selectedHistory.academicYear,
-                                        selectedHistory.semester,
-                                        firstAcademicYear,
-                                    ),
-                                    span: { xs: 1, sm: 6 },
-                                },
-                                {
-                                    key: 'calculatedAt',
-                                    label: 'วันที่คำนวณ',
-                                    children: formatThaiDateTime(
-                                        selectedHistory.calculatedAt,
-                                    ),
-                                    span: { xs: 1, sm: 6 },
-                                },
-                                {
-                                    key: 'previousGpa',
-                                    label: 'GPAX ก่อนคำนวณ',
-                                    children:
-                                        selectedHistory.previousGpa.toFixed(2),
-                                    span: { xs: 1, sm: 3 },
-                                },
-                                {
-                                    key: 'predictedTermGpa',
-                                    label: 'GPA เทอมที่คาดการณ์',
-                                    children:
-                                        selectedHistory.predictedTermGpa.toFixed(
-                                            2,
-                                        ),
-                                    span: { xs: 1, sm: 3 },
-                                },
-                                {
-                                    key: 'predictedCumulativeGpa',
-                                    label: 'GPAX คาดการณ์',
-                                    children:
-                                        selectedHistory.predictedCumulativeGpa.toFixed(
-                                            2,
-                                        ),
-                                    span: { xs: 1, sm: 3 },
-                                },
-                                {
-                                    key: 'gpaChange',
-                                    label: 'GPAX เปลี่ยนแปลง',
-                                    children: (() => {
-                                        const change = getGpaChangePresentation(
-                                            selectedHistory.predictedCumulativeGpa -
-                                                selectedHistory.previousGpa,
-                                        )
-
-                                        return (
-                                            <Text
-                                                strong
-                                                style={{ color: change.color }}
-                                            >
-                                                {change.text}
-                                            </Text>
-                                        )
-                                    })(),
-                                    span: { xs: 1, sm: 3 },
-                                },
-                            ]}
-                        />
-                        <Table<CalculationHistoryCourse>
-                            className="grade-history-detail-table"
-                            rowKey="code"
-                            columns={historyCourseColumns}
-                            dataSource={selectedHistory.courses}
-                            pagination={false}
-                            size="small"
-                            tableLayout="fixed"
-                        />
-                    </>
-                )}
-            </Modal>
         </div>
     )
 }
