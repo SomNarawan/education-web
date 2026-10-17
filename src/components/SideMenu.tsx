@@ -3,6 +3,7 @@ import {
     BarChartOutlined,
     BankOutlined,
     CalculatorOutlined,
+    CalendarOutlined,
     DatabaseOutlined,
     FileExcelOutlined,
     FileTextOutlined,
@@ -122,6 +123,12 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             key: '/sync',
             icon: <SyncOutlined />,
             label: 'ซิงค์ข้อมูล',
+            allowedRoles: ['admin'],
+        },
+        {
+            key: '/academic-term',
+            icon: <CalendarOutlined />,
+            label: 'จัดการภาคการศึกษา',
             allowedRoles: ['admin'],
         },
         {

@@ -35,6 +35,9 @@ const HighSchoolManagement = lazy(
 const GradeCalculator = lazy(
     () => import('./features/gradeCalculator/GradeCalculatorPage'),
 )
+const AcademicTermManagement = lazy(
+    () => import('./features/academicTerm/AcademicTermManagementPage'),
+)
 const StudentHomePage = lazy(() => import('./pages/student/StudentHomePage'))
 const StudentProfilePage = lazy(
     () => import('./pages/student/StudentProfilePage'),
@@ -203,6 +206,15 @@ export default function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <SyncData />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="academic-term"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AcademicTermManagement />
                                 </ProtectedRoute>
                             }
                         />
