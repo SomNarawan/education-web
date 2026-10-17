@@ -302,8 +302,9 @@ export default function GradeCalculatorPage() {
     const currentGpax = overview?.gpax ?? 0
     const currentCredits = overview?.cumulative_credits ?? 0
     const currentQualityPoints = currentGpax * currentCredits
-    const predictedTermLabel = overview
-        ? formatTerm(overview.next_term.year, overview.next_term.semester)
+    const predictionTerm = overview?.next_term ?? null
+    const predictedTermLabel = predictionTerm
+        ? formatTerm(predictionTerm.year, predictionTerm.semester)
         : 'ภาคการศึกษาถัดไป'
     const otherCourseIds = selectedCourseIds.filter((courseId) =>
         predictionCourses.some(
@@ -619,13 +620,15 @@ export default function GradeCalculatorPage() {
                     <label>
                         <Text strong>ชั้นปีที่คาดการณ์</Text>
                         <Text className="grade-calculator-readonly-value">
-                            {overview ? `ชั้นปี ${overview.next_term.year}` : '-'}
+                            {predictionTerm
+                                ? `ชั้นปี ${predictionTerm.year}`
+                                : '-'}
                         </Text>
                     </label>
                     <label>
                         <Text strong>ภาคการเรียนที่คาดการณ์</Text>
                         <Text className="grade-calculator-readonly-value">
-                            {overview?.next_term.semester ?? '-'}
+                            {predictionTerm?.semester ?? '-'}
                         </Text>
                     </label>
                 </div>
@@ -674,14 +677,7 @@ export default function GradeCalculatorPage() {
                                 value={formatDecimal(overview.latest_gpa)}
                             />
                             <Statistic
-                                title="ชั้นปีและภาคการเรียนปัจจุบัน"
-                                value={formatTerm(
-                                    overview.current_term.year,
-                                    overview.current_term.semester,
-                                )}
-                            />
-                            <Statistic
-                                title="ภาคการศึกษาล่าสุดที่มีผลการเรียน"
+                                title="ชั้นปีและภาคการศึกษาล่าสุด"
                                 value={
                                     overview.latest_completed_term
                                         ? formatTerm(
