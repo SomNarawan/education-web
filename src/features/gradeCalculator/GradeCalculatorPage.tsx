@@ -1,4 +1,8 @@
-import { CalculatorOutlined, DeleteOutlined } from '@ant-design/icons'
+import {
+    CalculatorOutlined,
+    DeleteOutlined,
+    HistoryOutlined,
+} from '@ant-design/icons'
 import {
     Alert,
     Button,
@@ -7,6 +11,7 @@ import {
     Col,
     Empty,
     Form,
+    Modal,
     Row,
     Select,
     Space,
@@ -19,7 +24,9 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import { appMode } from '../../config/appMode'
+import GradeCalculationHistoryModal from '../gradeCalculationHistory/GradeCalculationHistoryPage'
 import { useCurrentStudent } from '../../hooks/useCurrentStudent'
+import { createGradeCalculation } from '../../services/gradeCalculationService'
 import {
     getStudentAcademicOverview,
     getStudentUnattemptedCourses,
@@ -165,6 +172,10 @@ export default function GradeCalculatorPage() {
     const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([])
     const [calculationResult, setCalculationResult] =
         useState<GradeCalculationResult | null>(null)
+    const [savingCalculation, setSavingCalculation] = useState(false)
+    const [calculationSaved, setCalculationSaved] = useState(false)
+    const [resultOpen, setResultOpen] = useState(false)
+    const [historyOpen, setHistoryOpen] = useState(false)
     const [gradeForm] = Form.useForm<GradeCalculationFormValues>()
     const expectedGrades = Form.useWatch('grades', gradeForm) ?? {}
 
@@ -395,7 +406,7 @@ export default function GradeCalculatorPage() {
         )
         const cumulativeCredits = currentCredits + termCredits
 
-        setCalculationResult({
+        const result = {
             termGpa: termQualityPoints / termCredits,
             cumulativeCredits,
             cumulativeGpa:
@@ -404,7 +415,39 @@ export default function GradeCalculatorPage() {
                       cumulativeCredits
                     : 0,
             courses: calculatedCourses,
-        })
+        }
+
+        setCalculationResult(result)
+        gradeForm.resetFields()
+        setCalculationSaved(false)
+
+        if (!isStudent || !predictionTerm) {
+            setResultOpen(true)
+            return
+        }
+
+        try {
+            setSavingCalculation(true)
+            await createGradeCalculation({
+                study_year: predictionTerm.year,
+                semester: predictionTerm.semester,
+                semester_order: predictionTerm.semester_order,
+                courses: calculatedCourses.map((course) => ({
+                    code: course.code,
+                    name: course.name,
+                    credits: course.credits,
+                    source: course.source,
+                    grade: course.grade,
+                })),
+            })
+            setCalculationSaved(true)
+        } catch (error) {
+            console.error('Unable to save grade calculation', error)
+            message.error('คำนวณสำเร็จ แต่บันทึกประวัติไม่สำเร็จ')
+        } finally {
+            setSavingCalculation(false)
+            setResultOpen(true)
+        }
     }
 
     const semesterColumns: ColumnsType<StudentAcademicHistory> = [
@@ -501,14 +544,25 @@ export default function GradeCalculatorPage() {
     ]
 
     const resultColumns: ColumnsType<CalculatedCourse> = [
-        { title: 'รหัสวิชา', dataIndex: 'code' },
-        { title: 'ชื่อรายวิชา', dataIndex: 'name' },
-        { title: 'หน่วยกิต', dataIndex: 'credits', align: 'center' },
-        { title: 'เกรดคาดการณ์', dataIndex: 'grade', align: 'center' },
+        { title: 'รหัสวิชา', dataIndex: 'code', width: 120 },
+        { title: 'ชื่อรายวิชา', dataIndex: 'name', width: 420 },
+        {
+            title: 'หน่วยกิต',
+            dataIndex: 'credits',
+            align: 'center',
+            width: 90,
+        },
+        {
+            title: 'เกรดคาดการณ์',
+            dataIndex: 'grade',
+            align: 'center',
+            width: 120,
+        },
         {
             title: 'คะแนนเกรด',
             dataIndex: 'gradePoints',
             align: 'center',
+            width: 110,
             render: (value: number) => value.toFixed(2),
         },
     ]
@@ -581,6 +635,13 @@ export default function GradeCalculatorPage() {
                         ในภาคการศึกษาถัดไป
                     </p>
                 </div>
+                <Button
+                    icon={<HistoryOutlined />}
+                    disabled={!selectedStudentId}
+                    onClick={() => setHistoryOpen(true)}
+                >
+                    ดูประวัติ
+                </Button>
             </div>
 
             <Card
@@ -774,7 +835,11 @@ export default function GradeCalculatorPage() {
                                     type="primary"
                                     size="large"
                                     icon={<CalculatorOutlined />}
-                                    disabled={selectedCourses.length === 0}
+                                    loading={savingCalculation}
+                                    disabled={
+                                        selectedCourses.length === 0 ||
+                                        savingCalculation
+                                    }
                                     onClick={() => void handleCalculate()}
                                 >
                                     คำนวณผลการเรียน
@@ -786,10 +851,29 @@ export default function GradeCalculatorPage() {
             )}
 
             {calculationResult && (
-                <Card
-                    className="grade-calculator-card grade-calculation-result"
-                    title={`ผลการคาดการณ์ ${predictedTermLabel}`}
+                <Modal
+                    width={1000}
+                    open={resultOpen}
+                    title="ผลการคำนวณ"
+                    footer={
+                        <Button type="primary" onClick={() => setResultOpen(false)}>
+                            ปิด
+                        </Button>
+                    }
+                    onCancel={() => setResultOpen(false)}
                 >
+                    {calculationSaved && (
+                        <Alert
+                            className="grade-calculation-saved-alert"
+                            type="success"
+                            showIcon
+                            message="บันทึกการคำนวณแล้ว"
+                            description="ผลการคำนวณนี้ถูกบันทึกไว้ในประวัติเรียบร้อยแล้ว"
+                        />
+                    )}
+                    <div className="grade-calculation-result-heading">
+                        ผลการคาดการณ์ {predictedTermLabel}
+                    </div>
                     <Row gutter={[16, 16]}>
                         <Col xs={24} sm={12} lg={6}>
                             <Statistic
@@ -842,9 +926,21 @@ export default function GradeCalculatorPage() {
                         pagination={false}
                         size="small"
                         tableLayout="fixed"
+                        scroll={{ x: 860 }}
                     />
-                </Card>
+                </Modal>
             )}
+
+            <GradeCalculationHistoryModal
+                open={historyOpen}
+                studentId={selectedStudentId}
+                studentLabel={
+                    selectedStudent
+                        ? `${selectedStudent.studentCode} — ${selectedStudent.fullName}`
+                        : '-'
+                }
+                onClose={() => setHistoryOpen(false)}
+            />
         </div>
     )
 }

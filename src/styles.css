@@ -1385,6 +1385,25 @@ body {
     text-align: center;
 }
 
+.grade-calculation-result-heading {
+    margin-bottom: 16px;
+    color: #334155;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.grade-calculation-saved-alert {
+    margin-bottom: 20px;
+    border-color: #52c41a;
+    background: #f6ffed;
+}
+
+.grade-calculation-saved-alert .ant-alert-message {
+    color: #237804;
+    font-size: 16px;
+    font-weight: 600;
+}
+
 .grade-calculator-page .ant-table-cell {
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -1396,6 +1415,30 @@ body {
 
 .grade-history-detail-table {
     margin-top: 20px;
+}
+
+.grade-calculation-history-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.grade-calculation-history-student {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.grade-calculation-history-summary > span {
+    display: grid;
+    gap: 4px;
 }
 
 @media (max-width: 1100px) {
@@ -1417,6 +1460,10 @@ body {
 }
 
 @media (max-width: 768px) {
+    .grade-calculation-history-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .student-profile-page .page-title-section {
         align-items: stretch;
         flex-direction: column;
