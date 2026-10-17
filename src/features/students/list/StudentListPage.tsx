@@ -4,6 +4,7 @@ import {
     PlusOutlined,
     SearchOutlined,
 } from '@ant-design/icons'
+import axios from 'axios'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import StudentTable from './StudentTable'
@@ -27,11 +28,28 @@ import { useAuth } from '../../../hooks/useAuth'
 import type { SelectOption } from '../../../types/MasterData'
 import type { StudentGroup } from '../../../types/StudentRoute'
 import type { ListOfValue } from '../../../types/ListOfValue'
+import type { ApiErrorResponse } from '../../../types/ApiResponse'
 import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
 import { toListOfValueOptions } from '../../../utils/listOfValue'
 import { OTHER_NOTE_NAME } from '../notes/noteConstants'
 
 type NoteSearchType = number | undefined
+
+function getRequestErrorReason(error: unknown): string | null {
+    if (!axios.isAxiosError<ApiErrorResponse>(error)) return null
+
+    const validationErrors = error.response?.data.errors
+
+    if (validationErrors) {
+        for (const value of Object.values(validationErrors)) {
+            const firstMessage = Array.isArray(value) ? value[0] : value
+
+            if (firstMessage?.trim()) return firstMessage
+        }
+    }
+
+    return error.response?.data.message?.trim() || null
+}
 
 interface FacultyStudentSearchFormValues {
     searchText: string
@@ -441,11 +459,12 @@ function StudentList() {
             })
         } catch (error) {
             console.error(error)
-            message.error(
-                editingStudent
-                    ? 'แก้ไขข้อมูลนิสิตไม่สำเร็จ'
-                    : 'เพิ่มข้อมูลนิสิตไม่สำเร็จ',
-            )
+            const fallbackMessage = editingStudent
+                ? 'แก้ไขข้อมูลนิสิตไม่สำเร็จ'
+                : 'เพิ่มข้อมูลนิสิตไม่สำเร็จ'
+            const reason = getRequestErrorReason(error)
+
+            message.error(reason ? `${fallbackMessage}: ${reason}` : fallbackMessage)
         } finally {
             setDropdownLoading(false)
         }
