@@ -1404,31 +1404,6 @@ body {
     font-weight: 600;
 }
 
-.academic-term-summary-grid {
-    margin-bottom: 16px;
-}
-
-.academic-term-card {
-    margin-bottom: 16px;
-}
-
-.academic-term-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
-}
-
-.academic-term-confirmation {
-    display: grid;
-    gap: 16px;
-    margin-top: 16px;
-}
-
-.academic-term-note {
-    margin-bottom: 0;
-    text-align: center;
-}
-
 .grade-calculator-page .ant-table-cell {
     overflow-wrap: anywhere;
     word-break: break-word;
