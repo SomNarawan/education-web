@@ -4,6 +4,7 @@ import type {
     CreateGradeCalculationRequest,
     GradeCalculation,
     GradeCalculationListData,
+    LatestGradeCalculationRequest,
     ListGradeCalculationsRequest,
 } from '../types/GradeCalculation'
 
@@ -12,6 +13,17 @@ export async function getGradeCalculations(
 ): Promise<GradeCalculationListData> {
     const response = await api.get<ApiResponse<GradeCalculationListData>>(
         '/grade-calculations',
+        { params: filters },
+    )
+
+    return response.data.data
+}
+
+export async function getLatestGradeCalculation(
+    filters: LatestGradeCalculationRequest = {},
+): Promise<GradeCalculation | null> {
+    const response = await api.get<ApiResponse<GradeCalculation | null>>(
+        '/grade-calculations/latest',
         { params: filters },
     )
 

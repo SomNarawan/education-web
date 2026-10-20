@@ -55,7 +55,12 @@ export interface ListGradeCalculationsRequest {
     per_page?: number
 }
 
+export interface LatestGradeCalculationRequest {
+    student_id?: number
+}
+
 export interface CreateGradeCalculationRequest {
+    student_id?: number
     study_year: number
     semester: string
     semester_order: number | null
