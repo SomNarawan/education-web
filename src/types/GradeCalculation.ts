@@ -60,7 +60,6 @@ export interface LatestGradeCalculationRequest {
 }
 
 export interface CreateGradeCalculationRequest {
-    student_id?: number
     study_year: number
     semester: string
     semester_order: number | null

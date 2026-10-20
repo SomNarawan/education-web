@@ -221,10 +221,8 @@ export function calculateGradePrediction(
 export function buildGradeCalculationRequest(
     result: GradeCalculationResult,
     term: StudentAcademicTerm,
-    studentId?: number,
 ): CreateGradeCalculationRequest {
     return {
-        ...(studentId === undefined ? {} : { student_id: studentId }),
         study_year: term.year,
         semester: term.semester,
         semester_order: term.semester_order,

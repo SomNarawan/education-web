@@ -321,7 +321,7 @@ export function useGradeCalculator() {
         gradeForm.resetFields()
         setCalculationSaved(false)
 
-        if (!predictionTerm) {
+        if (currentRole !== 'student' || !predictionTerm) {
             setResultOpen(true)
             return
         }
@@ -331,7 +331,6 @@ export function useGradeCalculator() {
             const request = buildGradeCalculationRequest(
                 result,
                 predictionTerm,
-                isStudent ? undefined : (selectedStudentId ?? undefined),
             )
             await createGradeCalculation(request)
             setCalculationSaved(true)
