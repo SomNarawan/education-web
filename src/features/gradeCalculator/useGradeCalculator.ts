@@ -30,7 +30,9 @@ import {
     calculateGradePrediction,
     formatTerm,
     getDefaultCourseIds,
+    getSelectedCourses,
     restoreGradePrediction,
+    updateOtherCourseSelection,
 } from './gradeCalculatorUtils'
 
 interface GradeCalculatorData {
@@ -181,7 +183,7 @@ export function useGradeCalculator() {
 
     const predictionCourses = data?.courses ?? []
     const selectedCourses = useMemo(
-        () => data?.courses.filter(({ id }) => selectedCourseIds.includes(id)) ?? [],
+        () => getSelectedCourses(data?.courses ?? [], selectedCourseIds),
         [data, selectedCourseIds],
     )
     const overview = data?.overview ?? null
@@ -232,10 +234,9 @@ export function useGradeCalculator() {
                 .filter(({ source }) => source === 'other')
                 .map(({ id }) => id),
         )
-        setSelectedCourseIds((ids) => [
-            ...ids.filter((id) => !availableOtherIds.has(id)),
-            ...courseIds,
-        ])
+        setSelectedCourseIds((ids) =>
+            updateOtherCourseSelection(ids, courseIds, availableOtherIds),
+        )
 
         for (const id of availableOtherIds) {
             if (!courseIds.includes(id)) {

@@ -118,6 +118,33 @@ export function getDefaultCourseIds(courses: PredictionCourse[]): string[] {
         .map(({ id }) => id)
 }
 
+export function getSelectedCourses(
+    courses: PredictionCourse[],
+    selectedCourseIds: string[],
+): PredictionCourse[] {
+    const coursesById = new Map(courses.map((course) => [course.id, course]))
+
+    return selectedCourseIds
+        .map((id) => coursesById.get(id))
+        .filter((course): course is PredictionCourse => course !== undefined)
+}
+
+export function updateOtherCourseSelection(
+    currentIds: string[],
+    nextOtherIds: string[],
+    availableOtherIds: ReadonlySet<string>,
+): string[] {
+    const nextSelection = new Set(nextOtherIds)
+    const retainedIds = currentIds.filter(
+        (id) => !availableOtherIds.has(id) || nextSelection.has(id),
+    )
+    const addedIds = [...nextSelection].filter(
+        (id) => availableOtherIds.has(id) && !currentIds.includes(id),
+    )
+
+    return [...retainedIds, ...addedIds]
+}
+
 function normalizeCourseCode(code: string): string {
     return code.trim().toUpperCase()
 }
