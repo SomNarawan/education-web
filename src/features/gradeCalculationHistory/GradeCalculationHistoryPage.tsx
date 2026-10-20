@@ -38,6 +38,41 @@ const sourceLabels: Record<
     other: { label: 'วิชาอื่น', color: 'default' },
 }
 
+function renderGpaxWithChange(currentGpax: number, previousGpax: number) {
+    const change = Number((currentGpax - previousGpax).toFixed(2))
+    const changeText =
+        change > 0 ? `+${change.toFixed(2)}` : change.toFixed(2)
+    const changeClassName =
+        change > 0
+            ? 'grade-calculation-gpax-change-positive'
+            : change < 0
+              ? 'grade-calculation-gpax-change-negative'
+              : 'grade-calculation-gpax-change-neutral'
+
+    return (
+        <span className="grade-calculation-gpax-value">
+            {currentGpax.toFixed(2)}{' '}
+            <span className={changeClassName}>({changeText})</span>
+        </span>
+    )
+}
+
+function renderCourseGroupPerformance(course: GradeCalculationCourse) {
+    if (!course.course_group) return '-'
+
+    return (
+        <span className="grade-course-group-performance">
+            <span>{course.course_group}</span>
+            <Text type="secondary">
+                เกรดเฉลี่ย{' '}
+                {course.course_group_gpa == null
+                    ? '-'
+                    : course.course_group_gpa.toFixed(2)}
+            </Text>
+        </span>
+    )
+}
+
 export default function GradeCalculationHistoryModal({
     open,
     studentId,
@@ -118,6 +153,13 @@ export default function GradeCalculationHistoryModal({
                     `${courses.length} วิชา`,
             },
             {
+                title: 'GPAX ภาคก่อนหน้า',
+                dataIndex: 'current_gpax',
+                align: 'center',
+                width: 130,
+                render: (value: number) => value.toFixed(2),
+            },
+            {
                 title: 'GPA คาดการณ์',
                 dataIndex: 'term_gpa',
                 align: 'center',
@@ -128,8 +170,9 @@ export default function GradeCalculationHistoryModal({
                 title: 'GPAX คาดการณ์',
                 dataIndex: 'cumulative_gpa',
                 align: 'center',
-                width: 130,
-                render: (value: number) => value.toFixed(2),
+                width: 175,
+                render: (value: number, record) =>
+                    renderGpaxWithChange(value, record.current_gpax),
             },
             {
                 title: '',
@@ -150,6 +193,12 @@ export default function GradeCalculationHistoryModal({
     const courseColumns: ColumnsType<GradeCalculationCourse> = [
         { title: 'รหัสวิชา', dataIndex: 'code', width: 110 },
         { title: 'ชื่อรายวิชา', dataIndex: 'name' },
+        {
+            title: 'เกรดเฉลี่ยของหมวดวิชา',
+            key: 'courseGroupPerformance',
+            width: 360,
+            render: (_, course) => renderCourseGroupPerformance(course),
+        },
         {
             title: 'ประเภท',
             dataIndex: 'source',
@@ -186,7 +235,7 @@ export default function GradeCalculationHistoryModal({
     return (
         <>
             <Modal
-                width={1200}
+                width={1300}
                 open={open}
                 title="ประวัติการคำนวณผลการเรียน"
                 footer={null}
@@ -215,12 +264,12 @@ export default function GradeCalculationHistoryModal({
                         showTotal: (value) => `ทั้งหมด ${value} รายการ`,
                     }}
                     onChange={handleTableChange}
-                    scroll={{ x: 900 }}
+                    scroll={{ x: 1200 }}
                 />
             </Modal>
 
             <Modal
-                width={900}
+                width={1200}
                 open={selectedCalculation !== null}
                 title={
                     selectedCalculation
@@ -234,7 +283,7 @@ export default function GradeCalculationHistoryModal({
                     <>
                         <div className="grade-calculation-history-summary">
                             <Text>
-                                GPAX เดิม{' '}
+                                GPAX ภาคก่อนหน้า{' '}
                                 <strong>
                                     {selectedCalculation.current_gpax.toFixed(2)}
                                 </strong>
@@ -248,7 +297,10 @@ export default function GradeCalculationHistoryModal({
                             <Text>
                                 GPAX คาดการณ์{' '}
                                 <strong>
-                                    {selectedCalculation.cumulative_gpa.toFixed(2)}
+                                    {renderGpaxWithChange(
+                                        selectedCalculation.cumulative_gpa,
+                                        selectedCalculation.current_gpax,
+                                    )}
                                 </strong>
                             </Text>
                             <Text>
@@ -266,7 +318,7 @@ export default function GradeCalculationHistoryModal({
                             dataSource={selectedCalculation.courses}
                             pagination={false}
                             size="small"
-                            scroll={{ x: 700 }}
+                            scroll={{ x: 1100 }}
                         />
                     </>
                 )}

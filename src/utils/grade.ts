@@ -1,3 +1,5 @@
+import { chartColors } from '../config/appColors'
+
 export const gradeRanges = [
     'เกรด(0-1.74)',
     'เกรด(1.75-1.99)',
@@ -6,10 +8,10 @@ export const gradeRanges = [
 ]
 
 export const gradeRangeColors = [
-    '#ff5b5b',
-    '#ff8a34',
-    '#8bcf8b',
-    '#8bd2f2',
+    chartColors.gradeLow,
+    chartColors.gradeBelowStandard,
+    chartColors.gradeGood,
+    chartColors.gradeExcellent,
 ]
 
 function getGradeRangeIndex(gpa: number) {

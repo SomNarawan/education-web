@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { appColors } from '../../../config/appColors'
 import type { StudentListResponse } from '../../../types/StudentListResponse'
 import type { StudentGroup } from '../../../types/StudentRoute'
 import NoteHistoryModal from '../notes/NoteHistoryModal'
@@ -138,8 +139,8 @@ export default function StudentTable({
                     <Button
                         icon={<EyeOutlined />}
                         style={{
-                            borderColor: '#1677ff',
-                            color: '#1677ff',
+                            borderColor: appColors.info,
+                            color: appColors.info,
                         }}
                         onClick={() =>
                             navigate(`/students/${studentGroup}/detail/${record.id}`, {
@@ -155,8 +156,8 @@ export default function StudentTable({
                             <Button
                                 icon={<EditOutlined />}
                                 style={{
-                                    borderColor: '#faad14',
-                                    color: '#faad14',
+                                    borderColor: appColors.warning,
+                                    color: appColors.warning,
                                 }}
                                 onClick={() => onEdit(record.id)}
                             />

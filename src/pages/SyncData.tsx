@@ -19,6 +19,7 @@ import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CustomTable from '../components/custom/CustomTable'
+import { appColors } from '../config/appColors'
 import { useAuth } from '../hooks/useAuth'
 import {
     getSyncHistory,
@@ -391,8 +392,8 @@ export default function SyncData() {
                         icon={<EyeOutlined />}
                         aria-label={'ดูข้อมูล ' + record.label}
                         style={{
-                            borderColor: '#1677ff',
-                            color: '#1677ff',
+                            borderColor: appColors.info,
+                            color: appColors.info,
                         }}
                         onClick={() =>
                             navigate(`/sync/details/${record.key}`)

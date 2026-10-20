@@ -18,6 +18,7 @@ import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import CustomTable from '../../components/custom/CustomTable'
 import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark'
+import { appColors } from '../../config/appColors'
 import {
     createHighSchool,
     getHighSchool,
@@ -433,7 +434,7 @@ export default function HighSchoolManagementPage() {
                             aria-label={`${nextStatusLabel}${school.school_name}`}
                             style={
                                 status === 'active'
-                                    ? { backgroundColor: '#52c41a' }
+                                    ? { backgroundColor: appColors.success }
                                     : undefined
                             }
                         />
@@ -458,8 +459,8 @@ export default function HighSchoolManagementPage() {
                             updatingStatusId !== null
                         }
                         style={{
-                            borderColor: '#1677ff',
-                            color: '#1677ff',
+                            borderColor: appColors.info,
+                            color: appColors.info,
                         }}
                         onClick={() => void handleOpenView(school)}
                     />
@@ -468,8 +469,8 @@ export default function HighSchoolManagementPage() {
                         aria-label={`แก้ไข${school.school_name}`}
                         loading={loadingEditId === school.id}
                         style={{
-                            borderColor: '#faad14',
-                            color: '#faad14',
+                            borderColor: appColors.warning,
+                            color: appColors.warning,
                         }}
                         disabled={
                             loadingViewId !== null ||

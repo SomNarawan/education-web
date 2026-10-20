@@ -20,6 +20,9 @@ export interface StudentPendingCourse {
     course_name_th: string | null
     credit: number | null
     previous_grade: string | null
+    course_category: string | null
+    course_sub_category: string | null
+    course_group: string | null
 }
 
 export interface StudentNextTermCourse {

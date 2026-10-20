@@ -14,6 +14,8 @@ export interface GradeCalculationCourse {
     name: string
     credits: number
     source: GradeCalculationCourseSource
+    course_group?: string | null
+    course_group_gpa?: number | null
     grade: string
     grade_points: number
 }
@@ -24,6 +26,7 @@ export interface GradeCalculation {
     study_year: number
     semester: string
     semester_order: number | null
+    current_gpa: number | null
     current_gpax: number
     current_credits: number
     term_gpa: number
@@ -61,6 +64,8 @@ export interface CreateGradeCalculationRequest {
         name: string
         credits: number
         source: GradeCalculationCourseSource
+        course_group: string | null
+        course_group_gpa: number | null
         grade: string
     }>
 }

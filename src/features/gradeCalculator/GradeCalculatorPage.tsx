@@ -23,6 +23,7 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
+import { appColors } from '../../config/appColors'
 import { appMode } from '../../config/appMode'
 import GradeCalculationHistoryModal from '../gradeCalculationHistory/GradeCalculationHistoryPage'
 import { useCurrentStudent } from '../../hooks/useCurrentStudent'
@@ -32,14 +33,20 @@ import {
     getStudentUnattemptedCourses,
 } from '../../services/studentAcademicOverviewService'
 import {
+    getStudentGraphs,
+    isStudentGradeDataMissingError,
+} from '../../services/studentJsonDataService'
+import {
     getStudentDetailByCode,
     getStudents,
 } from '../../services/studentService'
 import type {
     StudentAcademicHistory,
     StudentAcademicOverview,
+    StudentNextTermCourse,
     StudentUnattemptedCoursesData,
 } from '../../types/StudentAcademicOverview'
+import type { StudentGraphData } from '../../types/StudentJsonData'
 import { gradeOptions } from './gradeOptions'
 
 const { Text } = Typography
@@ -59,6 +66,8 @@ interface PredictionCourse {
     credits: number
     source: CourseSource
     reason: string
+    courseGroup: string | null
+    courseGroupGpa: number | null
 }
 
 interface CalculatedCourse extends PredictionCourse {
@@ -101,32 +110,132 @@ function getGpaChangePresentation(change: number) {
                 : roundedChange.toFixed(2),
         color:
             roundedChange > 0
-                ? '#52c41a'
+                ? appColors.success
                 : roundedChange < 0
-                  ? '#ff4d4f'
-                  : '#64748b',
+                  ? appColors.error
+                  : appColors.neutral,
     }
+}
+
+async function loadCourseGroupPerformance(
+    studentCode: string,
+): Promise<StudentGraphData['by_group']> {
+    if (!/^\d+$/.test(studentCode.trim())) return {}
+
+    try {
+        const data = await getStudentGraphs(studentCode)
+
+        return data.by_group
+    } catch (error) {
+        if (isStudentGradeDataMissingError(error)) {
+            return {}
+        }
+
+        throw error
+    }
+}
+
+function findCourseGroupPerformance(
+    course: Pick<
+        StudentNextTermCourse,
+        'course_category' | 'course_sub_category' | 'course_group'
+    >,
+    performanceByGroup: StudentGraphData['by_group'],
+) {
+    const labels = [
+        course.course_group,
+        course.course_sub_category,
+        course.course_category,
+    ].filter((label): label is string => Boolean(label?.trim()))
+    const datasets = Object.values(performanceByGroup)
+    const categoryDataset = course.course_category
+        ? datasets.find(
+              (records) =>
+                  records[0]?.course_group === course.course_category,
+          )
+        : undefined
+
+    for (const label of labels) {
+        const record = categoryDataset?.find(
+            (item) => item.course_group === label,
+        )
+
+        if (record) {
+            return {
+                courseGroup: record.course_group,
+                courseGroupGpa: record.gpa,
+            }
+        }
+    }
+
+    for (const label of labels) {
+        const record = datasets
+            .flat()
+            .find((item) => item.course_group === label)
+
+        if (record) {
+            return {
+                courseGroup: record.course_group,
+                courseGroupGpa: record.gpa,
+            }
+        }
+    }
+
+    return {
+        courseGroup: labels[0] ?? null,
+        courseGroupGpa: null,
+    }
+}
+
+function renderCourseGroupPerformance(
+    courseGroup: string | null | undefined,
+    courseGroupGpa: number | null | undefined,
+) {
+    if (!courseGroup) return '-'
+
+    return (
+        <span className="grade-course-group-performance">
+            <span>{courseGroup}</span>
+            <Text type="secondary">
+                เกรดเฉลี่ย{' '}
+                {courseGroupGpa == null ? '-' : courseGroupGpa.toFixed(2)}
+            </Text>
+        </span>
+    )
 }
 
 function buildPredictionCourses(
     overview: StudentAcademicOverview,
     unattempted: StudentUnattemptedCoursesData,
+    performanceByGroup: StudentGraphData['by_group'],
 ): PredictionCourse[] {
-    const backlog = overview.pending_courses.map((course, index) => ({
-        id: `backlog-${course.course_code ?? 'course'}-${index}`,
-        code: course.course_code ?? '-',
-        name: course.course_name_th ?? '-',
-        credits: course.credit ?? 0,
-        source: 'backlog' as const,
-        reason: course.previous_grade
-            ? `ผลการเรียนเดิม ${course.previous_grade}`
-            : 'ยังไม่มีผลการเรียน',
-    }))
+    const backlog = overview.pending_courses.map((course, index) => {
+        const performance = findCourseGroupPerformance(
+            course,
+            performanceByGroup,
+        )
+
+        return {
+            id: `backlog-${course.course_code ?? 'course'}-${index}`,
+            code: course.course_code ?? '-',
+            name: course.course_name_th ?? '-',
+            credits: course.credit ?? 0,
+            source: 'backlog' as const,
+            reason: course.previous_grade
+                ? `ผลการเรียนเดิม ${course.previous_grade}`
+                : 'ยังไม่มีผลการเรียน',
+            ...performance,
+        }
+    })
     const nextSemester = overview.next_term.courses.map((course, index) => {
         const category =
             course.course_group ??
             course.course_sub_category ??
             course.course_category
+        const performance = findCourseGroupPerformance(
+            course,
+            performanceByGroup,
+        )
 
         return {
             id: `next-semester-${course.course_code ?? 'course'}-${index}`,
@@ -135,6 +244,7 @@ function buildPredictionCourses(
             credits: course.credit ?? 0,
             source: 'next-semester' as const,
             reason: category ?? 'รายวิชาตามแผนการเรียน',
+            ...performance,
         }
     })
     const other = unattempted.courses.map((course, index) => {
@@ -142,6 +252,10 @@ function buildPredictionCourses(
             course.course_group ??
             course.course_sub_category ??
             course.course_category
+        const performance = findCourseGroupPerformance(
+            course,
+            performanceByGroup,
+        )
 
         return {
             id: `other-${course.course_code ?? 'course'}-${index}`,
@@ -150,6 +264,7 @@ function buildPredictionCourses(
             credits: course.credit ?? 0,
             source: 'other' as const,
             reason: category ?? 'รายวิชาในแผนการเรียน',
+            ...performance,
         }
     })
 
@@ -167,6 +282,9 @@ export default function GradeCalculatorPage() {
         useState<StudentAcademicOverview | null>(null)
     const [unattempted, setUnattempted] =
         useState<StudentUnattemptedCoursesData | null>(null)
+    const [courseGroupPerformance, setCourseGroupPerformance] = useState<
+        StudentGraphData['by_group']
+    >({})
     const [loadingStudents, setLoadingStudents] = useState(true)
     const [loadingOverview, setLoadingOverview] = useState(false)
     const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([])
@@ -178,6 +296,10 @@ export default function GradeCalculatorPage() {
     const [historyOpen, setHistoryOpen] = useState(false)
     const [gradeForm] = Form.useForm<GradeCalculationFormValues>()
     const expectedGrades = Form.useWatch('grades', gradeForm) ?? {}
+    const selectedStudent = studentOptions.find(
+        (student) => student.id === selectedStudentId,
+    )
+    const selectedStudentCode = selectedStudent?.studentCode ?? ''
 
     useEffect(() => {
         let cancelled = false
@@ -245,7 +367,7 @@ export default function GradeCalculatorPage() {
     }, [isStudent, studentCode])
 
     useEffect(() => {
-        if (!selectedStudentId) {
+        if (!selectedStudentId || !selectedStudentCode) {
             return
         }
 
@@ -254,16 +376,23 @@ export default function GradeCalculatorPage() {
         const loadOverview = async () => {
             try {
                 setLoadingOverview(true)
-                const [data, unattemptedData] = await Promise.all([
-                    getStudentAcademicOverview(selectedStudentId),
-                    getStudentUnattemptedCourses(selectedStudentId),
-                ])
+                const [data, unattemptedData, performanceData] =
+                    await Promise.all([
+                        getStudentAcademicOverview(selectedStudentId),
+                        getStudentUnattemptedCourses(selectedStudentId),
+                        loadCourseGroupPerformance(selectedStudentCode),
+                    ])
 
                 if (cancelled) return
 
-                const courses = buildPredictionCourses(data, unattemptedData)
+                const courses = buildPredictionCourses(
+                    data,
+                    unattemptedData,
+                    performanceData,
+                )
                 setOverview(data)
                 setUnattempted(unattemptedData)
+                setCourseGroupPerformance(performanceData)
                 setSelectedCourseIds(
                     courses
                         .filter((course) => course.source !== 'other')
@@ -277,6 +406,7 @@ export default function GradeCalculatorPage() {
                 console.error(error)
                 setOverview(null)
                 setUnattempted(null)
+                setCourseGroupPerformance({})
                 setSelectedCourseIds([])
                 message.error('โหลดข้อมูลผลการเรียนไม่สำเร็จ')
             } finally {
@@ -291,14 +421,18 @@ export default function GradeCalculatorPage() {
         return () => {
             cancelled = true
         }
-    }, [gradeForm, selectedStudentId])
+    }, [gradeForm, selectedStudentCode, selectedStudentId])
 
     const predictionCourses = useMemo(
         () =>
             overview && unattempted
-                ? buildPredictionCourses(overview, unattempted)
+                ? buildPredictionCourses(
+                      overview,
+                      unattempted,
+                      courseGroupPerformance,
+                  )
                 : [],
-        [overview, unattempted],
+        [courseGroupPerformance, overview, unattempted],
     )
     const selectedCourses = useMemo(
         () =>
@@ -306,9 +440,6 @@ export default function GradeCalculatorPage() {
                 selectedCourseIds.includes(course.id),
             ),
         [predictionCourses, selectedCourseIds],
-    )
-    const selectedStudent = studentOptions.find(
-        (student) => student.id === selectedStudentId,
     )
     const currentGpax = overview?.gpax ?? 0
     const currentCredits = overview?.cumulative_credits ?? 0
@@ -437,6 +568,8 @@ export default function GradeCalculatorPage() {
                     name: course.name,
                     credits: course.credits,
                     source: course.source,
+                    course_group: course.courseGroup,
+                    course_group_gpa: course.courseGroupGpa,
                     grade: course.grade,
                 })),
             })
@@ -480,6 +613,16 @@ export default function GradeCalculatorPage() {
     const selectedCourseColumns: ColumnsType<PredictionCourse> = [
         { title: 'รหัสวิชา', dataIndex: 'code', width: 115 },
         { title: 'ชื่อรายวิชา', dataIndex: 'name' },
+        {
+            title: 'เกรดเฉลี่ยของหมวดวิชา',
+            key: 'courseGroupPerformance',
+            width: 360,
+            render: (_, course) =>
+                renderCourseGroupPerformance(
+                    course.courseGroup,
+                    course.courseGroupGpa,
+                ),
+        },
         {
             title: 'ประเภท',
             dataIndex: 'source',
@@ -545,7 +688,17 @@ export default function GradeCalculatorPage() {
 
     const resultColumns: ColumnsType<CalculatedCourse> = [
         { title: 'รหัสวิชา', dataIndex: 'code', width: 120 },
-        { title: 'ชื่อรายวิชา', dataIndex: 'name', width: 420 },
+        { title: 'ชื่อรายวิชา', dataIndex: 'name', width: 320 },
+        {
+            title: 'เกรดเฉลี่ยของหมวดวิชา',
+            key: 'courseGroupPerformance',
+            width: 360,
+            render: (_, course) =>
+                renderCourseGroupPerformance(
+                    course.courseGroup,
+                    course.courseGroupGpa,
+                ),
+        },
         {
             title: 'หน่วยกิต',
             dataIndex: 'credits',
@@ -824,6 +977,7 @@ export default function GradeCalculatorPage() {
                                 pagination={false}
                                 size="small"
                                 tableLayout="fixed"
+                                scroll={{ x: 1180 }}
                             />
                         </Form>
                         <div className="grade-calculator-actions">
@@ -852,7 +1006,7 @@ export default function GradeCalculatorPage() {
 
             {calculationResult && (
                 <Modal
-                    width={1000}
+                    width={1300}
                     open={resultOpen}
                     title="ผลการคำนวณ"
                     footer={
@@ -880,7 +1034,7 @@ export default function GradeCalculatorPage() {
                                 title="GPA เทอมที่คาดการณ์"
                                 value={calculationResult.termGpa}
                                 precision={2}
-                                valueStyle={{ color: '#1677ff' }}
+                                valueStyle={{ color: appColors.info }}
                             />
                         </Col>
                         <Col xs={24} sm={12} lg={6}>
@@ -892,8 +1046,8 @@ export default function GradeCalculatorPage() {
                                     color:
                                         calculationResult.cumulativeGpa >=
                                         currentGpax
-                                            ? '#52c41a'
-                                            : '#fa8c16',
+                                            ? appColors.success
+                                            : appColors.error,
                                 }}
                             />
                         </Col>
@@ -926,7 +1080,6 @@ export default function GradeCalculatorPage() {
                         pagination={false}
                         size="small"
                         tableLayout="fixed"
-                        scroll={{ x: 860 }}
                     />
                 </Modal>
             )}

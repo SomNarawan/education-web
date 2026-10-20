@@ -23,6 +23,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import CustomTable from '../../components/custom/CustomTable'
 import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark'
+import { appColors } from '../../config/appColors'
 import { useAuth } from '../../hooks/useAuth'
 import {
     createManagedMasterData,
@@ -383,7 +384,7 @@ function MasterDataManagementContent({
                             aria-label={`${nextStatusLabel}${recordLabel}`}
                             style={
                                 status === 'active'
-                                    ? { backgroundColor: '#52c41a' }
+                                    ? { backgroundColor: appColors.success }
                                     : undefined
                             }
                         />
@@ -421,8 +422,8 @@ function MasterDataManagementContent({
                                     loadingViewId !== record.id
                                 }
                                 style={{
-                                    borderColor: '#1677ff',
-                                    color: '#1677ff',
+                                    borderColor: appColors.info,
+                                    color: appColors.info,
                                 }}
                                 onClick={() => void handleOpenDetail(record)}
                             />
@@ -436,8 +437,8 @@ function MasterDataManagementContent({
                                 loadingEditId !== record.id
                             }
                             style={{
-                                borderColor: '#faad14',
-                                color: '#faad14',
+                                borderColor: appColors.warning,
+                                color: appColors.warning,
                             }}
                             onClick={() => void handleOpenEdit(record)}
                         />

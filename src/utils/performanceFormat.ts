@@ -1,3 +1,5 @@
+import { appColors } from '../config/appColors'
+
 export function formatDecimal(value: number) {
     return value.toFixed(2)
 }
@@ -18,6 +20,6 @@ export function getDiffColor(value: string | number) {
     const numericValue = Number(value)
 
     return !Number.isNaN(numericValue) && numericValue < 0
-        ? '#ff0000'
-        : '#008000'
+        ? appColors.error
+        : appColors.success
 }

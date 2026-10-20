@@ -190,7 +190,7 @@ body {
 }
 
 .curriculum-structure-collapsed .ant-btn {
-    color: #1677ff;
+    color: var(--app-color-info);
 }
 
 .curriculum-structure-card,
@@ -239,13 +239,13 @@ body {
 }
 
 .curriculum-structure-tree .ant-tree-node-selected {
-    color: #1677ff;
+    color: var(--app-color-info);
     background: #eaf4ff !important;
     font-weight: 600;
 }
 
 .curriculum-structure-tree .ant-tree-iconEle {
-    color: #1677ff;
+    color: var(--app-color-info);
 }
 
 .curriculum-courses-card .ant-card-body {
@@ -269,7 +269,7 @@ body {
 }
 
 .curriculum-courses-path .ant-breadcrumb-link {
-    color: #64748b;
+    color: var(--app-color-neutral);
 }
 
 @media (max-width: 1100px) {
@@ -635,7 +635,7 @@ body {
 
 .course-group-credit-chart-caption {
     margin-top: 8px;
-    color: #64748b;
+    color: var(--app-color-neutral);
     font-size: 11px;
 }
 
@@ -654,11 +654,11 @@ body {
 .grade-legend-danger,
 .course-group-remaining-heading,
 .course-group-remaining-value {
-    color: #ff0000;
+    color: var(--app-color-error);
 }
 
 .grade-legend-warning {
-    color: #ff8a00;
+    color: var(--app-color-warning);
 }
 
 .student-import-page {
@@ -695,7 +695,7 @@ body {
 
 .student-import-upload-field-error .ant-upload-drag,
 .student-import-upload-field-error .ant-upload-drag:hover {
-    border-color: #ff4d4f;
+    border-color: var(--app-color-error);
 }
 
 .student-import-actions {
@@ -825,7 +825,7 @@ body {
 .grade-legend-success,
 .course-group-completed-heading,
 .course-group-completed-value {
-    color: #008000;
+    color: var(--app-color-success);
 }
 
 .course-group-completed-heading,
@@ -875,7 +875,7 @@ body {
 }
 
 .chart-data-point:focus-visible rect:first-child {
-    stroke: #1677ff;
+    stroke: var(--app-color-info);
     stroke-width: 2;
 }
 
@@ -1115,7 +1115,7 @@ body {
 }
 
 .master-data-table-heading > span {
-    color: #64748b;
+    color: var(--app-color-neutral);
     white-space: nowrap;
 }
 
@@ -1127,7 +1127,7 @@ body {
 
 .form-required-mark {
     margin-inline-start: 4px;
-    color: #ff4d4f;
+    color: var(--app-color-error);
 }
 
 .school-location-form-field {
@@ -1136,7 +1136,7 @@ body {
 
 .school-location-form-field > p {
     margin: 4px 0 10px;
-    color: #64748b;
+    color: var(--app-color-neutral);
     font-size: 13px;
 }
 
@@ -1216,7 +1216,7 @@ body {
 
 .student-profile-summary-card .ant-avatar {
     flex: 0 0 auto;
-    background: #1677ff;
+    background: var(--app-color-info);
 }
 
 .student-profile-summary-text {
@@ -1238,7 +1238,7 @@ body {
 
 .student-profile-card .ant-descriptions-item-label {
     width: 180px;
-    color: #64748b;
+    color: var(--app-color-neutral);
 }
 
 .grade-calculator-page .page-title-section {
@@ -1325,7 +1325,7 @@ body {
 .grade-course-group-heading > span {
     display: block;
     margin-top: 3px;
-    color: #64748b;
+    color: var(--app-color-neutral);
     font-size: 13px;
 }
 
@@ -1360,7 +1360,7 @@ body {
 }
 
 .grade-course-choice-content > span {
-    color: #64748b;
+    color: var(--app-color-neutral);
     font-size: 12px;
 }
 
@@ -1394,7 +1394,7 @@ body {
 
 .grade-calculation-saved-alert {
     margin-bottom: 20px;
-    border-color: #52c41a;
+    border-color: var(--app-color-success);
     background: #f6ffed;
 }
 
@@ -1411,6 +1411,11 @@ body {
 
 .grade-prediction-table .ant-select {
     width: 100%;
+}
+
+.grade-course-group-performance {
+    display: grid;
+    gap: 2px;
 }
 
 .grade-history-detail-table {
@@ -1439,6 +1444,22 @@ body {
 .grade-calculation-history-summary > span {
     display: grid;
     gap: 4px;
+}
+
+.grade-calculation-gpax-value {
+    white-space: nowrap;
+}
+
+.grade-calculation-gpax-change-positive {
+    color: var(--app-color-success);
+}
+
+.grade-calculation-gpax-change-negative {
+    color: var(--app-color-error);
+}
+
+.grade-calculation-gpax-change-neutral {
+    color: var(--app-color-neutral);
 }
 
 @media (max-width: 1100px) {
