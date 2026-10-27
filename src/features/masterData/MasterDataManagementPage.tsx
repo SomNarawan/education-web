@@ -67,7 +67,7 @@ function MasterDataManagementContent({
     resource,
 }: MasterDataManagementContentProps) {
     const definition = masterDataDefinitions[resource]
-    const { logout } = useAuth()
+    const { clearSession } = useAuth()
     const [form] = Form.useForm<MasterDataFormValues>()
     const [records, setRecords] = useState<ManagedMasterDataRecord[]>([])
     const [loading, setLoading] = useState(true)
@@ -89,7 +89,7 @@ function MasterDataManagementContent({
                         responseMessage ??
                             'เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
                     )
-                    logout()
+                    clearSession()
                     return
                 }
 
@@ -99,7 +99,7 @@ function MasterDataManagementContent({
 
             message.error(fallbackMessage)
         },
-        [logout],
+        [clearSession],
     )
 
     const loadRecords = useCallback(async () => {

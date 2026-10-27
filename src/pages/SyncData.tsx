@@ -269,7 +269,7 @@ function createResultColumns(
 }
 
 export default function SyncData() {
-    const { logout } = useAuth()
+    const { clearSession } = useAuth()
     const navigate = useNavigate()
     const [syncingType, setSyncingType] = useState<SyncDataType | null>(null)
     const [errorRecord, setErrorRecord] =
@@ -303,14 +303,14 @@ export default function SyncData() {
             }
 
             if (requestError.unauthorized) {
-                logout()
+                clearSession()
             }
 
             return null
         } finally {
             setHistoryLoading(false)
         }
-    }, [logout])
+    }, [clearSession])
 
     useEffect(() => {
         // Initial API synchronization is intentionally triggered when the page mounts.

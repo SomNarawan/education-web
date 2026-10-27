@@ -17,13 +17,22 @@ import {
     appAllowedRoles,
     isRoleAllowedInApp,
 } from '../config/appMode'
+import {
+    authProvider,
+    clearStoredAuth,
+    portalLogoutUrl,
+} from '../config/auth'
+import { logout as logoutRequest } from '../services/authService'
 
 type AuthContextType = {
     token: string | null
     user: AuthUser | null
     currentRole: AppRole | null
     loginWithToken: (token: string) => Promise<void>
-    logout: () => void
+    // The user signs out: ends the session on the server too.
+    logout: () => Promise<void>
+    // The server already ended the session (401): forget it locally.
+    clearSession: () => void
     setCurrentRole: (role: AppRole) => void
 }
 
@@ -133,14 +142,17 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                 const storedRole = getStoredRole()
                 const responseRole = payload.current_role
 
+                // A role picked in the header menu wins; right after login there
+                // is none, so the role the user clicked in ENG Main (current_role)
+                // applies.
                 const roleToSet =
                     (storedRole && availableRoles.includes(storedRole)
                         ? storedRole
                         : null) ??
-                    (availableRoles.includes('admin') ? 'admin' : null) ??
                     (responseRole && availableRoles.includes(responseRole)
                         ? responseRole
                         : null) ??
+                    (availableRoles.includes('admin') ? 'admin' : null) ??
                     availableRoles[0]
 
                 if (roleToSet) {
@@ -185,15 +197,29 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         localStorage.setItem('auth_token', t)
     }, [])
 
-    const logout = useCallback(() => {
+    const clearSession = useCallback(() => {
         setToken(null)
         setUser(null)
         setCurrentRoleState(null)
 
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('auth_user')
-        localStorage.removeItem('current_role')
+        clearStoredAuth()
     }, [])
+
+    const logout = useCallback(async () => {
+        // Sent while auth_token is still stored; failing is fine, the session
+        // will not be used again either way.
+        await logoutRequest().catch(() => undefined)
+
+        if (authProvider === 'portal') {
+            // Leaving the app, so only storage is cleared: clearing the state
+            // would let RoleRedirect send the page to the login URL instead.
+            clearStoredAuth()
+            window.location.assign(portalLogoutUrl)
+            return
+        }
+
+        clearSession()
+    }, [clearSession])
 
     const setCurrentRole = useCallback((role: AppRole) => {
         if (!appAllowedRoles.includes(role)) return
@@ -210,6 +236,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                 currentRole,
                 loginWithToken,
                 logout,
+                clearSession,
                 setCurrentRole,
             }}
         >

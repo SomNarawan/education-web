@@ -78,14 +78,18 @@ VITE_API_URL=http://localhost:8000/api
 VITE_BASE_PATH=
 VITE_MOCK_LOGIN_ENABLED=true
 VITE_APP_MODE=staff
+VITE_AUTH_PROVIDER=mock
 ```
 
 | ตัวแปร | จำเป็น | รายละเอียด |
 |---|---|---|
 | `VITE_API_URL` | ใช่ | Base URL ที่ Axios ใช้เรียก backend เช่น `http://localhost:8000/api` หรือ `/api` เมื่อใช้ proxy |
 | `VITE_APP_MODE` | ใช่ | โหมดของ bundle: `staff` หรือ `student` |
+| `VITE_AUTH_PROVIDER` | ไม่ | `portal` (ค่าเริ่มต้น) เข้าสู่ระบบผ่าน KU All Login ที่ ENG Main · `mock` ใช้ `/mock-login` และ `/auth/callback` บนเครื่องตัวเอง |
+| `VITE_PORTAL_LOGIN_URL` | ไม่ | หน้า ENG Main ที่ส่งผู้ใช้ไปเมื่อยังไม่ได้เข้าสู่ระบบหรือ session หมด (ค่าเริ่มต้น `https://office.eng.kps.ku.ac.th/eng-main/home`) |
+| `VITE_PORTAL_LOGOUT_URL` | ไม่ | หน้าที่ไปหลังกดออกจากระบบ; เว้นว่าง = `VITE_PORTAL_LOGIN_URL` |
 | `VITE_BASE_PATH` | ไม่ | Subpath ที่ใช้ deploy เช่น `/education`; เว้นว่างเมื่อ deploy ที่ root |
-| `VITE_MOCK_LOGIN_ENABLED` | ไม่ | เปิด `/mock-login` สำหรับ staff เมื่อมีค่า `true`; ควรใช้เฉพาะ local/dev/staging |
+| `VITE_MOCK_LOGIN_ENABLED` | ไม่ | เปิด `/mock-login` สำหรับ staff เมื่อมีค่า `true` (ใช้ได้เฉพาะ `VITE_AUTH_PROVIDER=mock`); ควรใช้เฉพาะ local/dev/staging |
 | `VITE_API_PROXY_TARGET` | ไม่ | Target ของ Vite dev proxy เช่น `http://localhost:8000` |
 | `VITE_API_PROXY_PATH` | ไม่ | Path ที่ Vite proxy ไปยัง target เช่น `/api`; proxy จะทำงานเมื่อกำหนดทั้ง target และ path |
 
@@ -101,10 +105,23 @@ VITE_API_PROXY_PATH=/api
 
 ## Authentication และ Authorization
 
+**Portal (`VITE_AUTH_PROVIDER=portal`)** — staff เข้าสู่ระบบด้วย KU All Login ผ่าน ENG Main
+
+1. ยังไม่มี token → `RoleRedirect` พาไป `VITE_PORTAL_LOGIN_URL`
+2. ผู้ใช้กด tile ของระบบใน ENG Main → กลับมาที่ `/auth/portal/{admin|teacher}?exchangeToken=…&intranetToken=…`
+3. `PortalLogin` ลบ token ออกจาก URL ทันที แล้วส่งให้ `POST /auth/portal-login` (ครั้งเดียว — exchangeToken ใช้ซ้ำไม่ได้) ได้ JWT ของระบบกลับมา
+4. เข้าสู่ระบบด้วย role ที่กดมา (`current_role` จาก `/me`) และยังสลับ role ได้จากเมนูมุมขวาบน
+5. Request ที่แนบ token แล้วได้ 401 (เช่น session ถูกยกเลิกที่ ENG Main) → Axios interceptor ล้าง token แล้วพากลับ ENG Main
+6. ออกจากระบบ → `POST /auth/logout` (ปิด session ของระบบนี้เท่านั้น ระบบอื่นใน Portal ยังใช้งานได้) แล้วไป `VITE_PORTAL_LOGOUT_URL`
+
+ถ้าเข้าสู่ระบบไม่สำเร็จ หน้า `PortalLogin` จะแสดงข้อผิดพลาดพร้อมปุ่มกลับไปที่ Portal โดยไม่ redirect อัตโนมัติ (กันวนลูป)
+
+**Mock (`VITE_AUTH_PROVIDER=mock`)** — สำหรับ local
+
 1. ระบบรับ token จาก `/auth/callback?token=...`
 2. `AuthContext` บันทึก token ใน `auth_token` แล้วเรียก `GET /me`
-3. ข้อมูลผู้ใช้และ role ปัจจุบันถูกเก็บใน `auth_user` และ `current_role`
-4. Axios interceptor แนบ Bearer token จาก local storage ให้ทุก request
+
+ทั้งสองแบบ ข้อมูลผู้ใช้และ role ปัจจุบันถูกเก็บใน `auth_user` และ `current_role` และ Axios interceptor แนบ Bearer token จาก local storage ให้ทุก request
 
 สิทธิ์ route ถูกตรวจด้วย `ProtectedRoute`, `StudentAuthenticatedRoute` และ `StudentRouteGuard` การซ่อนเมนูเป็นเพียงส่วนแสดงผลและไม่ใช้แทน route guard
 
@@ -118,7 +135,7 @@ VITE_API_PROXY_PATH=/api
 | `/grade-calculator` | `teacher`, `admin` |
 | `/student/home`, `/student/profile`, `/student/grades`, `/student/grade-calculator` | `student` ใน student mode |
 
-Mock Login สำหรับ staff ถูกควบคุมด้วย `VITE_MOCK_LOGIN_ENABLED` ส่วน student mode มี route `/student/mock-login` แยกต่างหากตาม flow ปัจจุบัน การ deploy production ต้องเชื่อมต่อ SSO ให้ส่งผู้ใช้เข้า callback และต้องไม่เปิดช่องทาง mock login ที่ backend
+Mock Login สำหรับ staff ใช้ได้เมื่อ `VITE_AUTH_PROVIDER=mock` และ `VITE_MOCK_LOGIN_ENABLED=true` ส่วน student mode มี route `/student/mock-login` แยกต่างหากตาม flow ปัจจุบัน production ต้อง build ด้วย `VITE_AUTH_PROVIDER=portal` (backend ปิด mock login เองเมื่อ `APP_ENV=production`)
 
 ## การเชื่อมต่อ API
 

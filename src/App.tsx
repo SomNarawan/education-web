@@ -8,6 +8,7 @@ import StudentAuthenticatedRoute from './components/StudentAuthenticatedRoute'
 import StudentRouteGuard from './features/students/StudentRouteGuard'
 import ProtectedRoute from './components/ProtectedRoute'
 import { appMode, type AppMode } from './config/appMode'
+import { authProvider } from './config/auth'
 
 const StudentList = lazy(
     () => import('./features/students/list/StudentListPage'),
@@ -17,6 +18,7 @@ const StudentDetail = lazy(
 )
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const MockLogin = lazy(() => import('./pages/MockLogin'))
+const PortalLogin = lazy(() => import('./pages/PortalLogin'))
 const SyncData = lazy(() => import('./pages/SyncData'))
 const SystemMasterDataDetail = lazy(
     () => import('./pages/SystemMasterDataDetail'),
@@ -79,20 +81,46 @@ function AppModeRoute({ mode, children }: AppModeRouteProps) {
     return appMode === mode ? children : <Navigate to="/" replace />
 }
 
+interface MockAuthRouteProps {
+    children: ReactElement
+}
+
+// Entry points that take a ready-made token: closed when staff sign in
+// through the portal.
+function MockAuthRoute({ children }: MockAuthRouteProps) {
+    return authProvider === 'mock' ? children : <Navigate to="/" replace />
+}
+
 export default function App() {
     return (
         <BrowserRouter basename={basename}>
             <Suspense fallback={<PageLoading />}>
                 <Routes>
+                    {/* Outside MainLayout/ProtectedRoute: their redirect to /
+                        would drop the tokens in the query string. */}
+                    <Route
+                        path="/auth/portal/:role"
+                        element={
+                            <AppModeRoute mode="staff">
+                                <PortalLogin />
+                            </AppModeRoute>
+                        }
+                    />
                     <Route
                         path="/auth/callback"
-                        element={<AuthCallback />}
+                        element={
+                            <MockAuthRoute>
+                                <AuthCallback />
+                            </MockAuthRoute>
+                        }
                     />
                     <Route
                         path="/mock-login"
                         element={
                             <AppModeRoute mode="staff">
-                                <MockLogin />
+                                <MockAuthRoute>
+                                    <MockLogin />
+                                </MockAuthRoute>
                             </AppModeRoute>
                         }
                     />
