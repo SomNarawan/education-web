@@ -1,6 +1,16 @@
 node_modules
 dist
 .git
+.vscode
+.idea
+.claude
+*.log
+.DS_Store
+
+# Build config comes only from the Dockerfile's build args - local .env files
+# (e.g. .env.production, .env.localdeploy) must not leak into the bundle.
 .env
-.env.local
-.env.*.local
+.env.*
+
+Dockerfile*
+docker-compose*.yml
