@@ -47,14 +47,14 @@ npm ci
 รัน Staff และ Student แยกกันได้ด้วย terminal คนละหน้าต่าง:
 
 ```sh
-npm run dev:staff
-npm run dev:student
+npm run dev:private
+npm run dev:public
 ```
 
 - Staff: http://localhost:3001
 - Student: http://localhost:3002
 
-ค่าเริ่มต้นใน `.env.staff` เปิด Mock Login สำหรับ staff ส่วน `.env.student` ใช้หน้า Mock Login ของนิสิตเพื่อเลือกรายการผู้ใช้จำลอง
+ค่าเริ่มต้นใน `.env.private` เปิด Mock Login สำหรับ staff ส่วน `.env.public` ใช้หน้า Mock Login ของนิสิตเพื่อเลือกรายการผู้ใช้จำลอง
 
 หากต้องการรัน Vite ด้วย mode ปกติและพอร์ตเริ่มต้น:
 
@@ -66,10 +66,10 @@ npm run dev
 
 ไฟล์ที่ใช้กับแต่ละคำสั่ง:
 
-- `.env.staff` สำหรับ `npm run dev:staff`
-- `.env.student` สำหรับ `npm run dev:student`
+- `.env.private` สำหรับ `npm run dev:private`
+- `.env.public` สำหรับ `npm run dev:public`
 - `.env.development.example` และ `.env.production.example` เป็นตัวอย่างการตั้งค่าตาม environment
-- `.env.staff.local` หรือ `.env.student.local` สำหรับ override เฉพาะเครื่อง โดยไฟล์ `*.local` จะไม่ถูก commit
+- `.env.private.local` หรือ `.env.public.local` สำหรับ override เฉพาะเครื่อง โดยไฟล์ `*.local` จะไม่ถูก commit
 
 ตัวอย่างสำหรับ staff mode:
 
@@ -173,8 +173,8 @@ Route declarations รวมอยู่ที่ `src/App.tsx` และหน�
 
 ```sh
 npm run dev          # Vite development server
-npm run dev:staff    # staff mode ที่พอร์ต 3001
-npm run dev:student  # student mode ที่พอร์ต 3002
+npm run dev:private  # staff mode ที่พอร์ต 3001
+npm run dev:public   # student mode ที่พอร์ต 3002
 npm run lint         # ตรวจด้วย ESLint
 npm run build        # TypeScript project build และ Vite production build
 npm run preview      # preview ไฟล์ใน dist/
