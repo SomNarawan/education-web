@@ -20,8 +20,6 @@ export interface CreateStudentRequest {
     study_plan_name_th: string
     system_department_id?: number
     entry_year: number
-    study_year: number
-    study_semester: number
 
     guardian_title_id?: number | null
     guardian_first_name_th?: string | null

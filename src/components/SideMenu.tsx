@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
     BarChartOutlined,
     BankOutlined,
+    CalendarOutlined,
     CalculatorOutlined,
     DatabaseOutlined,
     FileExcelOutlined,
@@ -44,12 +45,21 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
     const { currentRole } = useAuth()
     const activeRole: AppRole | null =
         appMode === 'student' ? 'student' : currentRole
+    const [openKeys, setOpenKeys] = useState<string[]>([])
 
     const state = location.state as LocationState | null
 
     const selectedKey = location.pathname.includes('/detail/')
         ? state?.from ?? '/students/advisor'
         : location.pathname
+    const activeParentKey = location.pathname.startsWith('/master-data')
+        ? '/master-data'
+        : location.pathname.startsWith('/central-data')
+          ? '/central-data'
+          : null
+    const activeOpenKeys = activeParentKey
+        ? Array.from(new Set([...openKeys, activeParentKey]))
+        : openKeys
 
     const menuItems: AppMenuItem[] = [
         {
@@ -123,6 +133,38 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             icon: <SyncOutlined />,
             label: 'ซิงค์ข้อมูล',
             allowedRoles: ['admin'],
+        },
+        {
+            key: '/student-academic-period-sync',
+            icon: <CalendarOutlined />,
+            label: 'ซิงค์ชั้นปีและภาคการศึกษานิสิต',
+            allowedRoles: ['admin'],
+        },
+        {
+            key: '/central-data',
+            icon: <DatabaseOutlined />,
+            label: 'ข้อมูลจากระบบกลาง',
+            allowedRoles: ['admin'],
+            children: [
+                {
+                    key: '/central-data/faculty',
+                    icon: <BankOutlined />,
+                    label: 'คณะ',
+                    allowedRoles: ['admin'],
+                },
+                {
+                    key: '/central-data/department',
+                    icon: <TeamOutlined />,
+                    label: 'ภาควิชา',
+                    allowedRoles: ['admin'],
+                },
+                {
+                    key: '/central-data/academic-calendar',
+                    icon: <CalendarOutlined />,
+                    label: 'ปฏิทินการศึกษา',
+                    allowedRoles: ['admin'],
+                },
+            ],
         },
         {
             key: '/master-data',
@@ -209,11 +251,8 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
                 theme="dark"
                 mode="inline"
                 selectedKeys={[selectedKey]}
-                defaultOpenKeys={
-                    location.pathname.startsWith('/master-data')
-                        ? ['/master-data']
-                        : []
-                }
+                openKeys={activeOpenKeys}
+                onOpenChange={setOpenKeys}
                 onClick={({ key }) => navigate(key)}
                 items={items}
             />

@@ -1,4 +1,4 @@
-import { ReloadOutlined } from '@ant-design/icons'
+import { ReloadOutlined, SyncOutlined } from '@ant-design/icons'
 import {
     Alert,
     Button,
@@ -8,7 +8,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import CustomTable from '../components/custom/CustomTable'
 import {
     getSyncedSystemDepartments,
@@ -42,12 +42,12 @@ const pageConfig: Record<
 > = {
     faculty: {
         title: 'รายละเอียดข้อมูลคณะ',
-        description: 'ข้อมูลคณะทั้งหมดจากระบบส่วนกลาง',
+        description: 'ข้อมูลคณะจากระบบส่วนกลาง (ดูข้อมูลเท่านั้น)',
         searchPlaceholder: 'ค้นหาชื่อคณะหรือชื่อย่อ...',
     },
     department: {
         title: 'รายละเอียดข้อมูลภาควิชา',
-        description: 'ข้อมูลภาควิชาและคณะที่สังกัดทั้งหมด',
+        description: 'ข้อมูลภาควิชาและคณะที่สังกัด (ดูข้อมูลเท่านั้น)',
         searchPlaceholder: 'ค้นหาภาควิชาหรือคณะ...',
     },
 }
@@ -211,6 +211,7 @@ function getErrorMessage(error: unknown): string {
 
 export default function SystemMasterDataDetail() {
     const { dataType: dataTypeParam } = useParams()
+    const navigate = useNavigate()
     const [records, setRecords] = useState<DetailRecord[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -248,12 +249,19 @@ export default function SystemMasterDataDetail() {
 
     const config = pageConfig[dataType]
     return (
-        <div className="student-page">
+        <div className="student-page system-master-data-page">
             <div className="page-title-section">
                 <div>
                     <h1>{config.title}</h1>
                     <p>{config.description}</p>
                 </div>
+                <Button
+                    type="primary"
+                    icon={<SyncOutlined />}
+                    onClick={() => navigate('/sync')}
+                >
+                    ไปหน้า Sync ข้อมูล
+                </Button>
             </div>
 
             <div className="table-card">

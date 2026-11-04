@@ -1,0 +1,97 @@
+.academic-period-page {
+    --period-success: #16a34a;
+    --period-primary: #1677ff;
+}
+
+.academic-period-page .ant-tabs-nav {
+    margin-bottom: 20px;
+}
+
+.academic-period-page .ant-tabs-tab {
+    padding-block: 12px;
+    font-weight: 600;
+}
+
+.academic-period-stack {
+    display: flex;
+    width: 100%;
+}
+
+.academic-period-summary-card,
+.academic-period-table-card {
+    border: 0;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+}
+
+.academic-period-summary-card .ant-card-body {
+    padding: 18px 12px;
+}
+
+.academic-period-metric {
+    padding: 2px 20px;
+}
+
+.academic-period-metric + .academic-period-metric {
+    border-inline-start: 1px solid #e5e7eb;
+}
+
+.academic-period-metric .ant-statistic-content {
+    color: #334155;
+}
+
+.academic-period-metric-unchanged .ant-statistic-content {
+    color: var(--period-success);
+}
+
+.academic-period-metric-update .ant-statistic-content {
+    color: var(--period-primary);
+}
+
+.academic-period-table-card .ant-card-body {
+    padding: 0;
+}
+
+.academic-period-table-card .ant-card-head + .ant-card-body {
+    padding-top: 0;
+}
+
+.academic-period-table-card .ant-table-wrapper {
+    overflow: hidden;
+    border-radius: 0 0 12px 12px;
+}
+
+.academic-period-error,
+.academic-period-history-error {
+    margin-bottom: 16px;
+}
+
+.academic-period-history-detail {
+    display: flex;
+    width: 100%;
+}
+
+.academic-period-history-detail .ant-statistic-title {
+    min-height: 44px;
+}
+
+@media (max-width: 768px) {
+    .academic-period-title {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .academic-period-title > .ant-space,
+    .academic-period-title > .ant-space .ant-space-item,
+    .academic-period-title button {
+        width: 100%;
+    }
+
+    .academic-period-metric {
+        padding-block: 14px;
+    }
+
+    .academic-period-metric + .academic-period-metric {
+        border-top: 1px solid #e5e7eb;
+        border-inline-start: 0;
+    }
+}

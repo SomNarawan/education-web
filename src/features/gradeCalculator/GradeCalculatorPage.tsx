@@ -162,6 +162,7 @@ export default function GradeCalculatorPage() {
                 open={historyOpen}
                 studentId={selectedStudentId}
                 studentLabel={studentLabel}
+                academicHistory={overview?.academic_history ?? []}
                 onClose={() => setHistoryOpen(false)}
             />
         </div>

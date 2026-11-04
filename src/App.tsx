@@ -18,6 +18,12 @@ const StudentDetail = lazy(
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const MockLogin = lazy(() => import('./pages/MockLogin'))
 const SyncData = lazy(() => import('./pages/SyncData'))
+const AcademicCalendar = lazy(
+    () => import('./features/academicCalendar/AcademicCalendarPage'),
+)
+const StudentAcademicPeriodSync = lazy(
+    () => import('./features/academicPeriod/AcademicPeriodChangePage'),
+)
 const SystemMasterDataDetail = lazy(
     () => import('./pages/SystemMasterDataDetail'),
 )
@@ -208,7 +214,63 @@ export default function App() {
                         />
 
                         <Route
+                            path="central-data/academic-calendar"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AcademicCalendar />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="academic-calendar"
+                            element={
+                                <Navigate
+                                    to="/central-data/academic-calendar"
+                                    replace
+                                />
+                            }
+                        />
+
+                        <Route
+                            path="student-academic-period-sync"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <StudentAcademicPeriodSync />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="academic-period-change"
+                            element={
+                                <Navigate
+                                    to="/student-academic-period-sync"
+                                    replace
+                                />
+                            }
+                        />
+
+                        <Route
                             path="sync/details/:dataType"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <SystemMasterDataDetail />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="master-data/system/:dataType"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <SystemMasterDataDetail />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="central-data/:dataType"
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <SystemMasterDataDetail />

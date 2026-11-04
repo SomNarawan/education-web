@@ -7,7 +7,9 @@ import {
 import {
     Alert,
     Button,
+    Form,
     Modal,
+    Select,
     Space,
     Tag,
     Tooltip,
@@ -25,21 +27,27 @@ import {
     getSyncHistory,
     syncMasterData,
 } from '../services/syncService'
+import { syncAcademicCalendars } from '../services/academicCalendarService'
 import type { ApiErrorResponse, ApiResponse } from '../types/ApiResponse'
 import type {
-    SyncDataType,
     SyncExecutionStatus,
     SyncHistoryRecord,
     SyncResult,
     SyncStatus,
     SyncTableRecord,
+    SyncTableDataType,
     SyncType,
 } from '../types/SyncData'
+import {
+    createAcademicYearOptions,
+    createAcademicYearRange,
+} from '../utils/academicYear'
 import { formatThaiDateTime } from '../utils/dateFormat'
 
-const syncOptions: { label: string; value: SyncDataType }[] = [
+const syncOptions: { label: string; value: SyncTableDataType }[] = [
     { label: 'คณะ', value: 'faculty' },
     { label: 'ภาควิชา', value: 'department' },
+    { label: 'ปฏิทินการศึกษา', value: 'academic-calendar' },
 ]
 
 const statusDisplay: Record<
@@ -57,9 +65,32 @@ interface SyncHistoryError {
     unauthorized: boolean
 }
 
-const syncTypeByDataType: Record<SyncDataType, SyncType> = {
+const syncTypeByDataType: Record<SyncTableDataType, SyncType> = {
     faculty: 1,
     department: 2,
+    'academic-calendar': 3,
+}
+
+const currentAcademicYear = new Date().getFullYear()
+const academicYearOptions = createAcademicYearOptions(
+    createAcademicYearRange(currentAcademicYear, 9, 1),
+)
+
+function createWaitingRecord(
+    key: SyncTableDataType,
+    label: string,
+): SyncTableRecord {
+    return {
+        key,
+        label,
+        inserted: null,
+        updated: null,
+        inactivated: null,
+        skipped: null,
+        status: 'waiting',
+        syncedAt: null,
+        errorMessage: null,
+    }
 }
 
 function getSyncStatus(status: SyncExecutionStatus | null): SyncStatus {
@@ -129,27 +160,13 @@ function getSyncHistoryError(error: unknown): SyncHistoryError {
 }
 
 function mapHistoryToRecords(history: SyncHistoryRecord[]): SyncTableRecord[] {
-    if (history.length === 0) {
-        return []
-    }
-
     return syncOptions.map((option) => {
         const sync = history.find(
             (item) => item.sync_type === syncTypeByDataType[option.value],
         )
 
         if (!sync) {
-            return {
-                key: option.value,
-                label: option.label,
-                inserted: null,
-                updated: null,
-                inactivated: null,
-                skipped: null,
-                status: 'waiting',
-                syncedAt: null,
-                errorMessage: null,
-            }
+            return createWaitingRecord(option.value, option.label)
         }
 
         return {
@@ -271,12 +288,20 @@ function createResultColumns(
 export default function SyncData() {
     const { logout } = useAuth()
     const navigate = useNavigate()
-    const [syncingType, setSyncingType] = useState<SyncDataType | null>(null)
+    const [syncingType, setSyncingType] =
+        useState<SyncTableDataType | null>(null)
     const [errorRecord, setErrorRecord] =
         useState<SyncTableRecord | null>(null)
-    const [records, setRecords] = useState<SyncTableRecord[]>([])
+    const [records, setRecords] = useState<SyncTableRecord[]>(() =>
+        mapHistoryToRecords([]),
+    )
     const [historyLoading, setHistoryLoading] = useState(true)
     const [historyError, setHistoryError] = useState<string | null>(null)
+    const [selectedAcademicYears, setSelectedAcademicYears] = useState<number[]>(
+        [currentAcademicYear],
+    )
+    const [academicYearValidationError, setAcademicYearValidationError] =
+        useState(false)
 
     const loadSyncHistory = useCallback(async (
         showError = true,
@@ -294,7 +319,7 @@ export default function SyncData() {
             console.error(error)
             const requestError = getSyncHistoryError(error)
             if (clearRecordsOnError) {
-                setRecords([])
+                setRecords(mapHistoryToRecords([]))
             }
             setHistoryError(requestError.message)
 
@@ -319,7 +344,7 @@ export default function SyncData() {
     }, [loadSyncHistory])
 
     const updateRecord = (
-        dataType: SyncDataType,
+        dataType: SyncTableDataType,
         values: Partial<SyncTableRecord>,
     ) => {
         setRecords((currentRecords) =>
@@ -331,11 +356,31 @@ export default function SyncData() {
         )
     }
 
-    const handleSync = async (dataType: SyncDataType) => {
+    const handleSync = async (dataType: SyncTableDataType) => {
+        if (
+            dataType === 'academic-calendar' &&
+            selectedAcademicYears.length === 0
+        ) {
+            setAcademicYearValidationError(true)
+            message.warning('กรุณาเลือกปีการศึกษาอย่างน้อย 1 ปี')
+            return
+        }
+
+        if (dataType === 'academic-calendar') {
+            setAcademicYearValidationError(false)
+        }
+
         try {
             setSyncingType(dataType)
 
-            const result = await syncMasterData(dataType)
+            updateRecord(dataType, {
+                status: 'running',
+                errorMessage: null,
+            })
+
+            const result = dataType === 'academic-calendar'
+                ? await syncAcademicCalendars(selectedAcademicYears)
+                : await syncMasterData(dataType)
             updateRecord(dataType, mapSyncResult(result))
 
             if (result.status === 'success') {
@@ -365,6 +410,47 @@ export default function SyncData() {
 
     const columns: ColumnsType<SyncTableRecord> = [
         ...createResultColumns(setErrorRecord),
+        {
+            title: 'ปีการศึกษา',
+            key: 'academicYears',
+            width: 280,
+            render: (_, record) =>
+                record.key === 'academic-calendar' ? (
+                    <Form.Item
+                        validateStatus={
+                            academicYearValidationError ? 'error' : undefined
+                        }
+                        help={academicYearValidationError
+                            ? 'กรุณาเลือกปีการศึกษาอย่างน้อย 1 ปี'
+                            : undefined}
+                        style={{ marginBottom: 0 }}
+                    >
+                        <Select
+                            mode="multiple"
+                            value={selectedAcademicYears}
+                            options={academicYearOptions}
+                            placeholder="เลือกปีการศึกษา"
+                            aria-label="เลือกปีการศึกษาที่ต้องการ Sync"
+                            status={
+                                academicYearValidationError
+                                    ? 'error'
+                                    : undefined
+                            }
+                            maxTagCount="responsive"
+                            disabled={syncingType !== null}
+                            onChange={(years) => {
+                                setSelectedAcademicYears(years)
+                                if (years.length > 0) {
+                                    setAcademicYearValidationError(false)
+                                }
+                            }}
+                            style={{ width: '100%' }}
+                        />
+                    </Form.Item>
+                ) : (
+                    '-'
+                ),
+        },
         {
             title: 'จัดการ',
             key: 'actions',
@@ -396,7 +482,9 @@ export default function SyncData() {
                             color: appColors.info,
                         }}
                         onClick={() =>
-                            navigate(`/sync/details/${record.key}`)
+                            navigate(record.key === 'academic-calendar'
+                                ? '/central-data/academic-calendar'
+                                : `/central-data/${record.key}`)
                         }
                     />
                 </Space>

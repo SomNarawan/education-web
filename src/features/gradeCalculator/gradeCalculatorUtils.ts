@@ -205,14 +205,17 @@ export function calculateGradePrediction(
         (total, course) => total + course.gradePoints,
         0,
     )
+    const previousCumulativeQualityPoints = currentGpax * currentCredits
     const cumulativeCredits = currentCredits + termCredits
+    const cumulativeQualityPoints =
+        previousCumulativeQualityPoints + termQualityPoints
 
     return {
         termGpa: termQualityPoints / termCredits,
         cumulativeCredits,
         cumulativeGpa:
             cumulativeCredits > 0
-                ? (currentGpax * currentCredits + termQualityPoints) / cumulativeCredits
+                ? cumulativeQualityPoints / cumulativeCredits
                 : 0,
         courses,
     }

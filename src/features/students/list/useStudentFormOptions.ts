@@ -7,7 +7,6 @@ import {
     getGuardianRelationships,
     getHighSchoolOptions,
     getSystemDepartments,
-    getStudySemesters,
     getStudentStatuses,
     getTitles,
 } from '../../../services/listOfValueService'
@@ -22,7 +21,6 @@ interface StudentFormOptions {
     systemDepartments: ListOfValue[]
     systemTeachers: ListOfValue<string>[]
     studentStatuses: ListOfValue[]
-    studySemesters: ListOfValue[]
     admissionChannels: ListOfValue[]
     highSchools: ListOfValue[]
     guardianRelationships: ListOfValue[]
@@ -40,7 +38,6 @@ const emptyOptions: StudentFormOptions = {
     systemDepartments: [],
     systemTeachers: [],
     studentStatuses: [],
-    studySemesters: [],
     admissionChannels: [],
     highSchools: [],
     guardianRelationships: [],
@@ -151,7 +148,6 @@ export function useStudentFormOptions(
                             includeId(editingStudent?.student_status_id),
                         ),
                     ),
-                    loadOption('studySemesters', getStudySemesters()),
                     loadOption(
                         'admissionChannels',
                         getAdmissionChannels(

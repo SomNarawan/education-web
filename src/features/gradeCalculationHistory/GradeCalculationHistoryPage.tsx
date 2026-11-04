@@ -19,6 +19,7 @@ import type {
     GradeCalculationCourse,
     GradeCalculationCourseSource,
 } from '../../types/GradeCalculation'
+import type { StudentAcademicHistory } from '../../types/StudentAcademicOverview'
 
 const { Text } = Typography
 
@@ -26,6 +27,7 @@ interface GradeCalculationHistoryModalProps {
     open: boolean
     studentId: number | null
     studentLabel: string
+    academicHistory: StudentAcademicHistory[]
     onClose: () => void
 }
 
@@ -38,8 +40,19 @@ const sourceLabels: Record<
     other: { label: 'วิชาอื่น', color: 'default' },
 }
 
-function renderGpaxWithChange(currentGpax: number, previousGpax: number) {
-    const change = Number((currentGpax - previousGpax).toFixed(2))
+function renderGpaxWithChange(
+    predictedGpax: number,
+    previousGpax: number | null,
+) {
+    if (previousGpax === null) {
+        return (
+            <span className="grade-calculation-gpax-value">
+                {predictedGpax.toFixed(2)}
+            </span>
+        )
+    }
+
+    const change = Number((predictedGpax - previousGpax).toFixed(2))
     const changeText =
         change > 0 ? `+${change.toFixed(2)}` : change.toFixed(2)
     const changeClassName =
@@ -51,10 +64,32 @@ function renderGpaxWithChange(currentGpax: number, previousGpax: number) {
 
     return (
         <span className="grade-calculation-gpax-value">
-            {currentGpax.toFixed(2)}{' '}
+            {predictedGpax.toFixed(2)}{' '}
             <span className={changeClassName}>({changeText})</span>
         </span>
     )
+}
+
+function getPreviousYearGpax(
+    studyYear: number,
+    academicHistory: StudentAcademicHistory[],
+): number | null {
+    const previousYear = studyYear - 1
+
+    if (previousYear < 1) return null
+
+    const latestPreviousYearTerm = academicHistory
+        .filter((term) => term.year === previousYear)
+        .sort(
+            (firstTerm, secondTerm) =>
+                secondTerm.semester_order - firstTerm.semester_order,
+        )[0]
+
+    return latestPreviousYearTerm?.gpax ?? null
+}
+
+function formatGpax(value: number | null): string {
+    return value === null ? '-' : value.toFixed(2)
 }
 
 function renderCourseGroupPerformance(course: GradeCalculationCourse) {
@@ -77,6 +112,7 @@ export default function GradeCalculationHistoryModal({
     open,
     studentId,
     studentLabel,
+    academicHistory,
     onClose,
 }: GradeCalculationHistoryModalProps) {
     const { currentRole } = useAuth()
@@ -153,18 +189,13 @@ export default function GradeCalculationHistoryModal({
                     `${courses.length} วิชา`,
             },
             {
-                title: 'GPAX ภาคก่อนหน้า',
-                dataIndex: 'current_gpax',
+                title: 'GPAX ปีก่อนหน้า',
+                key: 'previous_year_gpax',
                 align: 'center',
                 width: 130,
-                render: (value: number) => value.toFixed(2),
-            },
-            {
-                title: 'GPA คาดการณ์',
-                dataIndex: 'term_gpa',
-                align: 'center',
-                width: 120,
-                render: (value: number) => value.toFixed(2),
+                render: (_, record) => formatGpax(
+                    getPreviousYearGpax(record.study_year, academicHistory),
+                ),
             },
             {
                 title: 'GPAX คาดการณ์',
@@ -172,7 +203,20 @@ export default function GradeCalculationHistoryModal({
                 align: 'center',
                 width: 175,
                 render: (value: number, record) =>
-                    renderGpaxWithChange(value, record.current_gpax),
+                    renderGpaxWithChange(
+                        value,
+                        getPreviousYearGpax(
+                            record.study_year,
+                            academicHistory,
+                        ),
+                    ),
+            },
+            {
+                title: 'GPA คาดการณ์',
+                dataIndex: 'term_gpa',
+                align: 'center',
+                width: 120,
+                render: (value: number) => value.toFixed(2),
             },
             {
                 title: '',
@@ -283,15 +327,12 @@ export default function GradeCalculationHistoryModal({
                     <>
                         <div className="grade-calculation-history-summary">
                             <Text>
-                                GPAX ภาคก่อนหน้า{' '}
+                                GPAX ปีก่อนหน้า{' '}
                                 <strong>
-                                    {selectedCalculation.current_gpax.toFixed(2)}
-                                </strong>
-                            </Text>
-                            <Text>
-                                GPA คาดการณ์{' '}
-                                <strong>
-                                    {selectedCalculation.term_gpa.toFixed(2)}
+                                    {formatGpax(getPreviousYearGpax(
+                                        selectedCalculation.study_year,
+                                        academicHistory,
+                                    ))}
                                 </strong>
                             </Text>
                             <Text>
@@ -299,7 +340,10 @@ export default function GradeCalculationHistoryModal({
                                 <strong>
                                     {renderGpaxWithChange(
                                         selectedCalculation.cumulative_gpa,
-                                        selectedCalculation.current_gpax,
+                                        getPreviousYearGpax(
+                                            selectedCalculation.study_year,
+                                            academicHistory,
+                                        ),
                                     )}
                                 </strong>
                             </Text>
@@ -307,6 +351,12 @@ export default function GradeCalculationHistoryModal({
                                 หน่วยกิตสะสม{' '}
                                 <strong>
                                     {selectedCalculation.cumulative_credits}
+                                </strong>
+                            </Text>
+                            <Text>
+                                GPA คาดการณ์{' '}
+                                <strong>
+                                    {selectedCalculation.term_gpa.toFixed(2)}
                                 </strong>
                             </Text>
                         </div>

@@ -1,6 +1,8 @@
 export type SyncDataType = 'faculty' | 'department'
 
-export type SyncType = 1 | 2
+export type SyncTableDataType = SyncDataType | 'academic-calendar'
+
+export type SyncType = 1 | 2 | 3
 
 export type SyncExecutionStatus = 'running' | 'success' | 'failed'
 
@@ -72,7 +74,7 @@ export interface SyncedSystemDepartment extends SyncedDataBase {
 export type SyncStatus = 'waiting' | SyncExecutionStatus
 
 export interface SyncTableRecord {
-    key: SyncDataType
+    key: SyncTableDataType
     label: string
     inserted: number | null
     updated: number | null
