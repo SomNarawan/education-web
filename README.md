@@ -44,6 +44,12 @@ Frontend ของระบบสารสนเทศนิสิต ใช้�
 npm ci
 ```
 
+สร้างไฟล์ env ของเว็บ Staff จากตัวอย่าง:
+
+```sh
+cp .env.localdeploy.private.example .env.localdeploy.private
+```
+
 รัน Staff และ Student แยกกันได้ด้วย terminal คนละหน้าต่าง:
 
 ```sh
@@ -54,32 +60,22 @@ npm run dev:public
 - Staff: http://localhost:3001
 - Student: http://localhost:3002
 
-ค่าเริ่มต้นใน `.env.private` เปิด Mock Login สำหรับ staff ส่วน `.env.public` ใช้หน้า Mock Login ของนิสิตเพื่อเลือกรายการผู้ใช้จำลอง
+ทั้งสองคำสั่งใช้ค่าเดียวกับการทดสอบ deploy ในเครื่อง คือเรียก API ที่พอร์ต 3009 และใช้ Mock Login
 
-หากต้องการรัน Vite ด้วย mode ปกติและพอร์ตเริ่มต้น:
-
-```sh
-npm run dev
-```
+`npm run dev` ทำงานเหมือน `npm run dev:private`
 
 ## Environment variables
 
-ไฟล์ที่ใช้กับแต่ละคำสั่ง:
+| ไฟล์ | ใช้กับ | Commit |
+|---|---|---|
+| `.env.private` | production ของเว็บ staff (`Dockerfile.private`) | ไม่ (ตัวอย่าง `.env.private.example`) |
+| `.env.public` | production ของเว็บนิสิต (`Dockerfile.public`) | ไม่ (ตัวอย่าง `.env.public.example`) |
+| `.env.localdeploy.private` | `npm run dev`, `npm run dev:private` และ `npm run docker:up` | ไม่ (ตัวอย่าง `.env.localdeploy.private.example`) |
+| `.env.localdeploy.public` | `npm run dev:public` | ใช่ ไม่มีค่าลับ |
 
-- `.env.private` สำหรับ `npm run dev:private`
-- `.env.public` สำหรับ `npm run dev:public`
-- `.env.development.example` และ `.env.production.example` เป็นตัวอย่างการตั้งค่าตาม environment
-- `.env.private.local` หรือ `.env.public.local` สำหรับ override เฉพาะเครื่อง โดยไฟล์ `*.local` จะไม่ถูก commit
+ค่าเฉพาะเครื่องให้ใส่ใน `.env.localdeploy.private.local` หรือ `.env.localdeploy.public.local` ซึ่งจะไม่ถูก commit
 
-ตัวอย่างสำหรับ staff mode:
-
-```env
-VITE_API_URL=http://localhost:8000/api
-VITE_BASE_PATH=
-VITE_MOCK_LOGIN_ENABLED=true
-VITE_APP_MODE=staff
-VITE_AUTH_PROVIDER=mock
-```
+Staff ใช้ `VITE_AUTH_PROVIDER=portal` บน production แต่ใช้ `mock` ในเครื่อง เพราะ ENG Main ส่งกลับมาที่ localhost ไม่ได้ ส่วนเว็บนิสิตใช้ `mock` ทั้งสองที่
 
 | ตัวแปร | จำเป็น | รายละเอียด |
 |---|---|---|

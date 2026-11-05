@@ -3,12 +3,11 @@ services:
     image: education-web-staff
     build:
       context: .
-      dockerfile: dockerfile.private
+      dockerfile: Dockerfile.private
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
         VITE_MOCK_LOGIN_ENABLED: ${VITE_MOCK_LOGIN_ENABLED:-true}
         VITE_BASE_PATH: ""
-        VITE_APP_MODE: staff
         VITE_AUTH_PROVIDER: ${VITE_AUTH_PROVIDER:-mock}
         VITE_PORTAL_LOGIN_URL: ${VITE_PORTAL_LOGIN_URL:-https://office.eng.kps.ku.ac.th/eng-main/home}
         VITE_PORTAL_LOGOUT_URL: ${VITE_PORTAL_LOGOUT_URL:-}
@@ -19,12 +18,11 @@ services:
     image: education-web-student
     build:
       context: .
-      dockerfile: dockerfile.public
+      dockerfile: Dockerfile.public
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
         VITE_MOCK_LOGIN_ENABLED: "false"
         VITE_BASE_PATH: ""
-        VITE_APP_MODE: student
         VITE_AUTH_PROVIDER: mock
     ports:
       - "3002:80"

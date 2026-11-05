@@ -25,10 +25,13 @@ COPY . .
 ARG VITE_API_URL
 ARG VITE_MOCK_LOGIN_ENABLED=false
 ARG VITE_BASE_PATH=
+# Students have no portal login yet, so this site signs in through mock login.
+ARG VITE_AUTH_PROVIDER=mock
 ENV VITE_API_URL=$VITE_API_URL \
     VITE_MOCK_LOGIN_ENABLED=$VITE_MOCK_LOGIN_ENABLED \
     VITE_BASE_PATH=$VITE_BASE_PATH \
-    VITE_APP_MODE=student
+    VITE_APP_MODE=student \
+    VITE_AUTH_PROVIDER=$VITE_AUTH_PROVIDER
 
 # The base path is read back from the built index.html, so the nginx config
 # always matches what was actually built.

@@ -20,6 +20,7 @@ dist-ssr
 .env.*.local
 .env.public
 .env.private
+.env.localdeploy.private
 
 # Editor directories and files
 .vscode/*

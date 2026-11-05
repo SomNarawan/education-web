@@ -4,14 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:private": "vite --mode private --port 3001",
-    "dev:public": "vite --mode public --port 3002",
+    "dev": "vite --mode localdeploy.private --port 3001",
+    "dev:private": "vite --mode localdeploy.private --port 3001",
+    "dev:public": "vite --mode localdeploy.public --port 3002",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "docker:up": "docker compose up --build",
-    "docker:down": "docker compose down"
+    "docker:up": "docker compose --env-file .env.localdeploy.private up --build",
+    "docker:down": "docker compose --env-file .env.localdeploy.private down"
   },
   "dependencies": {
     "@ant-design/icons": "^6.2.5",
