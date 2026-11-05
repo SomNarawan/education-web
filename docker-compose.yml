@@ -8,6 +8,9 @@ services:
         VITE_MOCK_LOGIN_ENABLED: ${VITE_MOCK_LOGIN_ENABLED:-true}
         VITE_BASE_PATH: ""
         VITE_APP_MODE: staff
+        VITE_AUTH_PROVIDER: ${VITE_AUTH_PROVIDER:-mock}
+        VITE_PORTAL_LOGIN_URL: ${VITE_PORTAL_LOGIN_URL:-https://office.eng.kps.ku.ac.th/eng-main/home}
+        VITE_PORTAL_LOGOUT_URL: ${VITE_PORTAL_LOGOUT_URL:-}
     ports:
       - "3001:80"
 
@@ -20,5 +23,6 @@ services:
         VITE_MOCK_LOGIN_ENABLED: "false"
         VITE_BASE_PATH: ""
         VITE_APP_MODE: student
+        VITE_AUTH_PROVIDER: mock
     ports:
       - "3002:80"

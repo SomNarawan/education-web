@@ -57,7 +57,7 @@ interface StudentImportFormValues {
 export default function StudentImportPicker({
     onImportComplete,
 }: StudentImportPickerProps) {
-    const { logout } = useAuth()
+    const { clearSession } = useAuth()
     const importLock = useRef(false)
     const [selectionForm] = Form.useForm<StudentImportFormValues>()
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -191,7 +191,7 @@ export default function StudentImportPicker({
             message.error(parsedError.message)
 
             if (parsedError.status === 401) {
-                logout()
+                clearSession()
             }
         } finally {
             setTemplateDownloading(false)
@@ -277,7 +277,7 @@ export default function StudentImportPicker({
                 refreshHistory = parsedError.status !== 401
 
                 if (parsedError.status === 401) {
-                    logout()
+                    clearSession()
                 }
             } finally {
                 if (refreshHistory) {
