@@ -2,6 +2,7 @@ export type AcademicPeriodCalendarStatus =
     | 'ready'
     | 'missing_calendar'
     | 'calendar_conflict'
+    | 'not_required'
 
 export type AcademicPeriodSummaryStatus =
     | 'ready'
@@ -40,8 +41,9 @@ export interface AcademicPeriodSummary {
     status: AcademicPeriodSummaryStatus
 }
 
-export interface StudentAcademicPeriodPreview {
-    reference_date: string
+export interface StudentAcademicPeriodPreviewGroup {
+    is_international: boolean
+    calendar_key: 'thai' | 'international'
     calendar_status: AcademicPeriodCalendarStatus
     calendar_message: string
     academic_year: number | null
@@ -59,9 +61,21 @@ export interface StudentAcademicPeriodPreview {
     summaries: AcademicPeriodSummary[]
 }
 
+export interface StudentAcademicPeriodPreview {
+    reference_date: string
+    total_students: number
+    ready_students: number
+    update_students: number
+    unchanged_students: number
+    missing_calendar_students: number
+    invalid_students: number
+    groups: StudentAcademicPeriodPreviewGroup[]
+}
+
 export interface StudentAcademicPeriodSyncHistory {
     id: number
     reference_date: string
+    is_international: boolean
     academic_year: number | null
     term_code: string | null
     term_name_th: string | null

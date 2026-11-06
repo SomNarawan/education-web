@@ -239,6 +239,7 @@ export default function StudentImportPicker({
                     curriculum.name_th,
                     studyPlan.id,
                     studyPlan.name_th,
+                    curriculum.is_international,
                     (progressEvent) => {
                         if (!progressEvent.total) return
 

@@ -119,6 +119,13 @@ export default function StudentProfileDetails({
             student.admission_channel_name,
         ),
         createItem('curriculum', 'หลักสูตร', student.curriculum_code),
+        createItem(
+            'studentType',
+            'ประเภทนิสิต',
+            student.is_international
+                ? 'นิสิตหลักสูตรนานาชาติ'
+                : 'นิสิตหลักสูตรภาษาไทย',
+        ),
         createItem('studyPlan', 'แผนการเรียน', student.study_plan_name_th),
         createItem('department', 'ภาควิชา', student.department_name),
         createItem('faculty', 'คณะ', student.faculty_name),

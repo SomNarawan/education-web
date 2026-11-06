@@ -7,6 +7,7 @@ export interface StudentListResponse {
     teacher_full_name: string | null
 
     curriculum_code: string
+    is_international: boolean
     study_plan_name_th: string
     study_plan_name: string | null
     curriculum_plan_name: string | null

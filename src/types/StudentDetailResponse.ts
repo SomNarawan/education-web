@@ -57,6 +57,7 @@ export interface StudentDetailResponse {
 
     curriculum_id: number
     curriculum_code: string
+    is_international: boolean
     study_plan_id: number
     study_plan_name_th: string
     study_plan_name: string | null

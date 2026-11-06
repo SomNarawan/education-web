@@ -131,6 +131,8 @@ export function useStudentFormOptions(
                                           name_th:
                                               editingStudent.curriculum_code,
                                           name_en: null,
+                                          is_international:
+                                              editingStudent.is_international,
                                       }
                                     : null,
                             ),

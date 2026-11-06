@@ -77,6 +77,16 @@ export function createAcademicPeriodHistoryColumns(
 ): TableColumnsType<StudentAcademicPeriodSyncHistory> {
     return [
         {
+            title: 'ประเภทนิสิต',
+            dataIndex: 'is_international',
+            key: 'is_international',
+            render: (value: boolean) => (
+                <Tag color={value ? 'purple' : 'blue'}>
+                    {value ? 'นานาชาติ' : 'ปกติ'}
+                </Tag>
+            ),
+        },
+        {
             title: 'ปี / ภาคการศึกษา',
             key: 'period',
             render: (_, record) =>

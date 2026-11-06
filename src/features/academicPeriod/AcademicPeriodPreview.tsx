@@ -4,29 +4,64 @@ import {
     SyncOutlined,
     TeamOutlined,
 } from '@ant-design/icons'
-import {
-    Alert,
-    Button,
-    Card,
-    Col,
-    Empty,
-    Row,
-    Space,
-    Statistic,
-    Table,
-    Tag,
-} from 'antd'
+import { Alert, Button, Card, Col, Empty, Row, Space, Statistic, Table, Tag } from 'antd'
 import type {
     AcademicPeriodSummary,
-    StudentAcademicPeriodPreview as StudentAcademicPeriodPreviewData,
+    StudentAcademicPeriodPreview as PreviewData,
+    StudentAcademicPeriodPreviewGroup,
 } from '../../types/StudentAcademicPeriodSync'
 import { academicPeriodSummaryColumns } from './academicPeriodSync.columns'
 
-interface AcademicPeriodPreviewProps {
-    preview: StudentAcademicPeriodPreviewData | null
+interface Props {
+    preview: PreviewData | null
     syncing: boolean
     onOpenCalendar: () => void
     onStartSync: () => void
+}
+
+function CalendarGroup({
+    group,
+    onOpenCalendar,
+}: {
+    group: StudentAcademicPeriodPreviewGroup
+    onOpenCalendar: () => void
+}) {
+    const ready = group.calendar_status === 'ready'
+    const notRequired = group.calendar_status === 'not_required'
+    const typeLabel = group.is_international ? 'นิสิตนานาชาติ' : 'นิสิตปกติ'
+
+    return (
+        <Card
+            title={typeLabel}
+            extra={<Tag color={group.is_international ? 'purple' : 'blue'}>{typeLabel}</Tag>}
+            className="academic-period-table-card"
+        >
+            <Space direction="vertical" size={12} className="academic-period-stack">
+                <Alert
+                    showIcon
+                    type={ready ? 'success' : notRequired ? 'info' : 'error'}
+                    icon={ready ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+                    message={ready
+                        ? `พร้อม Sync · ปีการศึกษา ${group.academic_year_be ?? '-'} · ${group.term_name_th ?? '-'}`
+                        : group.calendar_message}
+                    description={ready ? group.calendar_message : undefined}
+                    action={!ready && !notRequired ? (
+                        <Button size="small" onClick={onOpenCalendar}>
+                            ดูปฏิทินการศึกษา
+                        </Button>
+                    ) : undefined}
+                />
+                <Table<AcademicPeriodSummary>
+                    rowKey="entry_year"
+                    columns={academicPeriodSummaryColumns}
+                    dataSource={group.summaries}
+                    pagination={false}
+                    scroll={{ x: 900 }}
+                    locale={{ emptyText: 'ไม่พบนิสิตในกลุ่มนี้' }}
+                />
+            </Space>
+        </Card>
+    )
 }
 
 export default function AcademicPeriodPreview({
@@ -34,104 +69,49 @@ export default function AcademicPeriodPreview({
     syncing,
     onOpenCalendar,
     onStartSync,
-}: AcademicPeriodPreviewProps) {
-    if (!preview) {
-        return <Empty description="ไม่พบข้อมูลสำหรับตรวจสอบ" />
-    }
+}: Props) {
+    if (!preview) return <Empty description="ไม่พบข้อมูลสำหรับตรวจสอบ" />
+
+    const canSync = preview.groups.some(
+        (group) => group.calendar_status === 'ready' && group.ready_students > 0,
+    )
 
     return (
         <Space direction="vertical" size={16} className="academic-period-stack">
-            <Alert
-                showIcon
-                type={preview.calendar_status === 'ready' ? 'success' : 'error'}
-                icon={preview.calendar_status === 'ready'
-                    ? <CheckCircleOutlined />
-                    : <ExclamationCircleOutlined />}
-                message={preview.calendar_status === 'ready'
-                    ? `พร้อม Sync · ปีการศึกษา ${preview.academic_year_be ?? '-'} · ${preview.term_name_th ?? '-'}`
-                    : 'ยังไม่สามารถ Sync ได้'}
-                description={preview.calendar_status === 'ready'
-                    ? (
-                        <Space wrap size={[8, 4]}>
-                            <span>{preview.calendar_message}</span>
-                            <Tag color="blue">หลักสูตรภาษาไทย</Tag>
-                            <Tag color="warning">
-                                หลักสูตรนานาชาติ: รอการรับรอง
-                            </Tag>
-                        </Space>
-                    )
-                    : preview.calendar_message}
-                action={preview.calendar_status !== 'ready' ? (
-                    <Button size="small" onClick={onOpenCalendar}>
-                        ดูปฏิทินการศึกษา
-                    </Button>
-                ) : undefined}
-            />
-
-            <Card className="academic-period-summary-card">
-                <Row>
-                    <Col xs={24} md={8} className="academic-period-metric">
-                        <Statistic
-                            title="นิสิตกำลังศึกษาที่ตรวจสอบทั้งหมด"
-                            value={preview.total_students}
-                            suffix="คน"
-                            prefix={<TeamOutlined />}
-                        />
-                    </Col>
-                    <Col
-                        xs={24}
-                        md={8}
-                        className="academic-period-metric academic-period-metric-update"
-                    >
-                        <Statistic
-                            title="จะได้รับการอัปเดต"
-                            value={preview.update_students}
-                            suffix="คน"
-                            prefix={<SyncOutlined />}
-                        />
-                    </Col>
-                    <Col
-                        xs={24}
-                        md={8}
-                        className="academic-period-metric academic-period-metric-unchanged"
-                    >
-                        <Statistic
-                            title="ข้อมูลไม่เปลี่ยนแปลง"
-                            value={preview.unchanged_students}
-                            suffix="คน"
-                            prefix={<CheckCircleOutlined />}
-                        />
-                    </Col>
-                </Row>
-            </Card>
-
             <Card
-                title="สรุปนิสิตตามปีการศึกษาที่เข้า (กำลังศึกษาอยู่เท่านั้น)"
-                className="academic-period-table-card"
-                extra={
+                className="academic-period-summary-card"
+                extra={(
                     <Button
                         type="primary"
                         icon={<SyncOutlined />}
                         loading={syncing}
-                        disabled={
-                            preview.calendar_status !== 'ready' ||
-                            preview.ready_students === 0
-                        }
+                        disabled={!canSync}
                         onClick={onStartSync}
                     >
                         เริ่ม Sync
                     </Button>
-                }
+                )}
             >
-                <Table<AcademicPeriodSummary>
-                    rowKey="entry_year"
-                    columns={academicPeriodSummaryColumns}
-                    dataSource={preview.summaries}
-                    pagination={false}
-                    scroll={{ x: 900 }}
-                    locale={{ emptyText: 'ไม่พบนิสิตที่กำลังศึกษา' }}
-                />
+                <Row>
+                    <Col xs={24} md={8} className="academic-period-metric">
+                        <Statistic title="นิสิตที่ตรวจสอบทั้งหมด" value={preview.total_students} suffix="คน" prefix={<TeamOutlined />} />
+                    </Col>
+                    <Col xs={24} md={8} className="academic-period-metric academic-period-metric-update">
+                        <Statistic title="จะได้รับการอัปเดต" value={preview.update_students} suffix="คน" prefix={<SyncOutlined />} />
+                    </Col>
+                    <Col xs={24} md={8} className="academic-period-metric academic-period-metric-unchanged">
+                        <Statistic title="ข้อมูลไม่เปลี่ยนแปลง" value={preview.unchanged_students} suffix="คน" prefix={<CheckCircleOutlined />} />
+                    </Col>
+                </Row>
             </Card>
+
+            {preview.groups.map((group) => (
+                <CalendarGroup
+                    key={group.calendar_key}
+                    group={group}
+                    onOpenCalendar={onOpenCalendar}
+                />
+            ))}
         </Space>
     )
 }

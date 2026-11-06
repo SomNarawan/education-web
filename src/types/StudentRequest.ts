@@ -18,6 +18,7 @@ export interface CreateStudentRequest {
     curriculum_code: string
     study_plan_id: number
     study_plan_name_th: string
+    is_international: boolean
     system_department_id?: number
     entry_year: number
 

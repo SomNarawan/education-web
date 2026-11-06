@@ -6,6 +6,13 @@ export type SyncType = 1 | 2 | 3
 
 export type SyncExecutionStatus = 'running' | 'success' | 'failed'
 
+export interface AcademicCalendarSyncYearResult {
+    academic_year: number
+    academic_year_be: number
+    status: 'inserted' | 'updated' | 'skipped' | 'no_data'
+    has_data: boolean
+}
+
 export interface GetSyncsParams {
     sync_type?: SyncType
     status?: SyncExecutionStatus
@@ -25,6 +32,7 @@ export interface SyncResult {
     created_by: string | null
     updated_at: string
     updated_by: string | null
+    academic_year_results?: AcademicCalendarSyncYearResult[]
 }
 
 export interface SyncHistoryRecord {

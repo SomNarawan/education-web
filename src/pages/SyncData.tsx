@@ -113,6 +113,35 @@ function formatSyncDate(value: string | null | undefined): string | null {
     return value ? formatThaiDateTime(value) : null
 }
 
+function showAcademicCalendarSyncResult(result: SyncResult): void {
+    const yearResults = result.academic_year_results ?? []
+    const yearsWithData = yearResults
+        .filter((item) => item.has_data)
+        .map((item) => item.academic_year_be)
+    const yearsWithoutData = yearResults
+        .filter((item) => !item.has_data)
+        .map((item) => item.academic_year_be)
+
+    if (yearsWithData.length === 0) {
+        message.warning(
+            `Sync ไม่มีข้อมูล: ปีการศึกษา ${yearsWithoutData.join(', ')}`,
+        )
+        return
+    }
+
+    const details = [`ปีที่มีข้อมูล: ${yearsWithData.join(', ')}`]
+    if (yearsWithoutData.length > 0) {
+        details.push(`ปีที่ไม่มีข้อมูล: ${yearsWithoutData.join(', ')}`)
+    }
+
+    const text = `Sync ปฏิทินสำเร็จ · ${details.join(' · ')}`
+    if (yearsWithoutData.length > 0) {
+        message.warning(text)
+    } else {
+        message.success(text)
+    }
+}
+
 function getSyncHistoryError(error: unknown): SyncHistoryError {
     if (!axios.isAxiosError<ApiErrorResponse>(error)) {
         return {
@@ -382,6 +411,14 @@ export default function SyncData() {
                 ? await syncAcademicCalendars(selectedAcademicYears)
                 : await syncMasterData(dataType)
             updateRecord(dataType, mapSyncResult(result))
+
+            if (
+                dataType === 'academic-calendar' &&
+                result.status === 'success'
+            ) {
+                showAcademicCalendarSyncResult(result)
+                return
+            }
 
             if (result.status === 'success') {
                 message.success('Sync ข้อมูลสำเร็จ')

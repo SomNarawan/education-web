@@ -96,6 +96,15 @@ export function AcademicPeriodHistoryModal({
                         column={{ xs: 1, sm: 2 }}
                         items={[
                             {
+                                key: 'student_type',
+                                label: 'ประเภทนิสิต',
+                                children: (
+                                    <Tag color={history.is_international ? 'purple' : 'blue'}>
+                                        {history.is_international ? 'นิสิตนานาชาติ' : 'นิสิตปกติ'}
+                                    </Tag>
+                                ),
+                            },
+                            {
                                 key: 'period',
                                 label: 'ปี / ภาคการศึกษา',
                                 children:

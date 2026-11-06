@@ -28,10 +28,10 @@ export async function getStudentAcademicPeriodSyncHistory(): Promise<
 }
 
 export async function syncStudentAcademicPeriods(): Promise<
-    StudentAcademicPeriodSyncHistory
+    StudentAcademicPeriodSyncHistory[]
 > {
     const response = await api.post<
-        ApiResponse<StudentAcademicPeriodSyncHistory>
+        ApiResponse<StudentAcademicPeriodSyncHistory[]>
     >(endpoint)
 
     return response.data.data

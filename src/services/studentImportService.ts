@@ -27,6 +27,7 @@ export async function importStudents(
     curriculumCode: string,
     studyPlanId: number,
     studyPlanNameTh: string,
+    isInternational: boolean,
     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void,
 ): Promise<StudentImportResult> {
     const formData = new FormData()
@@ -36,6 +37,7 @@ export async function importStudents(
     formData.append('curriculum_code', curriculumCode)
     formData.append('study_plan_id', String(studyPlanId))
     formData.append('study_plan_name_th', studyPlanNameTh)
+    formData.append('is_international', isInternational ? '1' : '0')
 
     const response = await api.post<Blob>(
         '/students/import',

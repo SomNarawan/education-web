@@ -16,19 +16,13 @@ function getErrorMessage(error: unknown): string {
     if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
         return error.response?.data.message ?? error.message
     }
-
-    return error instanceof Error
-        ? error.message
-        : 'เกิดข้อผิดพลาดที่ไม่คาดคิด'
+    return error instanceof Error ? error.message : 'เกิดข้อผิดพลาดที่ไม่คาดคิด'
 }
 
 export function useAcademicPeriodSync() {
-    const [preview, setPreview] =
-        useState<StudentAcademicPeriodPreview | null>(null)
-    const [history, setHistory] =
-        useState<StudentAcademicPeriodSyncHistory[]>([])
-    const [selectedHistory, setSelectedHistory] =
-        useState<StudentAcademicPeriodSyncHistory | null>(null)
+    const [preview, setPreview] = useState<StudentAcademicPeriodPreview | null>(null)
+    const [history, setHistory] = useState<StudentAcademicPeriodSyncHistory[]>([])
+    const [selectedHistory, setSelectedHistory] = useState<StudentAcademicPeriodSyncHistory | null>(null)
     const [loading, setLoading] = useState(true)
     const [syncing, setSyncing] = useState(false)
     const [confirmOpen, setConfirmOpen] = useState(false)
@@ -37,7 +31,6 @@ export function useAcademicPeriodSync() {
     const loadData = useCallback(async () => {
         setLoading(true)
         setError(null)
-
         try {
             const [previewData, historyData] = await Promise.all([
                 getStudentAcademicPeriodPreview(),
@@ -46,10 +39,7 @@ export function useAcademicPeriodSync() {
             setPreview(previewData)
             setHistory(historyData)
         } catch (loadError) {
-            console.error(
-                'Unable to load student academic period sync',
-                loadError,
-            )
+            console.error('Unable to load student academic period sync', loadError)
             setError(getErrorMessage(loadError))
         } finally {
             setLoading(false)
@@ -57,36 +47,29 @@ export function useAcademicPeriodSync() {
     }, [])
 
     useEffect(() => {
-        // Initial API load is intentionally triggered when the page mounts.
         // eslint-disable-next-line react-hooks/set-state-in-effect
         void loadData()
     }, [loadData])
 
     const syncAcademicPeriods = useCallback(async () => {
         setSyncing(true)
-
         try {
-            const result = await syncStudentAcademicPeriods()
+            const results = await syncStudentAcademicPeriods()
             setConfirmOpen(false)
+            const successful = results.filter((item) => item.status === 'success')
+            const partial = results.filter((item) => item.status === 'partial')
+            const updated = results.reduce((sum, item) => sum + item.updated_count, 0)
 
-            if (result.status === 'success') {
-                message.success(
-                    `Sync สำเร็จ อัปเดตนิสิต ${result.updated_count.toLocaleString()} คน`,
-                )
-            } else if (result.status === 'partial') {
-                message.warning(
-                    'Sync สำเร็จบางส่วน กรุณาตรวจสอบรายการที่ไม่สำเร็จ',
-                )
+            if (successful.length === results.length) {
+                message.success(`Sync สำเร็จ ${results.length} กลุ่ม อัปเดตนิสิต ${updated.toLocaleString()} คน`)
+            } else if (successful.length > 0 || partial.length > 0) {
+                message.warning(`Sync สำเร็จบางส่วน (${successful.length + partial.length}/${results.length} กลุ่ม) กรุณาตรวจสอบประวัติ`)
             } else {
-                message.error(result.error_message ?? 'Sync ไม่สำเร็จ')
+                message.error('Sync ไม่สำเร็จ กรุณาตรวจสอบประวัติ')
             }
-
             await loadData()
         } catch (syncError) {
-            console.error(
-                'Unable to sync student academic periods',
-                syncError,
-            )
+            console.error('Unable to sync student academic periods', syncError)
             message.error(getErrorMessage(syncError))
         } finally {
             setSyncing(false)

@@ -377,6 +377,14 @@ export default function StudentDetailPage() {
                                                 }
                                             />
                                             <DetailItem
+                                                label="ประเภทนิสิต"
+                                                value={
+                                                    student.is_international
+                                                        ? 'นิสิตหลักสูตรนานาชาติ'
+                                                        : 'นิสิตหลักสูตรภาษาไทย'
+                                                }
+                                            />
+                                            <DetailItem
                                                 label="แผนการเรียน"
                                                 value={
                                                     student.study_plan_name_th

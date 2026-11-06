@@ -72,6 +72,7 @@ export interface Curriculum {
     id: number
     name_th: string
     name_en: string | null
+    is_international: boolean
 }
 
 export type SystemDepartment = ListOfValue
