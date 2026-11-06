@@ -4,17 +4,27 @@ import { Alert, Button, Spin, Typography } from 'antd'
 import { useAuth } from '../hooks/useAuth'
 import { checkBackendConnectivity } from '../utils/backendConnectivity'
 import { appMode } from '../config/appMode'
+import { authProvider, portalLoginUrl } from '../config/auth'
 
 export default function RoleRedirect() {
     const { token, user, currentRole } = useAuth()
     const [connectionError, setConnectionError] = useState<string | null>(
         null,
     )
+    const goToPortal =
+        appMode !== 'student' && !token && authProvider === 'portal'
+
+    // ยังไม่ login และใช้ Portal — ไปเลือกระบบที่ ENG Main แล้วจะถูกส่งกลับมาที่ /auth/portal/:role
+    useEffect(() => {
+        if (goToPortal) {
+            window.location.assign(portalLoginUrl)
+        }
+    }, [goToPortal])
 
     // เช็คว่า FE คุยกับ BE รอดหรือไม่ ก่อนให้ผู้ใช้กด login — log ผลลง console เสมอ
     // และถ้าเชื่อมต่อไม่ได้จะโชว์เหตุผลบนหน้าจอด้วย
     useEffect(() => {
-        if (appMode === 'student' || token) return
+        if (appMode === 'student' || token || goToPortal) return
 
         let cancelled = false
 
@@ -26,7 +36,7 @@ export default function RoleRedirect() {
         return () => {
             cancelled = true
         }
-    }, [token])
+    }, [token, goToPortal])
 
     if (appMode === 'student') {
         if (token && !user) {
@@ -50,7 +60,18 @@ export default function RoleRedirect() {
         )
     }
 
-    // ยังไม่ login — แสดงข้อความแทนการ navigate วนไปมากับ /auth/callback
+    if (goToPortal) {
+        return (
+            <div style={{ textAlign: 'center', padding: 60 }}>
+                <Spin size="large" />
+                <Typography.Paragraph style={{ marginTop: 16 }}>
+                    กำลังไปยังหน้าเข้าสู่ระบบ ENG Main…
+                </Typography.Paragraph>
+            </div>
+        )
+    }
+
+    // ยังไม่ login (mock) — แสดงข้อความแทนการ navigate วนไปมากับ /auth/callback
     if (!token) {
         if (import.meta.env.VITE_MOCK_LOGIN_ENABLED === 'true') {
             return <Navigate to="/mock-login" replace />

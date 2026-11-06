@@ -36,7 +36,7 @@ export default function HeaderBar() {
     const items: MenuProps['items'] = [
         ...roleItems,
         { type: 'divider', key: 'div' },
-        { key: 'logout', label: 'ออกจากระบบ', onClick: () => logout() },
+        { key: 'logout', label: 'ออกจากระบบ', onClick: () => void logout() },
     ]
 
     const menu = { items }

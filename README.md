@@ -44,48 +44,48 @@ Frontend ของระบบสารสนเทศนิสิต ใช้�
 npm ci
 ```
 
+สร้างไฟล์ env ของเว็บ Staff จากตัวอย่าง:
+
+```sh
+cp .env.localdeploy.private.example .env.localdeploy.private
+```
+
 รัน Staff และ Student แยกกันได้ด้วย terminal คนละหน้าต่าง:
 
 ```sh
-npm run dev:staff
-npm run dev:student
+npm run dev:private
+npm run dev:public
 ```
 
 - Staff: http://localhost:3001
 - Student: http://localhost:3002
 
-ค่าเริ่มต้นใน `.env.staff` เปิด Mock Login สำหรับ staff ส่วน `.env.student` ใช้หน้า Mock Login ของนิสิตเพื่อเลือกรายการผู้ใช้จำลอง
+ทั้งสองคำสั่งใช้ค่าเดียวกับการทดสอบ deploy ในเครื่อง คือเรียก API ที่พอร์ต 3009 และใช้ Mock Login
 
-หากต้องการรัน Vite ด้วย mode ปกติและพอร์ตเริ่มต้น:
-
-```sh
-npm run dev
-```
+`npm run dev` ทำงานเหมือน `npm run dev:private`
 
 ## Environment variables
 
-ไฟล์ที่ใช้กับแต่ละคำสั่ง:
+| ไฟล์ | ใช้กับ | Commit |
+|---|---|---|
+| `.env.private` | production ของเว็บ staff (`Dockerfile.private`) | ไม่ (ตัวอย่าง `.env.private.example`) |
+| `.env.public` | production ของเว็บนิสิต (`Dockerfile.public`) | ไม่ (ตัวอย่าง `.env.public.example`) |
+| `.env.localdeploy.private` | `npm run dev`, `npm run dev:private` และ `npm run docker:up` | ไม่ (ตัวอย่าง `.env.localdeploy.private.example`) |
+| `.env.localdeploy.public` | `npm run dev:public` | ใช่ ไม่มีค่าลับ |
 
-- `.env.staff` สำหรับ `npm run dev:staff`
-- `.env.student` สำหรับ `npm run dev:student`
-- `.env.development.example` และ `.env.production.example` เป็นตัวอย่างการตั้งค่าตาม environment
-- `.env.staff.local` หรือ `.env.student.local` สำหรับ override เฉพาะเครื่อง โดยไฟล์ `*.local` จะไม่ถูก commit
+ค่าเฉพาะเครื่องให้ใส่ใน `.env.localdeploy.private.local` หรือ `.env.localdeploy.public.local` ซึ่งจะไม่ถูก commit
 
-ตัวอย่างสำหรับ staff mode:
-
-```env
-VITE_API_URL=http://localhost:8000/api
-VITE_BASE_PATH=
-VITE_MOCK_LOGIN_ENABLED=true
-VITE_APP_MODE=staff
-```
+Staff ใช้ `VITE_AUTH_PROVIDER=portal` บน production แต่ใช้ `mock` ในเครื่อง เพราะ ENG Main ส่งกลับมาที่ localhost ไม่ได้ ส่วนเว็บนิสิตใช้ `mock` ทั้งสองที่
 
 | ตัวแปร | จำเป็น | รายละเอียด |
 |---|---|---|
 | `VITE_API_URL` | ใช่ | Base URL ที่ Axios ใช้เรียก backend เช่น `http://localhost:8000/api` หรือ `/api` เมื่อใช้ proxy |
 | `VITE_APP_MODE` | ใช่ | โหมดของ bundle: `staff` หรือ `student` |
+| `VITE_AUTH_PROVIDER` | ไม่ | `portal` (ค่าเริ่มต้น) เข้าสู่ระบบผ่าน KU All Login ที่ ENG Main · `mock` ใช้ `/mock-login` และ `/auth/callback` บนเครื่องตัวเอง |
+| `VITE_PORTAL_LOGIN_URL` | ไม่ | หน้า ENG Main ที่ส่งผู้ใช้ไปเมื่อยังไม่ได้เข้าสู่ระบบหรือ session หมด (ค่าเริ่มต้น `https://office.eng.kps.ku.ac.th/eng-main/home`) |
+| `VITE_PORTAL_LOGOUT_URL` | ไม่ | หน้าที่ไปหลังกดออกจากระบบ; เว้นว่าง = `VITE_PORTAL_LOGIN_URL` |
 | `VITE_BASE_PATH` | ไม่ | Subpath ที่ใช้ deploy เช่น `/education`; เว้นว่างเมื่อ deploy ที่ root |
-| `VITE_MOCK_LOGIN_ENABLED` | ไม่ | เปิด `/mock-login` สำหรับ staff เมื่อมีค่า `true`; ควรใช้เฉพาะ local/dev/staging |
+| `VITE_MOCK_LOGIN_ENABLED` | ไม่ | เปิด `/mock-login` สำหรับ staff เมื่อมีค่า `true` (ใช้ได้เฉพาะ `VITE_AUTH_PROVIDER=mock`); ควรใช้เฉพาะ local/dev/staging |
 | `VITE_API_PROXY_TARGET` | ไม่ | Target ของ Vite dev proxy เช่น `http://localhost:8000` |
 | `VITE_API_PROXY_PATH` | ไม่ | Path ที่ Vite proxy ไปยัง target เช่น `/api`; proxy จะทำงานเมื่อกำหนดทั้ง target และ path |
 
@@ -101,10 +101,23 @@ VITE_API_PROXY_PATH=/api
 
 ## Authentication และ Authorization
 
+**Portal (`VITE_AUTH_PROVIDER=portal`)** — staff เข้าสู่ระบบด้วย KU All Login ผ่าน ENG Main
+
+1. ยังไม่มี token → `RoleRedirect` พาไป `VITE_PORTAL_LOGIN_URL`
+2. ผู้ใช้กด tile ของระบบใน ENG Main → กลับมาที่ `/auth/portal/{admin|teacher}?exchangeToken=…&intranetToken=…`
+3. `PortalLogin` ลบ token ออกจาก URL ทันที แล้วส่งให้ `POST /auth/portal-login` (ครั้งเดียว — exchangeToken ใช้ซ้ำไม่ได้) ได้ JWT ของระบบกลับมา
+4. เข้าสู่ระบบด้วย role ที่กดมา (`current_role` จาก `/me`) และยังสลับ role ได้จากเมนูมุมขวาบน
+5. Request ที่แนบ token แล้วได้ 401 (เช่น session ถูกยกเลิกที่ ENG Main) → Axios interceptor ล้าง token แล้วพากลับ ENG Main
+6. ออกจากระบบ → `POST /auth/logout` (ปิด session ของระบบนี้เท่านั้น ระบบอื่นใน Portal ยังใช้งานได้) แล้วไป `VITE_PORTAL_LOGOUT_URL`
+
+ถ้าเข้าสู่ระบบไม่สำเร็จ หน้า `PortalLogin` จะแสดงข้อผิดพลาดพร้อมปุ่มกลับไปที่ Portal โดยไม่ redirect อัตโนมัติ (กันวนลูป)
+
+**Mock (`VITE_AUTH_PROVIDER=mock`)** — สำหรับ local
+
 1. ระบบรับ token จาก `/auth/callback?token=...`
 2. `AuthContext` บันทึก token ใน `auth_token` แล้วเรียก `GET /me`
-3. ข้อมูลผู้ใช้และ role ปัจจุบันถูกเก็บใน `auth_user` และ `current_role`
-4. Axios interceptor แนบ Bearer token จาก local storage ให้ทุก request
+
+ทั้งสองแบบ ข้อมูลผู้ใช้และ role ปัจจุบันถูกเก็บใน `auth_user` และ `current_role` และ Axios interceptor แนบ Bearer token จาก local storage ให้ทุก request
 
 สิทธิ์ route ถูกตรวจด้วย `ProtectedRoute`, `StudentAuthenticatedRoute` และ `StudentRouteGuard` การซ่อนเมนูเป็นเพียงส่วนแสดงผลและไม่ใช้แทน route guard
 
@@ -118,7 +131,7 @@ VITE_API_PROXY_PATH=/api
 | `/grade-calculator` | `teacher`, `admin` |
 | `/student/home`, `/student/profile`, `/student/grades`, `/student/grade-calculator` | `student` ใน student mode |
 
-Mock Login สำหรับ staff ถูกควบคุมด้วย `VITE_MOCK_LOGIN_ENABLED` ส่วน student mode มี route `/student/mock-login` แยกต่างหากตาม flow ปัจจุบัน การ deploy production ต้องเชื่อมต่อ SSO ให้ส่งผู้ใช้เข้า callback และต้องไม่เปิดช่องทาง mock login ที่ backend
+Mock Login สำหรับ staff ใช้ได้เมื่อ `VITE_AUTH_PROVIDER=mock` และ `VITE_MOCK_LOGIN_ENABLED=true` ส่วน student mode มี route `/student/mock-login` แยกต่างหากตาม flow ปัจจุบัน production ต้อง build ด้วย `VITE_AUTH_PROVIDER=portal` (backend ปิด mock login เองเมื่อ `APP_ENV=production`)
 
 ## การเชื่อมต่อ API
 
@@ -156,8 +169,8 @@ Route declarations รวมอยู่ที่ `src/App.tsx` และหน�
 
 ```sh
 npm run dev          # Vite development server
-npm run dev:staff    # staff mode ที่พอร์ต 3001
-npm run dev:student  # student mode ที่พอร์ต 3002
+npm run dev:private  # staff mode ที่พอร์ต 3001
+npm run dev:public   # student mode ที่พอร์ต 3002
 npm run lint         # ตรวจด้วย ESLint
 npm run build        # TypeScript project build และ Vite production build
 npm run preview      # preview ไฟล์ใน dist/
