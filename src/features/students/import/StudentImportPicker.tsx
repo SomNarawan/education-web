@@ -177,9 +177,20 @@ export default function StudentImportPicker({
     }
 
     const handleDownloadTemplate = async () => {
+        let curriculumId: number
+
+        try {
+            const values = await selectionForm.validateFields([
+                'curriculumId',
+            ])
+            curriculumId = values.curriculumId
+        } catch {
+            return
+        }
+
         try {
             setTemplateDownloading(true)
-            const result = await downloadStudentImportTemplate()
+            const result = await downloadStudentImportTemplate(curriculumId)
             downloadBlob(result.blob, result.fileName)
             message.success('ดาวน์โหลดไฟล์ Template สำเร็จ')
         } catch (error) {
@@ -473,7 +484,9 @@ export default function StudentImportPicker({
                     size="large"
                     icon={<DownloadOutlined />}
                     loading={templateDownloading}
-                    disabled={importing}
+                    disabled={
+                        !selectedCurriculumId || importing || templateDownloading
+                    }
                     onClick={() => void handleDownloadTemplate()}
                 >
                     ดาวน์โหลดไฟล์ Template

@@ -69,10 +69,13 @@ export async function downloadStudentImportResult(
     }
 }
 
-export async function downloadStudentImportTemplate(): Promise<
+export async function downloadStudentImportTemplate(
+    curriculumId: number,
+): Promise<
     StudentImportDownload
 > {
     const response = await api.get<Blob>('/students/import/template', {
+        params: { curriculum_id: curriculumId },
         responseType: 'blob',
     })
 
