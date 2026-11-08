@@ -87,6 +87,12 @@ export default function SideMenu({ collapsed }: SideMenuProps) {
             allowedRoles: ['student'],
         },
         {
+            key: '/advisor-dashboard',
+            icon: <BarChartOutlined />,
+            label: 'ภาพรวมนิสิตในที่ปรึกษา',
+            allowedRoles: ['teacher'],
+        },
+        {
             key: '/students/advisor',
             icon: <TeamOutlined />,
             label: 'รายชื่อนิสิตในที่ปรึกษา',

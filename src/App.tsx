@@ -23,6 +23,9 @@ const SyncData = lazy(() => import('./pages/SyncData'))
 const AcademicCalendar = lazy(
     () => import('./features/academicCalendar/AcademicCalendarPage'),
 )
+const AdvisorDashboard = lazy(
+    () => import('./features/advisorDashboard/AdvisorDashboardPage'),
+)
 const StudentAcademicPeriodSync = lazy(
     () => import('./features/academicPeriod/AcademicPeriodChangePage'),
 )
@@ -202,6 +205,15 @@ export default function App() {
                                 <StudentRouteGuard>
                                     <StudentDetail />
                                 </StudentRouteGuard>
+                            }
+                        />
+
+                        <Route
+                            path="advisor-dashboard"
+                            element={
+                                <ProtectedRoute allowedRoles={['teacher']}>
+                                    <AdvisorDashboard />
+                                </ProtectedRoute>
                             }
                         />
 
