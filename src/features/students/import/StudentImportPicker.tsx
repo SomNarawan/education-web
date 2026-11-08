@@ -484,9 +484,7 @@ export default function StudentImportPicker({
                     size="large"
                     icon={<DownloadOutlined />}
                     loading={templateDownloading}
-                    disabled={
-                        !selectedCurriculumId || importing || templateDownloading
-                    }
+                    disabled={importing || templateDownloading}
                     onClick={() => void handleDownloadTemplate()}
                 >
                     ดาวน์โหลดไฟล์ Template
