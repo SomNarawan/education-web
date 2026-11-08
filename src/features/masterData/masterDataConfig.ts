@@ -73,22 +73,6 @@ export const masterDataDefinitions: Record<
             },
         ],
     },
-    'import-types': {
-        title: 'จัดการประเภทการนำเข้าข้อมูล',
-        description: 'จัดการประเภทข้อมูลที่รองรับการนำเข้าสู่ระบบ',
-        itemLabel: 'ประเภทการนำเข้า',
-        searchPlaceholder: 'ค้นหาประเภทการนำเข้า...',
-        displayField: 'type',
-        refreshAfterMutation: true,
-        fields: [
-            {
-                key: 'type',
-                label: 'ประเภทการนำเข้า',
-                placeholder: 'เช่น student',
-                maxLength: 50,
-            },
-        ],
-    },
     relationships: {
         title: 'จัดการความสัมพันธ์ผู้ปกครอง',
         description: 'จัดการประเภทความสัมพันธ์ระหว่างนิสิตและผู้ปกครอง',

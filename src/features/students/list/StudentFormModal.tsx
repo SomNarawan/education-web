@@ -5,7 +5,6 @@ DatePicker,
 Form,
 Input,
 Modal,
-Radio,
 Row,
 } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
@@ -29,7 +28,8 @@ interface StudentFormModalProps {
     onSave: (values: StudentFormValues) => void | Promise<void>
 }
 
-interface FormValues extends Omit<StudentFormValues, 'entry_year'> {
+interface FormValues
+    extends Omit<StudentFormValues, 'entry_year' | 'is_international'> {
     entry_year: Dayjs
 }
 
@@ -73,7 +73,6 @@ useEffect(() => {
                 editingStudent.system_department_id ?? undefined,
             curriculum_id: editingStudent.curriculum_id,
             study_plan_id: editingStudent.study_plan_id,
-            is_international: editingStudent.is_international,
             entry_year: dayjs().year(editingStudent.entry_year_be),
             teacher_id: editingStudent.teacher_id,
             admission_channel_id: editingStudent.admission_channel_id,
@@ -129,6 +128,7 @@ const handleOk = async () => {
         guardian_relationship_id: values.guardian_relationship_id ?? null,
         guardian_phone: values.guardian_phone?.trim() || null,
         curriculum_code: curriculum.name_th,
+        is_international: curriculum.is_international,
         system_department_id: values.system_department_id,
         study_plan_name_th: studyPlan.name_th,
         entry_year:
@@ -160,7 +160,6 @@ return (
         <Form
             layout="vertical"
             form={form}
-            initialValues={{ is_international: false }}
             requiredMark={renderRequiredFormMark}
         >
             <Card title="1. รหัสนิสิต" size="small" style={{ marginBottom: 16 }}>
@@ -298,18 +297,6 @@ return (
                 style={{ marginBottom: 16 }}
             >
                 <Row gutter={16}>
-                    <Col xs={24}>
-                        <Form.Item
-                            label="ประเภทนิสิต"
-                            name="is_international"
-                            rules={[{ required: true, message: 'กรุณาเลือกประเภทนิสิต' }]}
-                        >
-                            <Radio.Group>
-                                <Radio value={false}>นิสิตปกติ</Radio>
-                                <Radio value={true}>นิสิตนานาชาติ</Radio>
-                            </Radio.Group>
-                        </Form.Item>
-                    </Col>
                     <Col xs={24} md={8}>
                         <Form.Item
                             label="ปีการศึกษาที่เข้าเรียน"
