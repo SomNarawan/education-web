@@ -33,6 +33,9 @@ export interface AdvisorPendingCourse {
     grade_letter: string | null
     enrollment_type: string
     credit: number | null
+    // Past terms only: whether the course has been passed since, from the latest grades.
+    resolved?: boolean
+    resolved_term_label?: string | null
 }
 
 export interface AdvisorAnnualCohort {
