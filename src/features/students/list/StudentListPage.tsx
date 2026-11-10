@@ -1,11 +1,11 @@
-import { Button, Form, Input, Spin, message, Typography } from 'antd'
+import { Button, Form, Input, Modal, Spin, message, Typography } from 'antd'
 const { Text } = Typography
 import {
     PlusOutlined,
     SearchOutlined,
 } from '@ant-design/icons'
 import axios from 'axios'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import StudentTable from './StudentTable'
 import StudentFormModal from './StudentFormModal'
@@ -94,6 +94,8 @@ function StudentList() {
     const [noteTypesLoading, setNoteTypesLoading] = useState(false)
     const [noteTypesError, setNoteTypesError] = useState<string | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [editConfirmOpen, setEditConfirmOpen] = useState(false)
+    const editConfirmOpenRef = useRef(false)
     const [editingStudent, setEditingStudent] =
         useState<StudentDetailResponse | null>(null)
 
@@ -421,12 +423,7 @@ function StudentList() {
         setEditingStudent(null)
     }
 
-    const handleSave = async (values: StudentFormValues) => {
-        if (!isAdmin) {
-            message.warning('เฉพาะผู้ดูแลระบบเท่านั้นที่บันทึกข้อมูลนิสิตได้')
-            return
-        }
-
+    const persistStudent = async (values: StudentFormValues) => {
         try {
             setDropdownLoading(true)
 
@@ -468,6 +465,44 @@ function StudentList() {
         } finally {
             setDropdownLoading(false)
         }
+    }
+
+    const handleSave = async (values: StudentFormValues) => {
+        if (!isAdmin) {
+            message.warning('เฉพาะผู้ดูแลระบบเท่านั้นที่บันทึกข้อมูลนิสิตได้')
+            return
+        }
+
+        if (editingStudent) {
+            if (editConfirmOpenRef.current) return
+
+            const finishConfirmation = () => {
+                editConfirmOpenRef.current = false
+                setEditConfirmOpen(false)
+            }
+
+            editConfirmOpenRef.current = true
+            setEditConfirmOpen(true)
+            Modal.confirm({
+                title: 'ยืนยันการแก้ไขข้อมูลนิสิต',
+                content: 'กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนยืนยันการแก้ไข',
+                okText: 'ยืนยันการแก้ไข',
+                cancelText: 'ยกเลิก',
+                centered: true,
+                onOk: async () => {
+                    try {
+                        await persistStudent(values)
+                    } finally {
+                        finishConfirmation()
+                    }
+                },
+                onCancel: finishConfirmation,
+            })
+
+            return
+        }
+
+        await persistStudent(values)
     }
 
     const handleDelete = async (id: number) => {
@@ -776,7 +811,7 @@ function StudentList() {
             {isAdmin && (
                 <StudentFormModal
                     open={isModalOpen}
-                    loading={dropdownLoading}
+                    loading={dropdownLoading || editConfirmOpen}
                     editingStudent={editingStudent}
                     onCancel={closeModal}
                     onSave={handleSave}
