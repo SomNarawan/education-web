@@ -35,6 +35,8 @@ function PendingCourseTable({ courses, termLabel }: { courses: AdvisorPendingCou
                     return latest ? <Tag color="red">{latest}</Tag> : 'ยังไม่มีผล'
                 } },
                 { title: 'รายการค้าง', key: 'reason', width: 145, render: (_, course) => <Tag color={course.grade_letter ? 'red' : 'orange'}>{course.grade_letter ? 'ยังไม่ผ่าน' : course.course_code && course.course_code !== '-' ? 'ยังไม่พบผลการเรียน' : 'หน่วยกิตยังไม่ครบ'}</Tag> },
+                ...(termLabel ? [{ title: 'ปัจจุบัน', key: 'current', width: 200, render: (_: unknown, course: AdvisorPendingCourse) => course.resolved == null ? '—'
+                    : course.resolved ? <Tag color="green">ผ่านแล้ว{course.resolved_term_label ? ` (ปีการศึกษา ${course.resolved_term_label})` : ''}</Tag> : <Tag color="red">ยังค้างตามข้อมูลล่าสุด</Tag> }] : []),
             ]}
         />
     </div>
@@ -47,9 +49,14 @@ interface AdvisorStudentModalProps {
     gradeContext?: 'current' | 'annual' | 'term'
     showPending?: boolean
     pendingTermLabel?: string
+    // Last term with grades of each student, to show how current the "not on plan" status is.
+    summaryLabel?: string
+    pendingRule?: string
+    latestTermById?: Record<number, string>
+    dataThrough?: string
 }
 
-export default function AdvisorStudentModal({ title, students, onClose, gradeContext = 'current', showPending = false, pendingTermLabel }: AdvisorStudentModalProps) {
+export default function AdvisorStudentModal({ title, students, onClose, gradeContext = 'current', showPending = false, pendingTermLabel, summaryLabel, pendingRule, latestTermById, dataThrough }: AdvisorStudentModalProps) {
     const [filter, setFilter] = useState('all')
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
@@ -71,6 +78,12 @@ export default function AdvisorStudentModal({ title, students, onClose, gradeCon
     ]
     if (gradeContext === 'annual') columns.push({ title: 'GPA ปีที่เลือก', dataIndex: 'gpa', width: 125, align: 'right', render: grade })
     if (gradeContext === 'term' && !historicalPending) columns.push({ title: 'GPAX ณ ภาคที่เลือก', dataIndex: 'gpax', width: 155, align: 'right', render: grade })
+    if (showPending && latestTermById && !historicalPending) {
+        columns.push({ title: 'ข้อมูลเกรดล่าสุด', key: 'latest_term', width: 150, render: (_, student) => {
+            const label = latestTermById[student.id]
+            return label ? <Tag color={label === dataThrough ? 'default' : 'orange'}>{label}</Tag> : '—'
+        } })
+    }
     if (showPending) {
         columns.push(
             { title: 'รายการค้าง', dataIndex: 'pending_count', width: 110, align: 'right', render: (count: number | null | undefined) => count == null ? <Tag>รอข้อมูล</Tag> : <Tag color="red">{number(count)} รายการ</Tag>, sorter: (a, b) => (a.pending_count ?? -1) - (b.pending_count ?? -1) },
@@ -84,11 +97,11 @@ export default function AdvisorStudentModal({ title, students, onClose, gradeCon
     return <Modal title={title} open={students !== null} onCancel={onClose} footer={null} width="min(1240px, calc(100vw - 32px))" destroyOnHidden className="advisor-student-modal">
         {showPending && <>
             <div className="advisor-report-summary">
-                <div><span>{historicalPending ? 'นิสิตไม่ตามแผน ณ ภาคที่เลือก' : 'นิสิตที่ยังไม่ตามแผน'}</span><strong>{number(rows.length)} <small>คน</small></strong></div>
+                <div><span>{summaryLabel ?? (historicalPending ? 'นิสิตไม่ตามแผน ณ ภาคที่เลือก' : 'นิสิตที่ยังไม่ตามแผน')}</span><strong>{number(rows.length)} <small>คน</small></strong></div>
                 <div><span>รายการที่ยังค้าง</span><strong>{allPendingUnknown ? '—' : number(rows.reduce((sum, row) => sum + (row.pending_count ?? 0), 0))} <small>รายการ</small></strong></div>
                 <div><span>หน่วยกิตที่ยังค้าง</span><strong>{allPendingUnknown ? '—' : number(rows.reduce((sum, row) => sum + (row.pending_credits ?? 0), 0))} <small>หน่วยกิต</small></strong></div>
             </div>
-            <p className="advisor-report-rule">{historicalPending ? `แสดงรายการที่ยังค้าง ณ ${pendingTermLabel ?? 'ภาคที่เลือก'} วิชาที่ผ่านแล้วภายในภาคนี้ไม่แสดง ส่วนผลที่ผ่านในภาคหลังจะไม่เปลี่ยนรายงานภาคเก่า` : 'แสดงเฉพาะนิสิตกำลังศึกษาที่ยังมีรายการค้างถึงภาคล่าสุดที่มีเกรด วิชาที่เคยตกและผ่านแล้วจะไม่แสดง'}</p>
+            <p className="advisor-report-rule">{pendingRule ?? (historicalPending ? `แสดงรายการที่ยังค้าง ณ ${pendingTermLabel ?? 'ภาคที่เลือก'} วิชาที่ผ่านแล้วภายในภาคนี้ไม่แสดง ส่วนผลที่ผ่านในภาคหลังจะไม่เปลี่ยนรายงานภาคเก่า` : 'แสดงเฉพาะนิสิตกำลังศึกษาที่ยังมีรายการค้างถึงภาคล่าสุดที่มีเกรด วิชาที่เคยตกและผ่านแล้วจะไม่แสดง')}</p>
             {unknownPending > 0 && <p className="advisor-footnote">นิสิต {number(unknownPending)} คนยังไม่มีรายละเอียดค้างเพียงพอ ยอดรายการและหน่วยกิตรวมเฉพาะผู้ที่มีรายละเอียดแล้ว</p>}
         </>}
         <div className="advisor-student-toolbar">
