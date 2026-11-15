@@ -1,6 +1,6 @@
 import type { ManagedMasterDataResource } from '../../types/MasterData'
 
-export interface MasterDataFieldDefinition {
+interface MasterDataFieldDefinition {
     key: string
     label: string
     placeholder: string

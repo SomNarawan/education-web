@@ -1,4 +1,4 @@
-export type AcademicPeriodCalendarStatus =
+type AcademicPeriodCalendarStatus =
     | 'ready'
     | 'missing_calendar'
     | 'calendar_conflict'
@@ -16,7 +16,7 @@ export type AcademicPeriodSyncStatus =
     | 'partial'
     | 'failed'
 
-export interface AcademicPeriodCalendarCurriculum {
+interface AcademicPeriodCalendarCurriculum {
     curriculum: string
     curriculum_name_th: string
     term_code: string | null

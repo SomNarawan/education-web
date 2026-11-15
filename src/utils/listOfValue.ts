@@ -1,7 +1,7 @@
 import type { ListOfValue } from '../types/ListOfValue'
 import type { SelectOption } from '../types/MasterData'
 
-export function getListOfValueLabel(item: ListOfValue<string | number>): string {
+function getListOfValueLabel(item: ListOfValue<string | number>): string {
     return item.name_th.trim() || item.name_en?.trim() || '-'
 }
 

@@ -1,7 +1,7 @@
 import api from '../config/axios'
 import type { MockLoginStudent, MockLoginUser } from '../types/MockLogin'
 
-export const mockLoginBaseUrl = import.meta.env.VITE_API_URL ?? ''
+const mockLoginBaseUrl = import.meta.env.VITE_API_URL ?? ''
 
 export async function searchMockLoginUsers(
     query: string,

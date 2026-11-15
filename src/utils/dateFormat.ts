@@ -5,7 +5,7 @@ import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-export const BANGKOK_TIME_ZONE = 'Asia/Bangkok'
+const BANGKOK_TIME_ZONE = 'Asia/Bangkok'
 
 type DateValue = string | number | Date | null | undefined
 

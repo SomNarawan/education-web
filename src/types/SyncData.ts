@@ -6,19 +6,19 @@ export type SyncType = 1 | 2 | 3
 
 export type SyncExecutionStatus = 'running' | 'success' | 'failed'
 
-export interface AcademicCalendarSyncYearResult {
+interface AcademicCalendarSyncYearResult {
     academic_year: number
     academic_year_be: number
     status: 'inserted' | 'updated' | 'skipped' | 'no_data'
 }
 
-export type SystemMasterDataSkipReasonCode =
+type SystemMasterDataSkipReasonCode =
     | 'unchanged'
     | 'invalid_source_data'
     | 'duplicate_source_id'
     | 'faculty_not_found'
 
-export interface SystemMasterDataSkipReason {
+interface SystemMasterDataSkipReason {
     code: SystemMasterDataSkipReasonCode
     count: number
 }

@@ -10,7 +10,7 @@ interface AcademicCalendarEventItemProps {
     event: AcademicCalendarEvent
 }
 
-export function AcademicCalendarEventItem({
+function AcademicCalendarEventItem({
     event,
 }: AcademicCalendarEventItemProps) {
     return (

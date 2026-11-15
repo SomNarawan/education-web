@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export const MAX_IMPORT_FILE_SIZE = 20 * 1024 * 1024
+const MAX_IMPORT_FILE_SIZE = 20 * 1024 * 1024
 
 interface FileMetadata {
     name: string

@@ -18,7 +18,7 @@ export interface StudentEnrollmentStatusesData {
     missing_sections: string[]
 }
 
-export interface StudentCreditStatusRecord {
+interface StudentCreditStatusRecord {
     type: string
     credits_study: number
     credits_all: number

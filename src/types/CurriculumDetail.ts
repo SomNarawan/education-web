@@ -1,10 +1,10 @@
-export type CurriculumCategoryType =
+type CurriculumCategoryType =
     | 'category'
     | 'subcategory'
     | 'group'
     | 'subject'
 
-export type CurriculumCourseSourceType =
+type CurriculumCourseSourceType =
     | 'manual'
     | 'ku_subject_category'
     | 'non_course_requirement'
@@ -22,7 +22,7 @@ export interface CurriculumCategory {
     children: CurriculumCategory[]
 }
 
-export interface CurriculumEnrollment {
+interface CurriculumEnrollment {
     study_year: number
     semester: string
     semester_order: number

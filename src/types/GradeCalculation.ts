@@ -3,7 +3,7 @@ export type GradeCalculationCourseSource =
     | 'next-semester'
     | 'other'
 
-export interface GradeCalculationStudent {
+interface GradeCalculationStudent {
     id: number
     student_code: string
     full_name_th: string
@@ -37,7 +37,7 @@ export interface GradeCalculation {
     created_at: string
 }
 
-export interface GradeCalculationPagination {
+interface GradeCalculationPagination {
     current_page: number
     last_page: number
     per_page: number

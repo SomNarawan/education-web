@@ -1,4 +1,4 @@
-export type GpaxRangeKey =
+type GpaxRangeKey =
     | 'range_3_25_4_00'
     | 'range_2_00_3_24'
     | 'range_1_75_1_99'
@@ -38,7 +38,7 @@ export interface AdvisorPendingCourse {
     resolved_term_label?: string | null
 }
 
-export interface AdvisorAnnualCohort {
+interface AdvisorAnnualCohort {
     entry_year: number
     ranges: GpaxRanges
     students: AdvisorHistoryStudent[]
@@ -56,7 +56,7 @@ export interface AdvisorAcademicTerm {
     students: AdvisorHistoryStudent[]
 }
 
-export interface AdvisorSummaryTotals {
+interface AdvisorSummaryTotals {
     all: number
     studying: number
     graduated: number
@@ -67,7 +67,7 @@ export interface AdvisorSummaryTotals {
 // Studying students compared with their study plan: on plan = every course of
 // the plan that is due has been passed, off plan = at least one is not passed
 // or not taken, unknown = no grade import for the student yet.
-export interface PlanStatusCounts {
+interface PlanStatusCounts {
     on_plan: number
     off_plan: number
     unknown: number
@@ -87,12 +87,12 @@ export interface AdvisorSummaryEntryYear {
     students: AdvisorHistoryStudent[]
 }
 
-export interface AdvisorSummaryStudyYear {
+interface AdvisorSummaryStudyYear {
     study_year: number
     count: number
 }
 
-export type AdvisorSummaryBlockKey =
+type AdvisorSummaryBlockKey =
     | 'plan_status'
     | 'gpa_by_study_year'
     | 'gpa_by_academic_term'
@@ -102,7 +102,7 @@ export interface AdvisorSummaryBlock {
     reason: string | null
 }
 
-export interface AdvisorSummaryDataQuality {
+interface AdvisorSummaryDataQuality {
     // Studying or graduated students whose GPAX is exactly 0.00 / missing:
     // usually grades were never imported.
     gpax_zero: number

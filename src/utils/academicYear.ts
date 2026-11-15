@@ -1,4 +1,4 @@
-export const BUDDHIST_ERA_OFFSET = 543
+const BUDDHIST_ERA_OFFSET = 543
 
 export interface AcademicYearOption {
     value: number

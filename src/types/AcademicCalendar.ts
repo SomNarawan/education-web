@@ -11,7 +11,7 @@ export interface AcademicCalendarEventData {
     isHoliday: boolean
 }
 
-export interface AcademicCalendarTermData {
+interface AcademicCalendarTermData {
     code: AcademicTermCode
     nameTh: string
     curriculum: AcademicCurriculumType

@@ -74,12 +74,8 @@ export const getGuardianRelationships = (includeIds?: number[]) =>
     getListOfValues('relationships', { include_ids: includeIds })
 export const getStudentStatuses = (includeIds?: number[]) =>
     getListOfValues('student-statuses', { include_ids: includeIds })
-export const getStudySemesters = () =>
-    getListOfValues('study-semesters')
 export const getNoteTypes = (includeIds?: number[]) =>
     getListOfValues('note-types', { include_ids: includeIds })
-export const getImportTypes = (includeIds?: number[]) =>
-    getListOfValues('import-types', { include_ids: includeIds })
 export const getHighSchoolOptions = (includeIds?: number[]) =>
     getListOfValues('high-schools', { include_ids: includeIds })
 export const getProvinces = (includeIds?: number[]) =>
@@ -104,7 +100,5 @@ export const getCurriculumPersonnel = (
     })
 export const getSystemDepartments = (includeIds?: number[]) =>
     getListOfValues('system-departments', { include_ids: includeIds })
-export const getSystemFaculties = (includeIds?: number[]) =>
-    getListOfValues('system-faculties', { include_ids: includeIds })
 export const getCurriculums = (includeIds?: number[]): Promise<Curriculum[]> =>
     getListOfValues<Curriculum>('curriculums', { include_ids: includeIds })

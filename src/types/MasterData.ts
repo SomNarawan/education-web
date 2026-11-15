@@ -1,7 +1,3 @@
-import type { ListOfValue } from './ListOfValue'
-
-export type Title = ListOfValue
-
 export type MasterDataStatus = 'active' | 'inactive'
 
 export type ManagedMasterDataResource =
@@ -22,10 +18,6 @@ export interface ManagedMasterDataRecord {
 }
 
 export type ManagedMasterDataPayload = Record<string, string>
-
-export type SystemTeacher = ListOfValue
-export type StudentStatusOption = ListOfValue
-export type AdmissionChannel = ListOfValue
 
 export interface HighSchoolListItem {
     id: number
@@ -56,11 +48,6 @@ export interface HighSchoolPayload {
     longitude: number
 }
 
-export type Province = ListOfValue
-export type District = ListOfValue
-export type Subdistrict = ListOfValue
-export type GuardianRelationship = ListOfValue
-
 export interface StudyPlan {
     id: number
     name_th: string
@@ -73,8 +60,6 @@ export interface Curriculum {
     name_en: string | null
     is_international: boolean
 }
-
-export type SystemDepartment = ListOfValue
 
 export interface SelectOption<T extends string | number = number> {
     label: string

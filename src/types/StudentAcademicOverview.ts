@@ -4,7 +4,7 @@ export interface StudentAcademicTerm {
     semester_order: number
 }
 
-export interface StudentCompletedAcademicTerm extends StudentAcademicTerm {
+interface StudentCompletedAcademicTerm extends StudentAcademicTerm {
     academic_year: number | null
     academic_year_be: number | null
 }
@@ -15,7 +15,7 @@ export interface StudentAcademicHistory extends StudentCompletedAcademicTerm {
     gpax: number
 }
 
-export interface StudentPendingCourse {
+interface StudentPendingCourse {
     course_code: string | null
     course_name_th: string | null
     credit: number | null
@@ -34,7 +34,7 @@ export interface StudentNextTermCourse {
     course_group: string | null
 }
 
-export interface StudentNextAcademicTerm extends StudentAcademicTerm {
+interface StudentNextAcademicTerm extends StudentAcademicTerm {
     source_import_id: number | null
     courses: StudentNextTermCourse[]
 }
