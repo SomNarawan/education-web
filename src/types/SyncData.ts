@@ -13,6 +13,17 @@ export interface AcademicCalendarSyncYearResult {
     has_data: boolean
 }
 
+export type SystemMasterDataSkipReasonCode =
+    | 'unchanged'
+    | 'invalid_source_data'
+    | 'duplicate_source_id'
+    | 'faculty_not_found'
+
+export interface SystemMasterDataSkipReason {
+    code: SystemMasterDataSkipReasonCode
+    count: number
+}
+
 export interface GetSyncsParams {
     sync_type?: SyncType
     status?: SyncExecutionStatus
@@ -33,6 +44,7 @@ export interface SyncResult {
     updated_at: string
     updated_by: string | null
     academic_year_results?: AcademicCalendarSyncYearResult[]
+    skip_reasons?: SystemMasterDataSkipReason[]
 }
 
 export interface SyncHistoryRecord {
@@ -79,7 +91,10 @@ export interface SyncedSystemDepartment extends SyncedDataBase {
     faculty_name: string | null
 }
 
-export type SyncStatus = 'waiting' | SyncExecutionStatus
+export type SyncStatus =
+    | 'waiting'
+    | 'partial_success'
+    | SyncExecutionStatus
 
 export interface SyncTableRecord {
     key: SyncTableDataType
@@ -90,5 +105,5 @@ export interface SyncTableRecord {
     skipped: number | null
     status: SyncStatus
     syncedAt: string | null
-    errorMessage: string | null
+    resultMessage: string | null
 }

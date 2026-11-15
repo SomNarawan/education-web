@@ -1,9 +1,4 @@
-import {
-    ExclamationCircleOutlined,
-    EyeOutlined,
-    ReloadOutlined,
-    SyncOutlined,
-} from '@ant-design/icons'
+import { EyeOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons'
 import {
     Alert,
     Button,
@@ -11,315 +6,52 @@ import {
     Modal,
     Select,
     Space,
-    Tag,
-    Tooltip,
     Typography,
     message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CustomTable from '../components/custom/CustomTable'
 import { appColors } from '../config/appColors'
+import {
+    getAcademicCalendarSyncOutcome,
+} from '../features/sync/academicCalendarSyncOutcome'
+import {
+    mapHistoryToRecords,
+    mapSyncResult,
+} from '../features/sync/syncData'
+import {
+    getRequestErrorMessage,
+    getSyncHistoryError,
+} from '../features/sync/syncError'
+import { createSyncResultColumns } from '../features/sync/syncResultColumns'
 import { useAuth } from '../hooks/useAuth'
+import { syncAcademicCalendars } from '../services/academicCalendarService'
 import {
     getSyncHistory,
     syncMasterData,
 } from '../services/syncService'
-import { syncAcademicCalendars } from '../services/academicCalendarService'
-import type { ApiErrorResponse, ApiResponse } from '../types/ApiResponse'
 import type {
-    SyncExecutionStatus,
-    SyncHistoryRecord,
-    SyncResult,
-    SyncStatus,
-    SyncTableRecord,
     SyncTableDataType,
-    SyncType,
+    SyncTableRecord,
 } from '../types/SyncData'
 import {
     createAcademicYearOptions,
     createAcademicYearRange,
 } from '../utils/academicYear'
-import { formatThaiDateTime } from '../utils/dateFormat'
-
-const syncOptions: { label: string; value: SyncTableDataType }[] = [
-    { label: 'คณะ', value: 'faculty' },
-    { label: 'ภาควิชา', value: 'department' },
-    { label: 'ปฏิทินการศึกษา', value: 'academic-calendar' },
-]
-
-const statusDisplay: Record<
-    SyncStatus,
-    { color: string; label: string }
-> = {
-    waiting: { color: 'default', label: 'ยังไม่ Sync' },
-    running: { color: 'processing', label: 'กำลัง Sync' },
-    success: { color: 'success', label: 'สำเร็จ' },
-    failed: { color: 'error', label: 'ไม่สำเร็จ' },
-}
-
-interface SyncHistoryError {
-    message: string
-    unauthorized: boolean
-}
-
-const syncTypeByDataType: Record<SyncTableDataType, SyncType> = {
-    faculty: 1,
-    department: 2,
-    'academic-calendar': 3,
-}
 
 const currentAcademicYear = new Date().getFullYear()
 const academicYearOptions = createAcademicYearOptions(
     createAcademicYearRange(currentAcademicYear, 9, 1),
 )
 
-function createWaitingRecord(
-    key: SyncTableDataType,
-    label: string,
-): SyncTableRecord {
-    return {
-        key,
-        label,
-        inserted: null,
-        updated: null,
-        inactivated: null,
-        skipped: null,
-        status: 'waiting',
-        syncedAt: null,
-        errorMessage: null,
-    }
-}
-
-function getSyncStatus(status: SyncExecutionStatus | null): SyncStatus {
-    if (status === 'running') {
-        return 'running'
-    }
-
-    if (status === 'success') {
-        return 'success'
-    }
-
-    if (status === 'failed') {
-        return 'failed'
-    }
-
-    return 'waiting'
-}
-
-function formatSyncDate(value: string | null | undefined): string | null {
-    return value ? formatThaiDateTime(value) : null
-}
-
-function showAcademicCalendarSyncResult(result: SyncResult): void {
-    const yearResults = result.academic_year_results ?? []
-    const yearsWithData = yearResults
-        .filter((item) => item.has_data)
-        .map((item) => item.academic_year_be)
-    const yearsWithoutData = yearResults
-        .filter((item) => !item.has_data)
-        .map((item) => item.academic_year_be)
-
-    if (yearsWithData.length === 0) {
-        message.warning(
-            `Sync ไม่มีข้อมูล: ปีการศึกษา ${yearsWithoutData.join(', ')}`,
-        )
-        return
-    }
-
-    const details = [`ปีที่มีข้อมูล: ${yearsWithData.join(', ')}`]
-    if (yearsWithoutData.length > 0) {
-        details.push(`ปีที่ไม่มีข้อมูล: ${yearsWithoutData.join(', ')}`)
-    }
-
-    const text = `Sync ปฏิทินสำเร็จ · ${details.join(' · ')}`
-    if (yearsWithoutData.length > 0) {
-        message.warning(text)
-    } else {
-        message.success(text)
-    }
-}
-
-function getSyncHistoryError(error: unknown): SyncHistoryError {
-    if (!axios.isAxiosError<ApiErrorResponse>(error)) {
-        return {
-            message: 'เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง',
-            unauthorized: false,
-        }
-    }
-
-    if (!error.response) {
-        return {
-            message:
-                'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบเครือข่ายแล้วลองใหม่อีกครั้ง',
-            unauthorized: false,
-        }
-    }
-
-    const responseMessage = error.response.data?.message
-
-    if (error.response.status === 401) {
-        return {
-            message:
-                responseMessage ?? 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
-            unauthorized: true,
-        }
-    }
-
-    if (error.response.status === 422) {
-        const validationMessages = Object.values(
-            error.response.data?.errors ?? {},
-        ).flat()
-
-        return {
-            message:
-                validationMessages.join(' ') ||
-                responseMessage ||
-                'ตัวกรองสถานะ Sync ไม่ถูกต้อง',
-            unauthorized: false,
-        }
-    }
-
-    return {
-        message: responseMessage ?? 'โหลดสถานะ Sync ล่าสุดไม่สำเร็จ',
-        unauthorized: false,
-    }
-}
-
-function mapHistoryToRecords(history: SyncHistoryRecord[]): SyncTableRecord[] {
-    return syncOptions.map((option) => {
-        const sync = history.find(
-            (item) => item.sync_type === syncTypeByDataType[option.value],
-        )
-
-        if (!sync) {
-            return createWaitingRecord(option.value, option.label)
-        }
-
-        return {
-            key: option.value,
-            label: sync.sync_type_name || option.label,
-            inserted: sync.inserted_count,
-            updated: sync.updated_count,
-            inactivated: sync.inactivated_count,
-            skipped: sync.skipped_count,
-            status: getSyncStatus(sync.status),
-            syncedAt: formatSyncDate(sync.updated_at ?? sync.created_at),
-            errorMessage: sync.error_message,
-        }
-    })
-}
-
-function mapSyncResult(result: SyncResult): Partial<SyncTableRecord> {
-    return {
-        inserted: result.inserted_count,
-        updated: result.updated_count,
-        inactivated: result.inactivated_count,
-        skipped: result.skipped_count,
-        status: getSyncStatus(result.status),
-        syncedAt: formatSyncDate(result.updated_at ?? result.created_at),
-        errorMessage: result.error_message,
-    }
-}
-
-function getRequestErrorMessage(error: unknown): string {
-    if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
-        return error.response?.data.message ?? error.message
-    }
-
-    return error instanceof Error ? error.message : 'ไม่ทราบสาเหตุ'
-}
-
-function createResultColumns(
-    onViewError: (record: SyncTableRecord) => void,
-): ColumnsType<SyncTableRecord> {
-    return [
-    {
-        title: 'ประเภทข้อมูล',
-        dataIndex: 'label',
-        key: 'label',
-    },
-    {
-        title: 'จำนวนที่เพิ่ม',
-        dataIndex: 'inserted',
-        key: 'inserted',
-        align: 'center',
-        render: (value: number | null) => value ?? '-',
-    },
-    {
-        title: 'จำนวนที่แก้ไข',
-        dataIndex: 'updated',
-        key: 'updated',
-        align: 'center',
-        render: (value: number | null) => value ?? '-',
-    },
-    {
-        title: 'จำนวนที่ปิดใช้งาน',
-        dataIndex: 'inactivated',
-        key: 'inactivated',
-        align: 'center',
-        render: (value: number | null) => value ?? '-',
-    },
-    {
-        title: 'จำนวนที่ข้าม',
-        dataIndex: 'skipped',
-        key: 'skipped',
-        align: 'center',
-        render: (value: number | null) => value ?? '-',
-    },
-    {
-        title: 'สถานะ',
-        dataIndex: 'status',
-        key: 'status',
-        align: 'center',
-        render: (status: SyncStatus) => {
-            const display = statusDisplay[status]
-            return <Tag color={display.color}>{display.label}</Tag>
-        },
-    },
-    {
-        title: 'สาเหตุ',
-        dataIndex: 'errorMessage',
-        key: 'errorMessage',
-        width: 90,
-        align: 'center',
-        render: (value: string | null, record) =>
-            value ? (
-                <Tooltip title={'ดูรายละเอียดข้อผิดพลาด'}>
-                    <Button
-                        className={'student-import-reason-button'}
-                        type={'text'}
-                        danger
-                        size={'small'}
-                        aria-label={
-                            'ดูรายละเอียดข้อผิดพลาด ' + record.label
-                        }
-                        icon={<ExclamationCircleOutlined />}
-                        onClick={() => onViewError(record)}
-                    />
-                </Tooltip>
-            ) : (
-                '-'
-            ),
-    },
-    {
-        title: 'Sync ล่าสุด',
-        dataIndex: 'syncedAt',
-        key: 'syncedAt',
-        align: 'center',
-        render: (value: string | null) => value ?? '-',
-    },
-    ]
-}
-
 export default function SyncData() {
     const { clearSession } = useAuth()
     const navigate = useNavigate()
     const [syncingType, setSyncingType] =
         useState<SyncTableDataType | null>(null)
-    const [errorRecord, setErrorRecord] =
+    const [resultRecord, setResultRecord] =
         useState<SyncTableRecord | null>(null)
     const [records, setRecords] = useState<SyncTableRecord[]>(() =>
         mapHistoryToRecords([]),
@@ -404,29 +136,40 @@ export default function SyncData() {
 
             updateRecord(dataType, {
                 status: 'running',
-                errorMessage: null,
+                resultMessage: null,
             })
 
             const result = dataType === 'academic-calendar'
                 ? await syncAcademicCalendars(selectedAcademicYears)
                 : await syncMasterData(dataType)
-            updateRecord(dataType, mapSyncResult(result))
-
-            if (
-                dataType === 'academic-calendar' &&
-                result.status === 'success'
-            ) {
-                showAcademicCalendarSyncResult(result)
+            if (dataType === 'academic-calendar') {
+                const outcome = getAcademicCalendarSyncOutcome(result)
+                updateRecord(dataType, outcome.record)
+                message[outcome.notice.type](outcome.notice.message)
                 return
             }
 
+            const syncRecord = mapSyncResult(result)
+            updateRecord(dataType, syncRecord)
+
             if (result.status === 'success') {
-                message.success('Sync ข้อมูลสำเร็จ')
+                if (syncRecord.status === 'partial_success') {
+                    message.warning(
+                        `Sync ข้อมูลสำเร็จบางส่วน · ข้าม ${result.skipped_count.toLocaleString()} รายการ (ดูรายละเอียดที่สาเหตุ)`,
+                    )
+                } else if (result.skipped_count > 0) {
+                    message.warning(
+                        `Sync ข้อมูลสำเร็จ · ข้าม ${result.skipped_count.toLocaleString()} รายการ (ดูรายละเอียดที่สาเหตุ)`,
+                    )
+                } else {
+                    message.success('Sync ข้อมูลสำเร็จ')
+                }
             } else {
                 message.error('Sync ข้อมูลไม่สำเร็จ')
             }
         } catch (error) {
             console.error(error)
+            const requestErrorMessage = getRequestErrorMessage(error)
             const latestRecords = await loadSyncHistory(false, false)
             const failedRecord = latestRecords?.find(
                 (record) =>
@@ -436,17 +179,17 @@ export default function SyncData() {
             if (!failedRecord) {
                 updateRecord(dataType, {
                     status: 'failed',
-                    errorMessage: getRequestErrorMessage(error),
+                    resultMessage: requestErrorMessage,
                 })
             }
-            message.error('Sync ข้อมูลไม่สำเร็จ')
+            message.error(`Sync ข้อมูลไม่สำเร็จ: ${requestErrorMessage}`)
         } finally {
             setSyncingType(null)
         }
     }
 
     const columns: ColumnsType<SyncTableRecord> = [
-        ...createResultColumns(setErrorRecord),
+        ...createSyncResultColumns(setResultRecord),
         {
             title: 'ปีการศึกษา',
             key: 'academicYears',
@@ -568,17 +311,17 @@ export default function SyncData() {
             </div>
 
             <Modal
-                open={errorRecord !== null}
-                title={'รายละเอียดข้อผิดพลาด'}
+                open={resultRecord !== null}
+                title="รายละเอียดผลการ Sync"
                 footer={null}
                 destroyOnHidden
-                onCancel={() => setErrorRecord(null)}
+                onCancel={() => setResultRecord(null)}
             >
                 <Typography.Paragraph
                     style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
                 >
-                    {errorRecord?.errorMessage ||
-                        'ไม่มีรายละเอียดข้อผิดพลาด'}
+                    {resultRecord?.resultMessage ||
+                        'ไม่มีรายละเอียดผลการ Sync'}
                 </Typography.Paragraph>
             </Modal>
         </div>

@@ -6,7 +6,6 @@ import {
     message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import CustomTable from '../components/custom/CustomTable'
@@ -20,6 +19,7 @@ import type {
     SyncedSystemFaculty,
     SystemMasterDataStatus,
 } from '../types/SyncData'
+import { getApiErrorMessage } from '../utils/apiError'
 import { formatThaiDateTime } from '../utils/dateFormat'
 
 interface DetailRecord {
@@ -201,14 +201,6 @@ async function loadDetailRecords(dataType: SyncDataType): Promise<DetailRecord[]
     return []
 }
 
-function getErrorMessage(error: unknown): string {
-    if (axios.isAxiosError(error)) {
-        return error.response?.data?.message ?? error.message
-    }
-
-    return error instanceof Error ? error.message : 'ไม่ทราบสาเหตุ'
-}
-
 export default function SystemMasterDataDetail() {
     const { dataType: dataTypeParam } = useParams()
     const navigate = useNavigate()
@@ -228,7 +220,7 @@ export default function SystemMasterDataDetail() {
             setRecords(await loadDetailRecords(dataType))
         } catch (requestError) {
             console.error(requestError)
-            const errorMessage = getErrorMessage(requestError)
+            const errorMessage = getApiErrorMessage(requestError)
             setRecords([])
             setError(errorMessage)
             message.error('โหลดรายละเอียดข้อมูลไม่สำเร็จ')

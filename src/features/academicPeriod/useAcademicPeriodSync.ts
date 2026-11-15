@@ -1,23 +1,15 @@
 import { message } from 'antd'
-import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import {
     getStudentAcademicPeriodPreview,
     getStudentAcademicPeriodSyncHistory,
     syncStudentAcademicPeriods,
 } from '../../services/studentAcademicPeriodSyncService'
-import type { ApiResponse } from '../../types/ApiResponse'
 import type {
     StudentAcademicPeriodPreview,
     StudentAcademicPeriodSyncHistory,
 } from '../../types/StudentAcademicPeriodSync'
-
-function getErrorMessage(error: unknown): string {
-    if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
-        return error.response?.data.message ?? error.message
-    }
-    return error instanceof Error ? error.message : 'เกิดข้อผิดพลาดที่ไม่คาดคิด'
-}
+import { getApiErrorMessage } from '../../utils/apiError'
 
 export function useAcademicPeriodSync() {
     const [preview, setPreview] = useState<StudentAcademicPeriodPreview | null>(null)
@@ -40,7 +32,10 @@ export function useAcademicPeriodSync() {
             setHistory(historyData)
         } catch (loadError) {
             console.error('Unable to load student academic period sync', loadError)
-            setError(getErrorMessage(loadError))
+            setError(getApiErrorMessage(
+                loadError,
+                'เกิดข้อผิดพลาดที่ไม่คาดคิด',
+            ))
         } finally {
             setLoading(false)
         }
@@ -70,7 +65,10 @@ export function useAcademicPeriodSync() {
             await loadData()
         } catch (syncError) {
             console.error('Unable to sync student academic periods', syncError)
-            message.error(getErrorMessage(syncError))
+            message.error(getApiErrorMessage(
+                syncError,
+                'เกิดข้อผิดพลาดที่ไม่คาดคิด',
+            ))
         } finally {
             setSyncing(false)
         }
