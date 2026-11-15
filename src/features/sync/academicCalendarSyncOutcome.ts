@@ -71,6 +71,11 @@ export function getAcademicCalendarSyncOutcome(
             : null,
     ].filter((message): message is string => message !== null)
     const resultMessage = resultMessages.join('\n')
+    const detailHint =
+        yearsByStatus.skipped.length > 0 || yearsByStatus.noData.length > 0
+            ? ' (ดูรายละเอียดที่สาเหตุ)'
+            : ''
+
     if (yearsByStatus.noData.length === yearResults.length) {
         return {
             record: {
@@ -80,7 +85,7 @@ export function getAcademicCalendarSyncOutcome(
             },
             notice: {
                 type: 'error',
-                message: `Sync ปฏิทินไม่สำเร็จ: ${resultMessages.join(' · ')}`,
+                message: `Sync ปฏิทินไม่สำเร็จ: ${resultMessages.join(' · ')}${detailHint}`,
             },
         }
     }
@@ -94,7 +99,7 @@ export function getAcademicCalendarSyncOutcome(
             },
             notice: {
                 type: 'warning',
-                message: `Sync ปฏิทินสำเร็จบางส่วน: ${resultMessages.join(' · ')}`,
+                message: `Sync ปฏิทินสำเร็จบางส่วน: ${resultMessages.join(' · ')}${detailHint}`,
             },
         }
     }
@@ -107,7 +112,7 @@ export function getAcademicCalendarSyncOutcome(
         },
         notice: {
             type: yearsByStatus.skipped.length > 0 ? 'warning' : 'success',
-            message: `Sync ปฏิทินเสร็จสิ้น: ${resultMessages.join(' · ')}`,
+            message: `Sync ปฏิทินเสร็จสิ้น: ${resultMessages.join(' · ')}${detailHint}`,
         },
     }
 }
