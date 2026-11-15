@@ -10,7 +10,6 @@ export interface AcademicCalendarSyncYearResult {
     academic_year: number
     academic_year_be: number
     status: 'inserted' | 'updated' | 'skipped' | 'no_data'
-    has_data: boolean
 }
 
 export type SystemMasterDataSkipReasonCode =
