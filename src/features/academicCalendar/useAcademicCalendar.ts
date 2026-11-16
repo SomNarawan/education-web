@@ -1,7 +1,6 @@
 import dayjs, { type Dayjs } from 'dayjs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getAcademicCalendar } from '../../services/academicCalendarService'
-import { getSyncHistory } from '../../services/syncService'
 import type {
     AcademicCalendarData,
     AcademicCurriculumType,
@@ -30,7 +29,6 @@ export function useAcademicCalendar() {
     const [selectedTerm, setSelectedTerm] =
         useState<AcademicTermCode>('first')
     const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null)
-    const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -63,32 +61,12 @@ export function useAcademicCalendar() {
         }
     }, [])
 
-    const loadLastSyncDate = useCallback(async () => {
-        try {
-            const history = await getSyncHistory({
-                sync_type: 3,
-                status: 'success',
-            })
-            const latestSync = history.find((item) => item.sync_type === 3)
-
-            setLastSyncedAt(
-                latestSync?.updated_at ?? latestSync?.created_at ?? null,
-            )
-        } catch (error) {
-            console.error('Unable to load academic calendar sync date', error)
-            setLastSyncedAt(null)
-        }
-    }, [])
-
     useEffect(() => {
         // Initial API load is intentionally triggered when the page mounts.
         /* eslint-disable react-hooks/set-state-in-effect */
-        void Promise.all([
-            loadCalendar(CURRENT_ACADEMIC_YEAR),
-            loadLastSyncDate(),
-        ])
+        void loadCalendar(CURRENT_ACADEMIC_YEAR)
         /* eslint-enable react-hooks/set-state-in-effect */
-    }, [loadCalendar, loadLastSyncDate])
+    }, [loadCalendar])
 
     const curriculumOptions = useMemo(() => {
         const options = new Map<AcademicCurriculumType, string>()
@@ -155,7 +133,6 @@ export function useAcademicCalendar() {
         calendarMonths,
         selectedDate,
         selectedDateEvents,
-        lastSyncedAt,
         loading,
         loadError,
         loadCalendar,

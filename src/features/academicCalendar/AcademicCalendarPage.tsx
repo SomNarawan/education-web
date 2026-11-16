@@ -1,4 +1,4 @@
-import { ClockCircleOutlined, SyncOutlined } from '@ant-design/icons'
+import { SyncOutlined } from '@ant-design/icons'
 import {
     Alert,
     Button,
@@ -16,7 +16,6 @@ import type {
     AcademicTermCode,
 } from '../../types/AcademicCalendar'
 import { toBuddhistYear } from '../../utils/academicYear'
-import { formatThaiDateTime } from '../../utils/dateFormat'
 import AcademicCalendarMonth from './AcademicCalendarMonth'
 import AcademicCalendarSchedule, {
     AcademicCalendarEventList,
@@ -42,7 +41,6 @@ export default function AcademicCalendarPage() {
         calendarMonths,
         selectedDate,
         selectedDateEvents,
-        lastSyncedAt,
         loading,
         loadError,
         loadCalendar,
@@ -60,12 +58,6 @@ export default function AcademicCalendarPage() {
                     <p>กำหนดการศึกษาแยกตามปีการศึกษา ภาคการศึกษา และประเภทหลักสูตร</p>
                 </div>
                 <div className="academic-calendar-title-actions">
-                    <Typography.Text type="secondary">
-                        <ClockCircleOutlined /> วันที่ Sync ล่าสุด:{' '}
-                        {lastSyncedAt
-                            ? formatThaiDateTime(lastSyncedAt)
-                            : '-'}
-                    </Typography.Text>
                     <Button
                         type="primary"
                         icon={<SyncOutlined />}
