@@ -53,6 +53,7 @@ function createWaitingRecord(
 function getSyncStatus(status: SyncExecutionStatus | null): SyncStatus {
     if (status === 'running') return 'running'
     if (status === 'success') return 'success'
+    if (status === 'partial_success') return 'partial_success'
     if (status === 'failed') return 'failed'
 
     return 'waiting'
@@ -66,9 +67,7 @@ function getSyncResultMessage(
     status: SyncStatus,
     errorMessage: string | null,
 ): string | null {
-    return status === 'failed'
-        ? errorMessage || syncFailureMessage
-        : null
+    return errorMessage ?? (status === 'failed' ? syncFailureMessage : null)
 }
 
 export function mapHistoryToRecords(
@@ -94,7 +93,10 @@ export function mapHistoryToRecords(
             skipped: sync.skipped_count,
             status,
             syncedAt: formatSyncDate(sync.updated_at ?? sync.created_at),
-            resultMessage: getSyncResultMessage(status, sync.error_message),
+            resultMessage: getSyncResultMessage(
+                status,
+                sync.error_message,
+            ),
         }
     })
 }
@@ -120,7 +122,10 @@ export function mapSyncResult(result: SyncResult): Partial<SyncTableRecord> {
         skipped: result.skipped_count,
         status: displayStatus,
         syncedAt: formatSyncDate(result.updated_at ?? result.created_at),
-        resultMessage: getSyncResultMessage(displayStatus, result.error_message) ??
+        resultMessage: getSyncResultMessage(
+            displayStatus,
+            result.error_message,
+        ) ??
             skipReasonMessage,
     }
 }

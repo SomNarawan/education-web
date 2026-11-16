@@ -4,7 +4,11 @@ export type SyncTableDataType = SyncDataType | 'academic-calendar'
 
 export type SyncType = 1 | 2 | 3
 
-export type SyncExecutionStatus = 'running' | 'success' | 'failed'
+export type SyncExecutionStatus =
+    | 'running'
+    | 'success'
+    | 'partial_success'
+    | 'failed'
 
 interface AcademicCalendarSyncYearResult {
     academic_year: number
@@ -90,10 +94,7 @@ export interface SyncedSystemDepartment extends SyncedDataBase {
     faculty_name: string | null
 }
 
-export type SyncStatus =
-    | 'waiting'
-    | 'partial_success'
-    | SyncExecutionStatus
+export type SyncStatus = 'waiting' | SyncExecutionStatus
 
 export interface SyncTableRecord {
     key: SyncTableDataType

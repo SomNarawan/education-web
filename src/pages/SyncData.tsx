@@ -152,7 +152,10 @@ export default function SyncData() {
             const syncRecord = mapSyncResult(result)
             updateRecord(dataType, syncRecord)
 
-            if (result.status === 'success') {
+            if (
+                result.status === 'success' ||
+                result.status === 'partial_success'
+            ) {
                 if (syncRecord.status === 'partial_success') {
                     message.warning(
                         `Sync ข้อมูลสำเร็จบางส่วน · ข้าม ${result.skipped_count.toLocaleString()} รายการ (ดูรายละเอียดที่สาเหตุ)`,
