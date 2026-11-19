@@ -1973,3 +1973,58 @@ button.academic-calendar-day:focus-visible,
         flex-direction: column;
     }
 }
+.centered-confirm-modal .ant-modal-confirm-body {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.centered-confirm-modal .ant-modal-confirm-body > .anticon {
+    margin: 0 0 12px;
+}
+
+.centered-confirm-modal .ant-modal-confirm-paragraph {
+    width: 100%;
+    max-width: 100%;
+    align-items: center;
+    row-gap: 12px;
+}
+
+.centered-confirm-modal .ant-modal-confirm-title,
+.centered-confirm-modal .ant-modal-confirm-content,
+.centered-confirm-modal .ant-modal-title {
+    width: 100%;
+    text-align: center;
+}
+
+.centered-confirm-modal .ant-modal-confirm-title,
+.centered-confirm-modal .ant-modal-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.centered-confirm-modal .ant-modal-confirm-title {
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.centered-confirm-modal .ant-modal-confirm-content {
+    color: #595959;
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+.centered-confirm-modal:not(.ant-modal-confirm) .ant-modal-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.centered-confirm-modal .ant-modal-confirm-btns,
+.centered-confirm-modal .ant-modal-footer {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    margin-top: 24px;
+}

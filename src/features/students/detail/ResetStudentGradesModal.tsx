@@ -2,7 +2,6 @@ import {
     Alert,
     Col,
     Form,
-    Modal,
     Radio,
     Row,
     Select,
@@ -11,6 +10,7 @@ import {
 } from 'antd'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
+import ConfirmModal from '../../../components/custom/ConfirmModal'
 
 const { Paragraph, Text } = Typography
 
@@ -147,7 +147,7 @@ export default function ResetStudentGradesModal({
               : 'ปีและภาคเรียนที่เลือก'
 
     return (
-        <Modal
+        <ConfirmModal
             open={open}
             title={
                 <Space>
@@ -273,6 +273,6 @@ export default function ResetStudentGradesModal({
             <Paragraph style={{ marginBottom: 0 }}>
                 ระบบจะรีเซ็ต <Text strong>{targetDescription}</Text>
             </Paragraph>
-        </Modal>
+        </ConfirmModal>
     )
 }

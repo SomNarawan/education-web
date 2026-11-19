@@ -10,7 +10,6 @@ import {
     Form,
     Input,
     Modal,
-    Popconfirm,
     Space,
     Switch,
     Tag,
@@ -22,6 +21,7 @@ import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import CustomTable from '../../components/custom/CustomTable'
+import { showConfirmModal } from '../../components/custom/confirmModalHelpers'
 import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark'
 import { appColors } from '../../config/appColors'
 import { useAuth } from '../../hooks/useAuth'
@@ -297,6 +297,25 @@ function MasterDataManagementContent({
         }
     }
 
+    function showStatusChangeConfirm(record: ManagedMasterDataRecord) {
+        const nextStatusLabel =
+            record.status === 'active' ? 'ปิดใช้งาน' : 'เปิดใช้งาน'
+        const recordLabel = getRecordLabel(
+            record,
+            definition.displayField,
+            definition.itemLabel,
+        )
+
+        showConfirmModal({
+            title: `ยืนยันการ${nextStatusLabel}${definition.itemLabel}`,
+            content: `ต้องการ${nextStatusLabel} ${recordLabel} ใช่หรือไม่`,
+            okText: 'ยืนยัน',
+            okButtonProps:
+                record.status === 'active' ? { danger: true } : undefined,
+            onOk: () => handleStatusChange(record),
+        })
+    }
+
     const tableFields = definition.listFieldKeys
         ? definition.fields.filter((field) =>
               definition.listFieldKeys?.includes(field.key),
@@ -366,29 +385,20 @@ function MasterDataManagementContent({
                 )
 
                 return (
-                    <Popconfirm
-                        title={`ยืนยันการ${nextStatusLabel}${definition.itemLabel}`}
-                        description={`ต้องการ${nextStatusLabel} ${recordLabel} ใช่หรือไม่`}
-                        okText="ยืนยัน"
-                        cancelText="ยกเลิก"
-                        onConfirm={() => handleStatusChange(record)}
-                    >
-                        <Switch
-                            checked={status === 'active'}
-                            checkedChildren="ใช้งาน"
-                            unCheckedChildren="ไม่ใช้งาน"
-                            loading={isUpdating}
-                            disabled={
-                                updatingStatusId !== null && !isUpdating
-                            }
-                            aria-label={`${nextStatusLabel}${recordLabel}`}
-                            style={
-                                status === 'active'
-                                    ? { backgroundColor: appColors.success }
-                                    : undefined
-                            }
-                        />
-                    </Popconfirm>
+                    <Switch
+                        checked={status === 'active'}
+                        checkedChildren="ใช้งาน"
+                        unCheckedChildren="ไม่ใช้งาน"
+                        loading={isUpdating}
+                        disabled={updatingStatusId !== null && !isUpdating}
+                        aria-label={`${nextStatusLabel}${recordLabel}`}
+                        style={
+                            status === 'active'
+                                ? { backgroundColor: appColors.success }
+                                : undefined
+                        }
+                        onChange={() => showStatusChangeConfirm(record)}
+                    />
                 )
             },
         }

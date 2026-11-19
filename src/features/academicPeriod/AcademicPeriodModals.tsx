@@ -17,6 +17,7 @@ import type {
 } from '../../types/StudentAcademicPeriodSync'
 import { formatThaiDate, formatThaiDateTime } from '../../utils/dateFormat'
 import { academicPeriodHistoryStatusDisplay } from './academicPeriodSync.constants'
+import ConfirmModal from '../../components/custom/ConfirmModal'
 
 interface AcademicPeriodConfirmModalProps {
     open: boolean
@@ -34,7 +35,7 @@ export function AcademicPeriodConfirmModal({
     onCancel,
 }: AcademicPeriodConfirmModalProps) {
     return (
-        <Modal
+        <ConfirmModal
             open={open}
             title="ยืนยันการ Sync ชั้นปีและภาคการศึกษานิสิต"
             okText="ยืนยัน Sync"
@@ -54,7 +55,7 @@ export function AcademicPeriodConfirmModal({
                 message={`ระบบจะ Sync นิสิตที่มีปฏิทินการศึกษารองรับ ${preview?.ready_students.toLocaleString() ?? 0} คน`}
                 description="ชั้นปีและภาคการศึกษาจะถูกคำนวณใหม่จากฐานข้อมูลโดยอัตโนมัติ กรุณาตรวจสอบสรุปก่อนยืนยัน"
             />
-        </Modal>
+        </ConfirmModal>
     )
 }
 

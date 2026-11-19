@@ -6,7 +6,6 @@ import {
     Input,
     InputNumber,
     Modal,
-    Popconfirm,
     Space,
     Switch,
     Tag,
@@ -17,6 +16,7 @@ import type { ApiErrorResponse } from '../../types/ApiResponse'
 import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import CustomTable from '../../components/custom/CustomTable'
+import { showConfirmModal } from '../../components/custom/confirmModalHelpers'
 import { renderRequiredFormMark } from '../../components/custom/RequiredFormMark'
 import { appColors } from '../../config/appColors'
 import {
@@ -353,6 +353,20 @@ export default function HighSchoolManagementPage() {
         }
     }
 
+    function showStatusChangeConfirm(school: HighSchoolListItem) {
+        const nextStatusLabel =
+            school.status === 'active' ? 'ปิดใช้งาน' : 'เปิดใช้งาน'
+
+        showConfirmModal({
+            title: `ยืนยันการ${nextStatusLabel}โรงเรียน`,
+            content: `ต้องการ${nextStatusLabel} ${school.school_name} ใช่หรือไม่`,
+            okText: 'ยืนยัน',
+            okButtonProps:
+                school.status === 'active' ? { danger: true } : undefined,
+            onOk: () => handleStatusChange(school),
+        })
+    }
+
     function getSchoolAddress(school: HighSchool) {
         if (
             !school.subdistrict_name ||
@@ -418,27 +432,20 @@ export default function HighSchoolManagementPage() {
                     status === 'active' ? 'ปิดใช้งาน' : 'เปิดใช้งาน'
 
                 return (
-                    <Popconfirm
-                        title={`ยืนยันการ${nextStatusLabel}โรงเรียน`}
-                        description={`ต้องการ${nextStatusLabel} ${school.school_name} ใช่หรือไม่`}
-                        okText="ยืนยัน"
-                        cancelText="ยกเลิก"
-                        onConfirm={() => handleStatusChange(school)}
-                    >
-                        <Switch
-                            checked={status === 'active'}
-                            checkedChildren="ใช้งาน"
-                            unCheckedChildren="ไม่ใช้งาน"
-                            loading={isUpdating}
-                            disabled={updatingStatusId !== null && !isUpdating}
-                            aria-label={`${nextStatusLabel}${school.school_name}`}
-                            style={
-                                status === 'active'
-                                    ? { backgroundColor: appColors.success }
-                                    : undefined
-                            }
-                        />
-                    </Popconfirm>
+                    <Switch
+                        checked={status === 'active'}
+                        checkedChildren="ใช้งาน"
+                        unCheckedChildren="ไม่ใช้งาน"
+                        loading={isUpdating}
+                        disabled={updatingStatusId !== null && !isUpdating}
+                        aria-label={`${nextStatusLabel}${school.school_name}`}
+                        style={
+                            status === 'active'
+                                ? { backgroundColor: appColors.success }
+                                : undefined
+                        }
+                        onChange={() => showStatusChangeConfirm(school)}
+                    />
                 )
             },
         },

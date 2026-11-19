@@ -1,4 +1,4 @@
-import { Button, Form, Input, Modal, Spin, message, Typography } from 'antd'
+import { Button, Form, Input, Spin, message, Typography } from 'antd'
 const { Text } = Typography
 import {
     PlusOutlined,
@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import StudentTable from './StudentTable'
 import StudentFormModal from './StudentFormModal'
+import { showConfirmModal } from '../../../components/custom/confirmModalHelpers'
 import type { StudentFormValues } from '../../../types/StudentFormValues'
 import type { StudentListResponse } from '../../../types/StudentListResponse'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
@@ -483,12 +484,10 @@ function StudentList() {
 
             editConfirmOpenRef.current = true
             setEditConfirmOpen(true)
-            Modal.confirm({
+            showConfirmModal({
                 title: 'ยืนยันการแก้ไขข้อมูลนิสิต',
                 content: 'กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนยืนยันการแก้ไข',
                 okText: 'ยืนยันการแก้ไข',
-                cancelText: 'ยกเลิก',
-                centered: true,
                 onOk: async () => {
                     try {
                         await persistStudent(values)

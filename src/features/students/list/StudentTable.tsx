@@ -1,4 +1,4 @@
-import { Button, Popconfirm, Space, Tag } from 'antd'
+import { Button, Space, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
     DeleteOutlined,
@@ -13,13 +13,14 @@ import type { StudentListResponse } from '../../../types/StudentListResponse'
 import type { StudentGroup } from '../../../types/StudentRoute'
 import NoteHistoryModal from '../notes/NoteHistoryModal'
 import CustomTable from '../../../components/custom/CustomTable'
+import { showConfirmModal } from '../../../components/custom/confirmModalHelpers'
 import { useStudentNotes } from '../notes/useStudentNotes'
 
 interface StudentTableProps {
     students: StudentListResponse[]
     loading?: boolean
     onEdit: (id: number) => void
-    onDelete: (id: number) => void
+    onDelete: (id: number) => void | Promise<void>
     studentGroup: StudentGroup
     canManage?: boolean
 }
@@ -47,6 +48,22 @@ export default function StudentTable({
     const handleOpenNotes = async (studentId: number) => {
         setNoteModalOpen(true)
         await loadNotes(studentId)
+    }
+
+    const showDeleteConfirm = (student: StudentListResponse) => {
+        const studentLabel = [student.student_code, student.full_name_th]
+            .filter(Boolean)
+            .join(' ')
+
+        showConfirmModal({
+            title: 'ยืนยันการลบข้อมูลนิสิต',
+            content: studentLabel
+                ? `ต้องการลบข้อมูล ${studentLabel} ใช่หรือไม่`
+                : 'ต้องการลบข้อมูลนิสิตรายการนี้ใช่หรือไม่',
+            okText: 'ลบข้อมูลนิสิต',
+            okButtonProps: { danger: true },
+            onOk: () => onDelete(student.id),
+        })
     }
 
     const advisorColumn: ColumnsType<StudentListResponse>[number] = {
@@ -162,14 +179,11 @@ export default function StudentTable({
                                 onClick={() => onEdit(record.id)}
                             />
 
-                            <Popconfirm
-                                title="ยืนยันการลบข้อมูลนิสิต?"
-                                okText="ลบ"
-                                cancelText="ยกเลิก"
-                                onConfirm={() => onDelete(record.id)}
-                            >
-                                <Button danger icon={<DeleteOutlined />} />
-                            </Popconfirm>
+                            <Button
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() => showDeleteConfirm(record)}
+                            />
                         </>
                     )}
                 </Space>

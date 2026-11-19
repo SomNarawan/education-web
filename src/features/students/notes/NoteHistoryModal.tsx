@@ -1,8 +1,9 @@
 import { DeleteOutlined } from '@ant-design/icons'
-import { Button, Modal, Popconfirm, Table, Typography } from 'antd'
+import { Button, Modal, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { NoteListResponse } from '../../../types/NoteListResponse'
 import { formatThaiDateTime } from '../../../utils/dateFormat'
+import { showConfirmModal } from '../../../components/custom/confirmModalHelpers'
 
 const { Text } = Typography
 
@@ -11,7 +12,7 @@ interface NoteHistoryModalProps {
     loading?: boolean
     notes: NoteListResponse[]
     onClose: () => void
-    onDelete?: (id: number) => void
+    onDelete?: (id: number) => void | Promise<void>
     showDelete?: boolean
 }
 
@@ -23,6 +24,18 @@ export default function NoteHistoryModal({
     onDelete,
     showDelete = false,
 }: NoteHistoryModalProps) {
+    const showDeleteConfirm = (record: NoteListResponse) => {
+        if (!onDelete) return
+
+        showConfirmModal({
+            title: 'ยืนยันการลบ Note',
+            content: 'ต้องการลบ Note รายการนี้ใช่หรือไม่',
+            okText: 'ลบ Note',
+            okButtonProps: { danger: true },
+            onOk: () => onDelete(record.id),
+        })
+    }
+
     const columns: ColumnsType<NoteListResponse> = [
         {
             title: 'Note',
@@ -88,14 +101,11 @@ export default function NoteHistoryModal({
                 }
 
                 return (
-                    <Popconfirm
-                        title="ยืนยันการลบ Note ?"
-                        okText="ลบ"
-                        cancelText="ยกเลิก"
-                        onConfirm={() => onDelete(record.id)}
-                    >
-                        <Button danger icon={<DeleteOutlined />} />
-                    </Popconfirm>
+                    <Button
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => showDeleteConfirm(record)}
+                    />
                 )
             },
         })
