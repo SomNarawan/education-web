@@ -23,6 +23,14 @@ export interface AdvisorHistoryStudent {
     pending_count?: number | null
     pending_credits?: number | null
     pending_courses?: AdvisorPendingCourse[] | null
+    // Overview only: the latest term with grades of this student.
+    latest_grade_term?: AdvisorLatestGradeTerm | null
+}
+
+interface AdvisorLatestGradeTerm {
+    academic_year: number
+    semester_order: number
+    term_label: string
 }
 
 export interface AdvisorPendingCourse {
@@ -53,7 +61,6 @@ export interface AdvisorAcademicTerm {
     off_plan: number
     retired: number
     unknown: number
-    students: AdvisorHistoryStudent[]
 }
 
 interface AdvisorSummaryTotals {
@@ -92,10 +99,7 @@ interface AdvisorSummaryStudyYear {
     count: number
 }
 
-type AdvisorSummaryBlockKey =
-    | 'plan_status'
-    | 'gpa_by_study_year'
-    | 'gpa_by_academic_term'
+type AdvisorSummaryBlockKey = 'plan_status'
 
 export interface AdvisorSummaryBlock {
     available: boolean
@@ -109,10 +113,14 @@ interface AdvisorSummaryDataQuality {
     gpax_missing: number
 }
 
-export interface AdvisorSummary {
+// GPA by study year and plan status counts per term. The students of a term are loaded when it is opened.
+export interface AdvisorHistory {
     gpa_by_study_year: { study_year: number; cohorts: AdvisorAnnualCohort[] }[]
     academic_terms: AdvisorAcademicTerm[]
     history_coverage: { with_grades: number; without_grades: number }
+}
+
+export interface AdvisorSummary {
     teacher_id: string | null
     teacher_full_name: string | null
     totals: AdvisorSummaryTotals

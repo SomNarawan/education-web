@@ -52,11 +52,12 @@ interface AdvisorStudentModalProps {
     // Last term with grades of each student, to show how current the "not on plan" status is.
     summaryLabel?: string
     pendingRule?: string
-    latestTermById?: Record<number, string>
-    dataThrough?: string
+    // Show the latest term with grades of each student, and wait for rows that are still loading.
+    showLatestTerm?: boolean
+    loading?: boolean
 }
 
-export default function AdvisorStudentModal({ title, students, onClose, gradeContext = 'current', showPending = false, pendingTermLabel, summaryLabel, pendingRule, latestTermById, dataThrough }: AdvisorStudentModalProps) {
+export default function AdvisorStudentModal({ title, students, onClose, gradeContext = 'current', showPending = false, pendingTermLabel, summaryLabel, pendingRule, showLatestTerm = false, loading = false }: AdvisorStudentModalProps) {
     const [filter, setFilter] = useState('all')
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
@@ -78,10 +79,12 @@ export default function AdvisorStudentModal({ title, students, onClose, gradeCon
     ]
     if (gradeContext === 'annual') columns.push({ title: 'GPA ปีที่เลือก', dataIndex: 'gpa', width: 125, align: 'right', render: grade })
     if (gradeContext === 'term' && !historicalPending) columns.push({ title: 'GPAX ณ ภาคที่เลือก', dataIndex: 'gpax', width: 155, align: 'right', render: grade })
-    if (showPending && latestTermById && !historicalPending) {
+    if (showPending && showLatestTerm && !historicalPending) {
+        const termRank = (student: AdvisorHistoryStudent) => student.latest_grade_term ? student.latest_grade_term.academic_year * 10 + student.latest_grade_term.semester_order : 0
+        const newest = (students ?? []).reduce<AdvisorHistoryStudent | null>((best, student) => best === null || termRank(student) > termRank(best) ? student : best, null)?.latest_grade_term?.term_label
         columns.push({ title: 'ข้อมูลเกรดล่าสุด', key: 'latest_term', width: 150, render: (_, student) => {
-            const label = latestTermById[student.id]
-            return label ? <Tag color={label === dataThrough ? 'default' : 'orange'}>{label}</Tag> : '—'
+            const label = student.latest_grade_term?.term_label
+            return label ? <Tag color={label === newest ? 'default' : 'orange'}>{label}</Tag> : '—'
         } })
     }
     if (showPending) {
@@ -94,7 +97,7 @@ export default function AdvisorStudentModal({ title, students, onClose, gradeCon
     }
     columns.push({ title: '', key: 'detail', width: 160, render: (_, row) => <Link to={`/students/advisor/detail/${row.id}`} state={{ from: '/advisor-dashboard' }}>ดูรายละเอียด <ArrowRightOutlined /></Link> })
 
-    return <Modal title={title} open={students !== null} onCancel={onClose} footer={null} width="min(1240px, calc(100vw - 32px))" destroyOnHidden className="advisor-student-modal">
+    return <Modal title={title} open={students !== null || loading} onCancel={onClose} footer={null} width="min(1240px, calc(100vw - 32px))" destroyOnHidden className="advisor-student-modal">
         {showPending && <>
             <div className="advisor-report-summary">
                 <div><span>{summaryLabel ?? (historicalPending ? 'นิสิตไม่ตามแผน ณ ภาคที่เลือก' : 'นิสิตที่ยังไม่ตามแผน')}</span><strong>{number(rows.length)} <small>คน</small></strong></div>
@@ -109,7 +112,7 @@ export default function AdvisorStudentModal({ title, students, onClose, gradeCon
             {!showPending && groups.length > 1 && <Select aria-label="กรองกลุ่มนิสิต" value={filter} onChange={(value) => { setFilter(value); setPage(1) }} options={[{ label: 'ทุกกลุ่ม', value: 'all' }, ...groups.map((value) => ({ value, label: groupLabels[value] ?? value }))]} />}
             <span>แสดง {number(rows.length)} / {number(students?.length ?? 0)} คน</span>
         </div>
-        <Table<AdvisorHistoryStudent> className="advisor-student-table" rowKey="id" dataSource={rows} columns={columns} size="middle"
+        <Table<AdvisorHistoryStudent> className="advisor-student-table" rowKey="id" dataSource={rows} columns={columns} size="middle" loading={loading}
             locale={{ emptyText: search ? 'ไม่พบนิสิตที่ตรงกับคำค้นหา' : showPending ? 'ไม่มีนิสิตที่ยังเรียนไม่ตามแผน' : 'ไม่มีนิสิตในกลุ่มนี้' }}
             pagination={{ current: page, onChange: setPage, pageSize: 8, showSizeChanger: false }} scroll={{ x: showPending ? 1100 : 1000 }}
             expandable={showPending ? {

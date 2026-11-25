@@ -2,12 +2,14 @@ import { Suspense, createContext, lazy, useContext, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRightOutlined, BookOutlined, CheckCircleOutlined, ClockCircleOutlined, ExpandOutlined, InfoCircleOutlined, ReloadOutlined, SafetyCertificateOutlined, SearchOutlined, TeamOutlined } from '@ant-design/icons'
-import { Alert, Button, Card, Col, Empty, Modal, Progress, Row, Segmented, Select, Skeleton, Space, Table, Tag, Tooltip } from 'antd'
+import { Alert, Button, message, Card, Col, Empty, Modal, Progress, Row, Segmented, Select, Skeleton, Space, Table, Tag, Tooltip } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { ColumnConfig } from '@ant-design/plots'
 import { chartColors } from '../../config/appColors'
-import type { AdvisorAcademicTerm, AdvisorHistoryStudent, AdvisorSummary, AdvisorSummaryBlock, AdvisorSummaryEntryYear, GpaxRanges } from '../../types/AdvisorSummary'
+import type { AdvisorAcademicTerm, AdvisorHistoryStudent, AdvisorSummary, AdvisorSummaryBlock, AdvisorSummaryEntryYear, GpaxRanges, AdvisorHistory } from '../../types/AdvisorSummary'
+import { useAdvisorHistory } from './useAdvisorHistory'
 import { useAdvisorSummary } from './useAdvisorSummary'
+import { getAdvisorTermStudents } from '../../services/advisorSummaryService'
 import AdvisorStudentModal from './AdvisorStudentModal'
 import './advisorDashboard.css'
 
@@ -162,37 +164,58 @@ function PendingPanel({ title, block, children }: { title: string; block: Adviso
     </div>
 }
 
-function HistoricalSections({ summary }: { summary: AdvisorSummary }) {
+interface TermView {
+    term: AdvisorAcademicTerm
+    only: 'off_plan' | 'all'
+    students: AdvisorHistoryStudent[] | null
+}
+
+function HistoricalSections({ summary, history, historyLoading, historyError, onRetry }: { summary: AdvisorSummary; history: AdvisorHistory | null; historyLoading: boolean; historyError: boolean; onRetry: () => void }) {
     const [detail, setDetail] = useState<{ title: string; students: AdvisorHistoryStudent[]; gradeContext: 'annual' | 'term' } | null>(null)
-    const [offPlanTerm, setOffPlanTerm] = useState<AdvisorAcademicTerm | null>(null)
+    const [termView, setTermView] = useState<TermView | null>(null)
     const [latestOffPlanOpen, setLatestOffPlanOpen] = useState(false)
     const [year, setYear] = useState<number | 'all'>('all')
-    const terms = summary.academic_terms.filter((term) => year === 'all' || term.academic_year === year)
-    const years = [...new Set(summary.academic_terms.map((term) => term.academic_year))]
-    const latest = latestTermOf(summary)
+    const allTerms = history?.academic_terms ?? []
+    const terms = allTerms.filter((term) => year === 'all' || term.academic_year === year)
+    const years = [...new Set(allTerms.map((term) => term.academic_year))]
     // "รอข้อมูล" only appears when some student cannot be compared with a study plan.
     const showUnknown = summary.plan_status.unknown > 0 || terms.some((term) => term.unknown > 0)
+    // The students of a term are loaded only when the term is opened.
+    const openTerm = (term: AdvisorAcademicTerm, only: TermView['only']) => {
+        setTermView({ term, only, students: null })
+        getAdvisorTermStudents(term.academic_year, term.semester_order)
+            .then((students) => setTermView((current) => current !== null && current.term === term && current.only === only ? { ...current, students } : current))
+            .catch(() => { void message.error('โหลดรายชื่อนิสิตของภาคนี้ไม่สำเร็จ'); setTermView(null) })
+    }
     const termColumns: ColumnsType<AdvisorAcademicTerm> = [
         { title: 'ปีการศึกษา', dataIndex: 'academic_year', render: (value: number) => value + 543 },
         { title: 'ภาคเรียน', dataIndex: 'semester_name' },
         { title: 'ตามแผน', dataIndex: 'on_plan', key: 'on_plan', align: 'right' },
         { title: 'ไม่ตามแผน', dataIndex: 'off_plan', key: 'off_plan', align: 'right',
-            render: (_: number, term: AdvisorAcademicTerm) => term.off_plan === 0 ? 0 : <Tooltip title="ดูรายชื่อและวิชาที่ค้าง ณ ภาคนี้"><Button danger type="link" size="small" className="advisor-off-plan-count" aria-label={`ดูนิสิตไม่ตามแผน ${term.term_label} ${number(term.off_plan)} คน`} onClick={() => setOffPlanTerm(term)}>{number(term.off_plan)}</Button></Tooltip> },
+            render: (_: number, term: AdvisorAcademicTerm) => term.off_plan === 0 ? 0 : <Tooltip title="ดูรายชื่อและวิชาที่ค้าง ณ ภาคนี้"><Button danger type="link" size="small" className="advisor-off-plan-count" aria-label={`ดูนิสิตไม่ตามแผน ${term.term_label} ${number(term.off_plan)} คน`} onClick={() => openTerm(term, 'off_plan')}>{number(term.off_plan)}</Button></Tooltip> },
         { title: 'พ้นสภาพ', dataIndex: 'retired', key: 'retired', align: 'right', render: (value: number) => value > 0 ? value : <Tooltip title="ยังไม่มีข้อมูลพ้นสภาพรายภาค"><span>—</span></Tooltip> },
         ...(showUnknown ? [{ title: 'รอข้อมูล', dataIndex: 'unknown', key: 'unknown', align: 'right' as const }] : []),
-        { title: 'รายละเอียด', key: 'detail', align: 'center', render: (_, term) => <Button type="text" icon={<SearchOutlined />} aria-label={`ดูนิสิต ${term.term_label}`} onClick={() => setDetail({ title: term.term_label, students: term.students, gradeContext: 'term' })} /> },
+        { title: 'รายละเอียด', key: 'detail', align: 'center', render: (_, term) => <Button type="text" icon={<SearchOutlined />} aria-label={`ดูนิสิต ${term.term_label}`} onClick={() => openTerm(term, 'all')} /> },
     ]
+    if (history === null) {
+        return historyError
+            ? <Alert className="advisor-load-error" type="error" showIcon title="โหลดข้อมูลย้อนหลังรายภาคเรียนไม่สำเร็จ" action={<Button size="small" onClick={onRetry}>ลองใหม่</Button>} />
+            : <div className="advisor-loading" aria-label="กำลังโหลดข้อมูลย้อนหลังรายภาคเรียน"><Skeleton active={historyLoading} paragraph={{ rows: 6 }} /></div>
+    }
+    const gpaBlock: AdvisorSummaryBlock = { available: history.history_coverage.with_grades > 0, reason: history.history_coverage.with_grades > 0 ? null : 'grade_history_required' }
+    const termBlock: AdvisorSummaryBlock = { available: allTerms.length > 0, reason: allTerms.length > 0 ? null : 'grade_history_required' }
+    const termStudents = termView?.students == null ? null : termView.only === 'off_plan' ? termView.students.filter((student) => student.plan_status === 'off_plan') : termView.students
     return <>
         <div className="advisor-history-heading"><h2>ผลการเรียนในแต่ละชั้นปี</h2><p>GPA เฉพาะชั้นปี คำนวณถ่วงน้ำหนักด้วยหน่วยกิตจากทุกภาคเรียนที่มีผลการเรียนในปีการศึกษานั้น รวมภาคฤดูร้อน</p></div>
-        {summary.blocks.gpa_by_study_year.available ? <Row gutter={[20, 20]}>
-            {summary.gpa_by_study_year.map((group) => <Col xs={24} lg={12} key={group.study_year}>
+        {gpaBlock.available ? <Row gutter={[20, 20]}>
+            {history.gpa_by_study_year.map((group) => <Col xs={24} lg={12} key={group.study_year}>
                 <SectionCard title={`ช่วงเกรดนิสิตปีที่ ${group.study_year}`} description="เปรียบเทียบช่วง GPA ของแต่ละรุ่น" extra={<Button size="small" onClick={() => setDetail({ title: `GPA ชั้นปีที่ ${group.study_year}`, students: group.cohorts.flatMap((cohort) => cohort.students), gradeContext: 'annual' })}>ดูรายชื่อ</Button>}>
                     <StackChart title={`ช่วงเกรดนิสิตปีที่ ${group.study_year}`} rows={group.cohorts.map((cohort) => ({ category: cohortLabel(cohort.entry_year), counts: cohort.ranges }))} series={gpaxRanges.map((range) => ({ key: range.key, label: range.label, color: range.color }))} />
                 </SectionCard>
             </Col>)}
-        </Row> : <PendingPanel title="ช่วงเกรดนิสิตปีที่ 1–4" block={summary.blocks.gpa_by_study_year}>ต้องมีผลการเรียนรายวิชาที่ระบุปีและภาคการศึกษา จึงจะคำนวณ GPA ของแต่ละชั้นปีได้</PendingPanel>}
+        </Row> : <PendingPanel title="ช่วงเกรดนิสิตปีที่ 1–4" block={gpaBlock}>ต้องมีผลการเรียนรายวิชาที่ระบุปีและภาคการศึกษา จึงจะคำนวณ GPA ของแต่ละชั้นปีได้</PendingPanel>}
         <SectionCard title="สถานะตามแผนรายภาคเรียน" description="สถานะของนิสิต ณ สิ้นแต่ละภาคเรียน • ผลที่ผ่านภายหลังไม่เปลี่ยนตัวเลขย้อนหลัง" extra={<Select aria-label="กรองปีการศึกษาย้อนหลัง" value={year} onChange={setYear} style={{ minWidth: 150 }} options={[{ label: 'ทุกปีการศึกษา', value: 'all' as const }, ...years.map((value) => ({ label: String(value + 543), value }))]} />}>
-            {summary.blocks.gpa_by_academic_term.available ? <>
+            {termBlock.available ? <>
                 <StackChart title="สถานะตามแผนรายภาคเรียน" rows={terms.map((term) => ({ category: term.term_label, counts: { on_plan: term.on_plan, off_plan: term.off_plan, retired: term.retired, unknown: term.unknown } }))} series={planSeries} />
                 <Table<AdvisorAcademicTerm> className="advisor-cohort-table" rowKey={(term) => `${term.academic_year}-${term.semester_order}`} dataSource={terms} columns={termColumns} size="middle" scroll={{ x: 1100 }} pagination={{ pageSize: 8, showSizeChanger: false }}
                     summary={() => <><Table.Summary.Row>
@@ -203,25 +226,18 @@ function HistoricalSections({ summary }: { summary: AdvisorSummary }) {
                         {showUnknown && <Table.Summary.Cell index={5} align="right"><strong>{number(summary.plan_status.unknown)}</strong></Table.Summary.Cell>}
                         <Table.Summary.Cell index={showUnknown ? 6 : 5} />
                     </Table.Summary.Row></>} />
-            </> : <PendingPanel title="สถานะนิสิตรายภาคเรียน" block={summary.blocks.gpa_by_academic_term}>ต้องมีเกรดหรือประวัติสถานะรายภาคเรียน จึงจะแสดงข้อมูลส่วนนี้ได้</PendingPanel>}
+            </> : <PendingPanel title="สถานะนิสิตรายภาคเรียน" block={termBlock}>ต้องมีเกรดหรือประวัติสถานะรายภาคเรียน จึงจะแสดงข้อมูลส่วนนี้ได้</PendingPanel>}
         </SectionCard>
-        <AdvisorStudentModal key={`latest-off-plan-${latestOffPlanOpen}`} title="นิสิตที่ยังไม่ตามแผน · สรุปสถานะล่าสุด" students={latestOffPlanOpen ? summary.off_plan_students : null} showPending summaryLabel="นิสิตที่ยังไม่ตามแผน" pendingRule="แสดงเฉพาะวิชาหรือเงื่อนไขที่ยังเหลือตามข้อมูลล่าสุดของแต่ละคน วิชาที่แก้ผ่านแล้วไม่แสดง" latestTermById={latest.byId} dataThrough={latest.dataThrough} onClose={() => setLatestOffPlanOpen(false)} />
+        <AdvisorStudentModal key={`latest-off-plan-${latestOffPlanOpen}`} title="นิสิตที่ยังไม่ตามแผน · สรุปสถานะล่าสุด" students={latestOffPlanOpen ? summary.off_plan_students : null} showPending summaryLabel="นิสิตที่ยังไม่ตามแผน" pendingRule="แสดงเฉพาะวิชาหรือเงื่อนไขที่ยังเหลือตามข้อมูลล่าสุดของแต่ละคน วิชาที่แก้ผ่านแล้วไม่แสดง" showLatestTerm onClose={() => setLatestOffPlanOpen(false)} />
         <AdvisorStudentModal key={detail?.title ?? 'closed'} title={detail?.title ?? ''} students={detail?.students ?? null} gradeContext={detail?.gradeContext} onClose={() => setDetail(null)} />
-        <AdvisorStudentModal key={`off-plan-term-${offPlanTerm?.academic_year}-${offPlanTerm?.semester_order}`} title={offPlanTerm ? `นิสิตไม่ตามแผน · ปีการศึกษา ${offPlanTerm.term_label}` : ''} students={offPlanTerm ? offPlanTerm.students.filter((student) => student.plan_status === 'off_plan') : null} gradeContext="term" showPending pendingTermLabel={offPlanTerm ? `ปีการศึกษา ${offPlanTerm.term_label}` : undefined} onClose={() => setOffPlanTerm(null)} />
+        <AdvisorStudentModal key={`term-${termView?.only}-${termView?.term.academic_year}-${termView?.term.semester_order}`} title={termView ? (termView.only === 'off_plan' ? `นิสิตไม่ตามแผน · ปีการศึกษา ${termView.term.term_label}` : termView.term.term_label) : ''} students={termStudents} loading={termView !== null && termView.students === null} gradeContext="term" showPending={termView?.only === 'off_plan'} pendingTermLabel={termView?.only === 'off_plan' ? `ปีการศึกษา ${termView.term.term_label}` : undefined} onClose={() => setTermView(null)} />
     </>
-}
-
-function latestTermOf(summary: AdvisorSummary) {
-    const byId: Record<number, string> = {}
-    for (const term of summary.academic_terms) for (const student of term.students) byId[student.id] = term.term_label
-    return { byId, dataThrough: summary.academic_terms.at(-1)?.term_label }
 }
 
 function CohortSection({ summary }: { summary: AdvisorSummary }) {
     const [detail, setDetail] = useState<AdvisorSummaryEntryYear | null>(null)
     const [offPlanCohort, setOffPlanCohort] = useState<AdvisorSummaryEntryYear | null>(null)
     const [entryYear, setEntryYear] = useState<number | 'all'>('all')
-    const latest = latestTermOf(summary)
     const rows = summary.by_entry_year.filter((row) => entryYear === 'all' || row.entry_year === entryYear)
     const cohortStudentIds = new Set(offPlanCohort?.students.map((student) => student.id) ?? [])
     const offPlanStudents = offPlanCohort === null ? null : summary.off_plan_students.filter((student) => cohortStudentIds.has(student.id))
@@ -247,11 +263,11 @@ function CohortSection({ summary }: { summary: AdvisorSummary }) {
             summary={() => <Table.Summary.Row><Table.Summary.Cell index={0}><strong>รวม</strong></Table.Summary.Cell>{totals.map((value, index) => <Table.Summary.Cell key={index} index={index + 1} align="right"><strong>{!planAvailable && (index === 2 || index === 3) ? '—' : number(value)}</strong></Table.Summary.Cell>)}</Table.Summary.Row>} />
         <p className="advisor-footnote">กดตัวเลข “ไม่ตามแผน” เพื่อดูรายชื่อและรายการค้างของรุ่นนั้น • ตามแผน/ไม่ตามแผนของรุ่นนับเฉพาะนิสิตที่ยังกำลังศึกษาในปัจจุบัน (รุ่นที่จบแล้วจึงเป็น 0) • รอประเมินแผน = ยังไม่มีข้อมูลสำหรับเทียบแผนการเรียน</p>
         <AdvisorStudentModal key={detail?.entry_year ?? 'closed'} title={detail ? cohortLabel(detail.entry_year) : ''} students={detail?.students ?? null} onClose={() => setDetail(null)} />
-        <AdvisorStudentModal key={`off-plan-${offPlanCohort?.entry_year ?? 'closed'}`} title={offPlanCohort ? `นิสิตที่ยังไม่ตามแผน · ${cohortLabel(offPlanCohort.entry_year)} (เข้าเรียน ${offPlanCohort.entry_year + 543})` : ''} students={offPlanStudents} showPending latestTermById={latest.byId} dataThrough={latest.dataThrough} onClose={() => setOffPlanCohort(null)} />
+        <AdvisorStudentModal key={`off-plan-${offPlanCohort?.entry_year ?? 'closed'}`} title={offPlanCohort ? `นิสิตที่ยังไม่ตามแผน · ${cohortLabel(offPlanCohort.entry_year)} (เข้าเรียน ${offPlanCohort.entry_year + 543})` : ''} students={offPlanStudents} showPending showLatestTerm onClose={() => setOffPlanCohort(null)} />
     </SectionCard>
 }
 
-function SummaryContent({ summary }: { summary: AdvisorSummary }) {
+function SummaryContent({ summary, historyState }: { summary: AdvisorSummary; historyState: ReturnType<typeof useAdvisorHistory> }) {
     const [offPlanOpen, setOffPlanOpen] = useState(false)
     const { totals, studying_gpax: gpax, plan_status: plan } = summary
     const planAvailable = summary.blocks.plan_status.available
@@ -299,28 +315,29 @@ function SummaryContent({ summary }: { summary: AdvisorSummary }) {
                 {totals.studying > summary.studying_by_study_year.reduce((sum, row) => sum + row.count, 0) && <p className="advisor-footnote">ไม่ระบุชั้นปี {number(totals.studying - summary.studying_by_study_year.reduce((sum, row) => sum + row.count, 0))} คน</p>}
             </SectionCard></Col>
             <Col xs={24} xl={14}><SectionCard title="ข้อมูลที่ใช้ติดตามผลย้อนหลัง" description="ความครบถ้วนของข้อมูลและหลักการอ่านกราฟ">
-                <div className="advisor-coverage"><div><strong>{number(summary.history_coverage.with_grades)}</strong><span>คนที่มีประวัติเกรด</span></div><div><strong>{number(summary.history_coverage.without_grades)}</strong><span>คนที่ยังไม่มีประวัติเกรด</span></div></div>
+                {historyState.history ? <div className="advisor-coverage"><div><strong>{number(historyState.history.history_coverage.with_grades)}</strong><span>คนที่มีประวัติเกรด</span></div><div><strong>{number(historyState.history.history_coverage.without_grades)}</strong><span>คนที่ยังไม่มีประวัติเกรด</span></div></div> : <Skeleton active paragraph={{ rows: 1 }} />}
                 <p className="advisor-footnote">กราฟปีที่ 1–4 ใช้ GPA ของปีนั้น รวมทุกภาคเรียนที่มีผลการเรียน รวมภาคฤดูร้อน โดยไม่นำวิชาที่ไม่คิด GPA มาคำนวณ</p>
                 <p className="advisor-footnote">สถานะตามแผนย้อนหลังคำนวณจากวิชาที่ถึงกำหนดและเกรดที่มีถึงภาคนั้น ส่วนพ้นสภาพต้องมีบันทึกสถานะรายภาค</p>            </SectionCard></Col>
         </Row>
-        <HistoricalSections summary={summary} />
+        <HistoricalSections summary={summary} history={historyState.history} historyLoading={historyState.loading} historyError={historyState.loadError !== null} onRetry={() => void historyState.load()} />
         <Row gutter={[20, 20]}>
             <Col xs={24} xl={12}><SectionCard title="GPAX ของนิสิตปัจจุบันแยกตามรุ่น" description="นิสิตที่กำลังศึกษา • เปรียบเทียบจำนวนหรือร้อยละได้"><GpaxChart title="GPAX ของนิสิตปัจจุบันแยกตามรุ่น" rows={summary.by_entry_year} pick={(row) => row.gpax} /></SectionCard></Col>
             <Col xs={24} xl={12}><SectionCard title="GPAX ของนิสิตที่จบการศึกษา" description={`นิสิตจบการศึกษา ${number(totals.graduated)} คน • แยกตามรุ่น`}><GpaxChart title="GPAX ของนิสิตที่จบการศึกษา" rows={summary.by_entry_year} pick={(row) => row.graduated_gpax} /></SectionCard></Col>
         </Row>
         <div className="advisor-bottom-note"><CheckCircleOutlined /> สรุปจากข้อมูลที่มีในระบบ • “ไม่มีข้อมูล” แสดงแยกจากจำนวนศูนย์ • การเรียนตามแผนใช้เกณฑ์รายวิชาที่ถึงกำหนด</div>
-        <AdvisorStudentModal key={offPlanOpen ? 'off-plan-open' : 'off-plan-closed'} title="นิสิตที่ยังเรียนไม่ตามแผน" students={offPlanOpen ? summary.off_plan_students : null} showPending latestTermById={latestTermOf(summary).byId} dataThrough={latestTermOf(summary).dataThrough} onClose={() => setOffPlanOpen(false)} />
+        <AdvisorStudentModal key={offPlanOpen ? 'off-plan-open' : 'off-plan-closed'} title="นิสิตที่ยังเรียนไม่ตามแผน" students={offPlanOpen ? summary.off_plan_students : null} showPending showLatestTerm onClose={() => setOffPlanOpen(false)} />
     </div>
 }
 
 export default function AdvisorDashboardPage() {
     const { summary, loading, loadError, load } = useAdvisorSummary()
+    const historyState = useAdvisorHistory()
     return <div className="student-page advisor-dashboard">
         <div className="advisor-hero"><div><span className="advisor-eyebrow"><TeamOutlined /> สำหรับอาจารย์ที่ปรึกษา</span><h1>ภาพรวมนิสิตในที่ปรึกษา</h1>
             {summary?.teacher_full_name && <div className="advisor-teacher"><span />{summary.teacher_full_name}</div>}</div>
-            <Space wrap><Button icon={<ReloadOutlined />} loading={loading} onClick={() => void load()}>รีเฟรชข้อมูล</Button><Link className="advisor-primary-link" to="/students/advisor">รายชื่อนิสิต <ArrowRightOutlined /></Link></Space>
+            <Space wrap><Button icon={<ReloadOutlined />} loading={loading} onClick={() => { void load(); void historyState.load() }}>รีเฟรชข้อมูล</Button><Link className="advisor-primary-link" to="/students/advisor">รายชื่อนิสิต <ArrowRightOutlined /></Link></Space>
         </div>
         {loadError && <Alert className="advisor-load-error" type="error" showIcon title={loadError} action={<Button size="small" onClick={() => void load()}>ลองใหม่</Button>} />}
-        {loading ? <div className="advisor-loading" aria-label="กำลังโหลดภาพรวมนิสิต"><Skeleton active paragraph={{ rows: 8 }} /></div> : summary ? <SummaryContent summary={summary} /> : !loadError && <Card><Empty description="ไม่มีข้อมูล" /></Card>}
+        {loading ? <div className="advisor-loading" aria-label="กำลังโหลดภาพรวมนิสิต"><Skeleton active paragraph={{ rows: 8 }} /></div> : summary ? <SummaryContent summary={summary} historyState={historyState} /> : !loadError && <Card><Empty description="ไม่มีข้อมูล" /></Card>}
     </div>
 }
