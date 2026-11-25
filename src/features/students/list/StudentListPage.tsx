@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import StudentTable from './StudentTable'
 import StudentFormModal from './StudentFormModal'
+import { useStudentCreateFormOptions } from './useStudentCreateFormOptions'
 import { showConfirmModal } from '../../../components/custom/confirmModalHelpers'
 import type { StudentFormValues } from '../../../types/StudentFormValues'
 import type { StudentListResponse } from '../../../types/StudentListResponse'
@@ -130,6 +131,9 @@ function StudentList() {
     const isDepartmentListPage = currentStudentGroup === 'department'
 
     const isFacultyListPage = currentStudentGroup === 'faculty'
+    const createFormOptions = useStudentCreateFormOptions(
+        isAdmin && (isDepartmentListPage || isFacultyListPage),
+    )
 
     const pageTitle = useMemo(() => {
         if (currentStudentGroup === 'faculty') {
@@ -812,6 +816,7 @@ function StudentList() {
                     open={isModalOpen}
                     loading={dropdownLoading || editConfirmOpen}
                     editingStudent={editingStudent}
+                    createFormOptions={createFormOptions}
                     onCancel={closeModal}
                     onSave={handleSave}
                 />

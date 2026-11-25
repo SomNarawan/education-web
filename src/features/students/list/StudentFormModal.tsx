@@ -1,4 +1,6 @@
 import {
+Alert,
+Button,
 Card,
 Col,
 DatePicker,
@@ -8,10 +10,11 @@ Modal,
 Row,
 } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { StudentFormValues } from '../../../types/StudentFormValues'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
 import { useStudentFormOptions } from './useStudentFormOptions'
+import type { StudentCreateFormOptionsState } from './useStudentCreateFormOptions'
 import { renderRequiredFormMark } from '../../../components/custom/RequiredFormMark'
 import ListOfValueSelect from '../../../components/custom/ListOfValueSelect'
 import { toListOfValueOptions } from '../../../utils/listOfValue'
@@ -24,6 +27,7 @@ interface StudentFormModalProps {
     open: boolean
     loading: boolean
     editingStudent: StudentDetailResponse | null
+    createFormOptions: StudentCreateFormOptionsState
     onCancel: () => void
     onSave: (values: StudentFormValues) => void | Promise<void>
 }
@@ -37,22 +41,47 @@ export default function StudentFormModal({
 open,
 loading,
 editingStudent,
+createFormOptions,
 onCancel,
 onSave,
 }: StudentFormModalProps) {
 const [form] = Form.useForm<FormValues>()
 const selectedCurriculumId = Form.useWatch('curriculum_id', form)
 const {
-    options: dropdownData,
-    loading: optionsLoading,
+    options: editOptions,
+    loading: editOptionsLoading,
     studyPlansLoading,
     systemTeachersLoading,
-    error: optionsError,
+    error: editOptionsError,
     clearStudyPlans,
 } = useStudentFormOptions(
     open,
     selectedCurriculumId,
     editingStudent,
+)
+const createOptions = createFormOptions.options
+const optionsLoading = editingStudent
+    ? editOptionsLoading
+    : createFormOptions.loading
+const createOptionsError = editingStudent ? null : createFormOptions.error
+const optionsError = editingStudent ? editOptionsError : createOptionsError
+const dropdownData = editingStudent
+    ? editOptions
+    : {
+          titles: createOptions?.titles ?? [],
+          curriculums: createOptions?.curriculums ?? [],
+          systemDepartments: createOptions?.system_departments ?? [],
+          studentStatuses: createOptions?.student_statuses ?? [],
+          admissionChannels: createOptions?.admission_channels ?? [],
+          highSchools: createOptions?.high_schools ?? [],
+          guardianRelationships: createOptions?.guardian_relationships ?? [],
+          studyPlans: editOptions.studyPlans,
+          systemTeachers: editOptions.systemTeachers,
+      }
+const highSchools = dropdownData.highSchools
+const highSchoolOptions = useMemo(
+    () => toListOfValueOptions(highSchools),
+    [highSchools],
 )
 
 useEffect(() => {
@@ -145,11 +174,13 @@ return (
     <Modal
         title={editingStudent ? 'แก้ไขข้อมูลนิสิต' : 'เพิ่มข้อมูลนิสิต'}
         open={open}
+        afterClose={form.resetFields}
         onOk={handleOk}
         onCancel={onCancel}
         okText="บันทึก"
         cancelText="ยกเลิก"
         width={1000}
+        okButtonProps={{ disabled: !!createOptionsError }}
         confirmLoading={
             loading ||
             optionsLoading ||
@@ -157,6 +188,19 @@ return (
             systemTeachersLoading
         }
     >
+        {createOptionsError && (
+            <Alert
+                type="error"
+                showIcon
+                title={createOptionsError}
+                action={
+                    <Button size="small" onClick={createFormOptions.retry}>
+                        ลองใหม่
+                    </Button>
+                }
+                style={{ marginBottom: 16 }}
+            />
+        )}
         <Form
             layout="vertical"
             form={form}
@@ -470,9 +514,7 @@ return (
                         loading={optionsLoading}
                         error={optionsError}
                         placeholder="เลือกโรงเรียน"
-                        options={toListOfValueOptions(
-                            dropdownData.highSchools,
-                        )}
+                        options={highSchoolOptions}
                     />
                 </Form.Item>
             </Card>

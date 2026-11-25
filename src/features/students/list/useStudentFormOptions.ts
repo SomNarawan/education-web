@@ -93,7 +93,7 @@ export function useStudentFormOptions(
         : null
 
     useEffect(() => {
-        if (!enabled) {
+        if (!enabled || !editingStudent) {
             return
         }
 
@@ -315,7 +315,11 @@ export function useStudentFormOptions(
 
     return {
         options,
-        loading: isRequestLoading(enabled, optionsKey, optionsRequest),
+        loading: isRequestLoading(
+            enabled && !!editingStudent,
+            optionsKey,
+            optionsRequest,
+        ),
         studyPlansLoading: isRequestLoading(
             enabled,
             curriculumOptionsKey,

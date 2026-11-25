@@ -1,5 +1,6 @@
 import api from '../config/axios'
 import type { ApiResponse } from '../types/ApiResponse'
+import type { StudentCreateFormOptions } from '../types/StudentCreateFormOptions'
 import type { StudentListResponse } from '../types/StudentListResponse'
 import type { StudentDetailResponse } from '../types/StudentDetailResponse'
 import type {
@@ -24,6 +25,14 @@ export async function getStudents(
         {
             params,
         },
+    )
+
+    return response.data.data
+}
+
+export async function getStudentCreateFormOptions(): Promise<StudentCreateFormOptions> {
+    const response = await api.get<ApiResponse<StudentCreateFormOptions>>(
+        '/students/create-form-options',
     )
 
     return response.data.data
