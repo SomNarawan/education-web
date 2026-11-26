@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { Alert, Button, Spin, Typography } from 'antd'
 import { useAuth } from '../hooks/useAuth'
 import { checkBackendConnectivity } from '../utils/backendConnectivity'
-import { appMode } from '../config/appMode'
+import { appMode, getDefaultRouteForRole } from '../config/appMode'
 import { authProvider, portalLoginUrl } from '../config/auth'
 
 export default function RoleRedirect() {
@@ -133,20 +133,5 @@ export default function RoleRedirect() {
         )
     }
 
-    // teacher
-    if (currentRole === 'teacher') {
-        return <Navigate to="/students/advisor" replace />
-    }
-
-    // admin
-    if (currentRole === 'admin') {
-        return <Navigate to="/students/department" replace />
-    }
-
-    if (currentRole === 'student') {
-        return <Navigate to="/student/home" replace />
-    }
-
-    // role ที่ระบบไม่รองรับ
-    return null
+    return <Navigate to={getDefaultRouteForRole(currentRole)} replace />
 }

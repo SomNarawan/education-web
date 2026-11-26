@@ -39,6 +39,8 @@
 .advisor-range-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--range-text); font-weight: 600; }
 .advisor-range-label i, .advisor-plan-rows i, .advisor-legend i { display: inline-block; flex-shrink: 0; width: 8px; height: 8px; border-radius: 3px; background: var(--range-color); }
 .advisor-range-value { margin: 8px 0 3px; font-size: 32px; line-height: 1.3; color: #243e5c; font-weight: 650; font-variant-numeric: tabular-nums; }
+.advisor-gpax-count { padding: 0; border: 0; background: transparent; color: #1963a6; font: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .15em; cursor: pointer; }
+.advisor-gpax-count:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 .advisor-range-caption { color: #7b899a; font-size: 11px; }
 .advisor-card-note { display: flex; align-items: center; gap: 8px; margin-top: 16px; color: var(--advisor-muted); font-size: 12px; }
 .advisor-plan-summary { display: flex; align-items: center; gap: 24px; margin: 10px 0 24px; }
@@ -73,6 +75,13 @@
 .advisor-chart-modal .advisor-footnote { text-align: center; }
 .advisor-chart-empty { display: grid; min-height: 280px; place-items: center; }
 .advisor-cohort-table { margin-top: 20px; }
+.advisor-backlog-table { width: 100%; min-width: 0; }
+.advisor-backlog-table .ant-table-cell { vertical-align: middle; font-variant-numeric: tabular-nums; }
+.advisor-backlog-table .ant-table-tbody .ant-table-cell:first-child { overflow-wrap: anywhere; }
+.advisor-cohort-table .advisor-cohort-roster { padding-inline: 4px; margin-inline-start: -4px; gap: 4px; min-height: 32px; }
+.advisor-cohort-roster .anticon { font-size: 10px; }
+.advisor-cohort-roster:hover > span:first-child { text-decoration: underline; text-underline-offset: 3px; }
+.advisor-cohort-roster:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .advisor-cohort-table .ant-table-thead > tr > th { background: #f5f8fc; color: #60758e; font-size: 12px; }
 .advisor-cohort-table .ant-table-tbody > tr > td { color: #445a73; font-size: 13px; }
 .advisor-cohort-table .ant-table-summary { background: #f5f8fc; color: #294764; }
@@ -126,3 +135,48 @@
     .advisor-plan-summary { gap: 16px; } .advisor-chart-toolbar { align-items: flex-start; flex-wrap: wrap; }
     .advisor-pending { padding: 16px; } .advisor-bottom-note { text-align: left; }
 }
+
+.advisor-current-total { display: flex; align-items: baseline; gap: 10px; color: #445a73; }
+.advisor-current-total strong { color: #193c63; font-size: 36px; line-height: 1.2; }
+.advisor-plan-bar { display: flex; height: 14px; overflow: hidden; border-radius: 7px; margin: 16px 0 12px; background: #edf2f7; }
+.advisor-plan-bar > span { flex-basis: 0; }
+.advisor-plan-counts, .advisor-lifetime { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; }
+.advisor-plan-counts strong { margin-left: 4px; }
+.advisor-lifetime { border-top: 1px solid #e7edf5; margin-top: 16px; padding-top: 12px; color: #53657a; font-size: 13px; }
+.advisor-report-tabs { min-width: 0; }
+
+.advisor-review-total { margin: 10px 0 16px; color: #53657a; }
+.advisor-review { display: grid; grid-template-columns: minmax(225px, 31%) minmax(0, 1fr); border: 1px solid #dce5ef; border-radius: 12px; overflow: hidden; }
+.advisor-review-list, .advisor-review-detail { min-width: 0; max-height: min(62vh, 640px); padding: 16px; }
+.advisor-review-list { display: flex; flex-direction: column; gap: 10px; border-right: 1px solid #dce5ef; background: #f7f9fc; }
+.advisor-review-sort { display: flex; align-items: center; gap: 6px; }
+.advisor-review-sort .ant-select { flex: 1; min-width: 0; }
+.advisor-review-names, .advisor-review-courses { list-style: none; margin: 0; padding: 0; }
+.advisor-review-names { overflow-y: auto; min-height: 0; }
+.advisor-review-names button { width: 100%; border: 1px solid transparent; border-bottom-color: #dce5ef; padding: 10px 12px; text-align: left; font: inherit; color: #233b55; background: transparent; border-radius: 6px; cursor: pointer; }
+.advisor-review-names button:hover { background: #eef3fa; }
+.advisor-review-names button[aria-pressed="true"] { background: #e8f1ff; border-color: #79a6db; }
+.advisor-review-names button:focus-visible { outline: 2px solid #245c9e; outline-offset: -2px; }
+.advisor-review-names span { display: block; color: #506378; font-size: 13px; }
+.advisor-review-detail { overflow-y: auto; overflow-wrap: anywhere; }
+.advisor-review-detail h3 { margin: 0 0 3px; font-size: 19px; }
+.advisor-review-detail h4 { margin: 12px 0 4px; font-size: 15px; }
+.advisor-course-title { display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.advisor-course-title > span { color: #844320; }
+.advisor-course-meta { color: #58697b; font-size: 13px; }
+.advisor-review-courses li { padding: 12px 0; border-top: 1px solid #e6ebf2; }
+.advisor-course-history { margin: 12px 0 4px; }
+.advisor-course-history summary, .advisor-term-caption summary { cursor: pointer; color: #245c9e; padding-block: 4px; }
+.advisor-term-caption { color: #455b72; margin: 0 0 12px; }
+.advisor-term-counts { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 4px 0 0; padding: 0; list-style: none; }
+.advisor-term-counts strong { color: #233b55; white-space: nowrap; }
+.advisor-review-detail > a { display: inline-block; margin-top: 10px; }
+.advisor-review .advisor-review-back { display: none; }
+@media (max-width: 768px) {
+    .advisor-review { display: block; }
+    .advisor-review-list { border-right: 0; }
+    .advisor-review[data-mobile-detail="true"] .advisor-review-list,
+    .advisor-review[data-mobile-detail="false"] .advisor-review-detail { display: none; }
+    .advisor-review .advisor-review-back { display: inline-flex; margin-bottom: 12px; }
+}
+
