@@ -17,12 +17,13 @@ export interface AdvisorHistoryStudent {
     gpa?: number
     gpax?: number | null
     range?: GpaxRangeKey
-    plan_status?: 'on_plan' | 'off_plan' | 'retired' | 'unknown'
+    plan_status?: 'on_plan' | 'off_plan' | 'retired' | 'unknown' | 'curriculum_unavailable'
     status?: 'studying' | 'graduated' | 'retired' | 'other'
     status_source?: string
     pending_count?: number | null
     pending_credits?: number | null
     pending_courses?: AdvisorPendingCourse[] | null
+    unassessed_courses?: AdvisorPendingCourse[]
     // Overview only: the latest term with grades of this student.
     latest_grade_term?: AdvisorLatestGradeTerm | null
 }
@@ -36,13 +37,16 @@ interface AdvisorLatestGradeTerm {
 export interface AdvisorPendingCourse {
     course_code: string | null
     course_name: string | null
+    course_group?: string | null
+    course_sub_category?: string | null
+    course_category?: string | null
     study_period: string | null
     semester_year_be: number | null
     grade_letter: string | null
-    enrollment_type: string
+    enrollment_type: string | null
     credit: number | null
     // Past terms only: whether the course has been passed since, from the latest grades.
-    resolved?: boolean
+    resolved?: boolean | null
     resolved_term_label?: string | null
 }
 
@@ -61,6 +65,8 @@ export interface AdvisorAcademicTerm {
     off_plan: number
     retired: number
     unknown: number
+    incomplete_curriculum?: boolean
+    curriculum_unavailable?: number
 }
 
 interface AdvisorSummaryTotals {
@@ -75,6 +81,7 @@ interface AdvisorSummaryTotals {
 // the plan that is due has been passed, off plan = at least one is not passed
 // or not taken, unknown = no grade import for the student yet.
 interface PlanStatusCounts {
+    curriculum_unavailable?: number
     on_plan: number
     off_plan: number
     unknown: number
@@ -129,6 +136,7 @@ export interface AdvisorSummary {
     studying_by_study_year: AdvisorSummaryStudyYear[]
     plan_status: PlanStatusCounts
     off_plan_students: AdvisorHistoryStudent[]
+    unit_review_students?: AdvisorHistoryStudent[]
     by_entry_year: AdvisorSummaryEntryYear[]
     data_quality: AdvisorSummaryDataQuality
     blocks: Record<AdvisorSummaryBlockKey, AdvisorSummaryBlock>

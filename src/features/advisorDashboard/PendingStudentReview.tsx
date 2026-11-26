@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import type { AdvisorHistoryStudent, AdvisorPendingCourse } from '../../types/AdvisorSummary'
 
 type SortField = 'pending_credits' | 'pending_count' | 'gpax'
+const unitLabels: Record<string, string> = { credit: 'หน่วยกิต', course: 'วิชา', hour: 'ชั่วโมง', day: 'วัน', week: 'สัปดาห์' }
 const sortOptions = [
     { label: 'หน่วยกิตค้าง', value: 'pending_credits' },
     { label: 'จำนวนรายการค้าง', value: 'pending_count' },
@@ -15,16 +16,36 @@ const quantity = (value: number | null | undefined, unit: string) => value == nu
 const gpaxOf = (student: AdvisorHistoryStudent, historical: boolean) => historical ? student.gpax : student.current_gpax
 const yearOf = (student: AdvisorHistoryStudent, historical: boolean) => historical ? student.term_study_year : student.study_year
 
+function outstandingAmounts(students: AdvisorHistoryStudent[]) {
+    const totals = new Map<string, number>()
+    for (const student of students) {
+        if (!student.pending_courses) {
+            if (student.pending_credits != null && student.pending_credits > 0) {
+                totals.set('credit', (totals.get('credit') ?? 0) + student.pending_credits)
+            }
+            continue
+        }
+        for (const course of student.pending_courses) {
+            const unit = course.enrollment_type
+            if (unit && Object.hasOwn(unitLabels, unit) && course.credit != null && course.credit > 0) {
+                totals.set(unit, (totals.get(unit) ?? 0) + course.credit)
+            }
+        }
+    }
+    return [...totals].map(([unit, amount]) => quantity(amount, unitLabels[unit])).join(' · ')
+}
+
 function CourseItem({ course, historical }: { course: AdvisorPendingCourse; historical: boolean }) {
     const code = String(course.course_code ?? '').trim()
     const group = !code || code === '-' || code.toUpperCase() === 'FREE' || /x/i.test(code)
     const latestGrade = course.grade_letter?.split(',').map((item) => item.trim()).filter((item) => item && item !== '-').at(-1)
-    const unit = course.enrollment_type === 'hour' ? 'ชั่วโมง' : 'หน่วยกิต'
-    const amount = course.credit == null ? null : quantity(course.credit, unit)
-    const reason = group ? (amount ? `ขาดอีก ${amount}` : 'ยังเรียนไม่ครบตามแผน') : latestGrade ? `ผลการเรียน ${latestGrade}` : 'ยังไม่มีผลการเรียน'
+    const unit = unitLabels[course.enrollment_type ?? '']
+    const amount = course.credit == null || !unit ? null : quantity(course.credit, unit)
+    const showRemaining = group || (!!unit && course.enrollment_type !== 'credit')
+    const reason = !unit ? 'ยังประเมินไม่ได้' : showRemaining ? (amount ? `ขาดอีก ${amount}` : 'ยังเรียนไม่ครบตามแผน') : latestGrade ? `ผลการเรียน ${latestGrade}` : 'ยังไม่มีผลการเรียน'
     const meta = [
         code && code !== '-' && code.toUpperCase() !== 'FREE' ? code : null,
-        group ? null : amount,
+        showRemaining ? null : amount,
         course.study_period,
         course.semester_year_be ? `ปีการศึกษา ${course.semester_year_be}` : null,
     ].filter(Boolean).join(' · ')
@@ -93,9 +114,10 @@ export default function PendingStudentReview({ students, termLabel }: PendingRev
             return ascending ? first - second : second - first
         })
     const selected = rows.find((student) => student.id === selectedId) ?? rows[0]
-    const total = (key: 'pending_credits' | 'pending_count', unit: string) => {
-        const known = rows.filter((student) => student[key] != null)
-        return known.length ? quantity(known.reduce((sum, student) => sum + (student[key] ?? 0), 0), unit) : 'รอข้อมูล'
+    const amounts = outstandingAmounts(rows)
+    const totalCount = () => {
+        const known = rows.filter((student) => student.pending_count != null)
+        return known.length ? quantity(known.reduce((sum, student) => sum + (student.pending_count ?? 0), 0), 'รายการ') : 'รอข้อมูล'
     }
     const showStudent = (student: AdvisorHistoryStudent) => {
         setSelectedId(student.id)
@@ -110,12 +132,13 @@ export default function PendingStudentReview({ students, termLabel }: PendingRev
     }
     if (!students.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={historical ? 'ไม่มีนิสิตที่เรียนไม่ตามแผนในภาคนี้' : 'ไม่มีนิสิตที่ยังเรียนไม่ตามแผน'} />
     const latestTerm = selected?.latest_grade_term?.term_label
+    const selectedAmounts = selected ? outstandingAmounts([selected]) : ''
     const heading = termLabel ?? (latestTerm ? `ข้อมูลถึงปีการศึกษา ${latestTerm}` : 'ยังไม่มีข้อมูลภาคเรียนล่าสุด')
     return <>
         <p className="advisor-review-total" aria-live="polite">
             {query ? 'พบ' : 'ทั้งหมด'} {number(rows.length)} คน
-            {rows.length > 0 && <> · {historical ? 'ภาคที่เลือกค้าง' : 'ค้าง'} {total('pending_count', 'รายการ')} · {total('pending_credits', 'หน่วยกิต')}
-                {rows.some((row) => row.pending_count == null || row.pending_credits == null) && ' (รวมเฉพาะยอดที่มีข้อมูล)'}</>}
+            {rows.length > 0 && <> · {historical ? 'ภาคที่เลือกค้าง' : 'ค้าง'} {totalCount()}{amounts && ` · ${amounts}`}
+                {rows.some((row) => row.pending_count == null || row.pending_courses?.some(course => course.credit == null)) && ' (รวมเฉพาะยอดที่มีข้อมูล)'}</>}
         </p>
         <div className="advisor-review" data-mobile-detail={showMobileDetail && !!selected}>
             <section className="advisor-review-list" aria-label="รายชื่อนิสิตไม่ตามแผน">
@@ -127,11 +150,12 @@ export default function PendingStudentReview({ students, termLabel }: PendingRev
                 </div>
                 <ul className="advisor-review-names">{rows.map((student) => {
                     const year = yearOf(student, historical)
+                    const studentAmounts = historical ? '' : outstandingAmounts([student])
                     return <li key={student.id}><button type="button" aria-pressed={selected?.id === student.id}
                         ref={selected?.id === student.id ? activeButton : undefined} onClick={() => showStudent(student)}>
                         <strong>{student.full_name_th || student.student_code}</strong>
                         <span>{student.student_code} · {year == null ? 'ไม่ระบุชั้นปี' : `ชั้นปีที่ ${year}`}</span>
-                        <span>{pendingSummary(student, historical)}{!historical && ` · ${quantity(student.pending_credits, 'หน่วยกิต')}`}</span>
+                        <span>{pendingSummary(student, historical)}{studentAmounts && ` · ${studentAmounts}`}</span>
                     </button></li>
                 })}</ul>
                 {!rows.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่พบนิสิตที่ตรงกับคำค้นหา" />}
@@ -140,12 +164,13 @@ export default function PendingStudentReview({ students, termLabel }: PendingRev
                 <Button className="advisor-review-back" ref={backButton} icon={<ArrowLeftOutlined />} onClick={backToList}>กลับไปรายชื่อ</Button>
                 <header><h3>{selected.full_name_th || selected.student_code}</h3>
                     <div className="advisor-course-meta">{selected.student_code} · {historical ? 'GPAX ณ สิ้นภาค' : 'GPAX'} {gpaxOf(selected, historical)?.toFixed(2) ?? 'รอข้อมูล'}</div>
-                    <div className="advisor-course-meta">{heading}{historical && selected.pending_credits != null && ` · ค้าง ${quantity(selected.pending_credits, 'หน่วยกิต')}`}</div>
+                    <div className="advisor-course-meta">{heading}{historical && selectedAmounts && ` · ค้าง ${selectedAmounts}`}</div>
                     <h4>{pendingSummary(selected, historical)}</h4>
                 </header>
                 {selected.pending_courses?.length ? (historical ? <CourseHistory courses={selected.pending_courses} /> : <CourseList courses={selected.pending_courses} historical={false} />)
                     : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={selected.pending_courses == null || selected.pending_count !== 0
                         ? 'ยังไม่มีรายละเอียดรายวิชาค้าง' : 'ไม่มีรายการค้างในภาคที่ประเมิน'} />}
+                {!!selected.unassessed_courses?.length && <p>ยังประเมินไม่ได้ · {selected.unassessed_courses.map(course => course.course_name || course.course_code || 'ไม่ระบุชื่อวิชา').join(', ')}</p>}
                 <Link to={`/students/advisor/detail/${selected.id}`} state={{ from: '/advisor-dashboard' }}>ดูข้อมูลนิสิต <ArrowRightOutlined /></Link>
             </section>}
         </div>

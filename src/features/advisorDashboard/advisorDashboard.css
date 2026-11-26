@@ -75,6 +75,9 @@
 .advisor-chart-modal .advisor-footnote { text-align: center; }
 .advisor-chart-empty { display: grid; min-height: 280px; place-items: center; }
 .advisor-cohort-table { margin-top: 20px; }
+.advisor-backlog-table { width: 100%; min-width: 0; }
+.advisor-backlog-table .ant-table-cell { vertical-align: middle; font-variant-numeric: tabular-nums; }
+.advisor-backlog-table .ant-table-tbody .ant-table-cell:first-child { overflow-wrap: anywhere; }
 .advisor-cohort-table .advisor-cohort-roster { padding-inline: 4px; margin-inline-start: -4px; gap: 4px; min-height: 32px; }
 .advisor-cohort-roster .anticon { font-size: 10px; }
 .advisor-cohort-roster:hover > span:first-child { text-decoration: underline; text-underline-offset: 3px; }

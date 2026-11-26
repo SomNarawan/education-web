@@ -9,6 +9,7 @@ import PendingStudentReview from './PendingStudentReview'
 
 const groupLabels: Record<string, string> = {
     on_plan: 'ตามแผน', off_plan: 'ไม่ตามแผน', retired: 'พ้นสภาพนิสิต', unknown: 'รอข้อมูล',
+    curriculum_unavailable: 'โหลดข้อมูลหลักสูตรไม่ได้',
     studying: 'กำลังศึกษา', graduated: 'จบการศึกษา', other: 'สถานะอื่น',
     range_3_25_4_00: '3.25 – 4.00', range_2_00_3_24: '2.00 – 3.24',
     range_1_75_1_99: '1.75 – 1.99', range_0_00_1_74: '0.00 – 1.74', no_gpax: 'ไม่มีค่า GPAX',
@@ -64,7 +65,10 @@ function StudentRoster({ students, gradeContext = 'current', showLatestTerm = fa
             return label ? <Tag color={label === newest ? 'default' : 'orange'}>{label}</Tag> : 'ไม่มีข้อมูลภาคเรียน'
         } })
     }
-    columns.push({ title: isTerm ? 'สถานะในภาคนั้น' : showLatestTerm ? 'สถานะตามแผน' : 'กลุ่ม', key: 'group', width: 155, render: (_, student) => <Tag>{groupLabels[group(student)] ?? group(student)}</Tag> })
+    columns.push({ title: isTerm ? 'สถานะในภาคนั้น' : showLatestTerm ? 'สถานะตามแผน' : 'กลุ่ม', key: 'group', width: 155, render: (_, student) => <>
+        <Tag>{groupLabels[group(student)] ?? group(student)}</Tag>
+        {!!student.unassessed_courses?.length && <div className="advisor-course-meta">ยังประเมินไม่ได้ · {student.unassessed_courses.map(course => course.course_name || course.course_code || 'ไม่ระบุชื่อวิชา').join(', ')}</div>}
+    </> })
     columns.push({ title: '', key: 'detail', width: 160, render: (_, row) => <Link to={`/students/advisor/detail/${row.id}`} state={{ from: '/advisor-dashboard' }}>ดูรายละเอียด <ArrowRightOutlined /></Link> })
 
     return <>

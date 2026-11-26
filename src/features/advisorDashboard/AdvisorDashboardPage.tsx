@@ -11,6 +11,7 @@ import { useAdvisorHistory } from './useAdvisorHistory'
 import { useAdvisorSummary } from './useAdvisorSummary'
 import { getAdvisorGpaxStudents, getAdvisorTermStudents } from '../../services/advisorSummaryService'
 import AdvisorStudentModal from './AdvisorStudentModal'
+import CourseBacklog from './CourseBacklog'
 import './advisorDashboard.css'
 
 const Column = lazy(() => import('@ant-design/plots').then((module) => ({ default: module.Column })))
@@ -33,6 +34,8 @@ const planSeries = [
     { key: 'retired', label: 'พ้นสภาพ', color: '#a65d68' },
     { key: 'unknown', label: 'รอประเมิน', color: '#94a3b8' },
 ]
+const unavailableSeries = { key: 'curriculum_unavailable', label: 'โหลดข้อมูลหลักสูตรไม่ได้', color: '#cc9449' }
+const curriculumMessage = 'ติดต่อ CMIS ไม่ได้ และยังไม่มีข้อมูลหลักสูตรที่บันทึกไว้ครบ ลองรีเฟรชอีกครั้งเมื่อเชื่อมต่อได้'
 const PLAN_RULE = 'ตามแผน: ผ่านทุกรายวิชาในแผนที่ถึงกำหนดจนถึงภาคล่าสุดที่นำเข้าเกรด • ไม่ตามแผน: ยังมีวิชาที่ถึงกำหนดแต่ยังไม่ผ่านหรือยังไม่ได้เรียน'
 const number = (value: number) => value.toLocaleString('th-TH')
 const cohortLabel = (year: number) => `เข้าศึกษาปี ${year + 543}`
@@ -217,8 +220,9 @@ function TermReport({ history }: { history: AdvisorHistory }) {
     }
     const termRows = terms.map((term) => ({
         ...term,
-        total: term.on_plan + term.off_plan + term.unknown,
+        total: term.on_plan + term.off_plan + term.unknown + (term.curriculum_unavailable ?? 0),
     }))
+    const hasUnavailable = terms.some(term => term.curriculum_unavailable)
     const columns: ColumnsType<AdvisorTermRow> = [
         { title: 'ภาคเรียน', key: 'term', render: (_, term) => `${term.semester_name} ${term.academic_year + 543}` },
         { title: 'มีผลการเรียน (คน)', dataIndex: 'total', align: 'right', render: number },
@@ -227,6 +231,7 @@ function TermReport({ history }: { history: AdvisorHistory }) {
             <Button type="link" danger size="small" className="advisor-off-plan-count" aria-label={`ดูนิสิตไม่ตามแผน ${term.term_label} ${number(term.off_plan)} จาก ${number(term.total)} คน`}
                 onClick={() => void openTerm(term, 'off_plan')}>{number(term.off_plan)} ({termPercent.format(term.off_plan / term.total)})</Button> },
         { title: 'รอประเมิน', dataIndex: 'unknown', align: 'right' },
+        ...(hasUnavailable ? [{ title: unavailableSeries.label, dataIndex: unavailableSeries.key, render: (count?: number) => number(count ?? 0) }] : []),
         { title: 'รายชื่อ', key: 'detail', render: (_, term) => <Button type="link" size="small" aria-label={`ดูรายชื่อทั้งภาค ${term.term_label}`}
             onClick={() => void openTerm(term, 'all')}>ดูรายชื่อทั้งภาค</Button> },
     ]
@@ -244,11 +249,12 @@ function TermReport({ history }: { history: AdvisorHistory }) {
     }>
         {terms.length === 0 ? <Empty description="ยังไม่มีผลการเรียนรายภาค" /> : <>
             <StackChart title={title} caption={caption} defaultMode="percent" percentLabel="ร้อยละของนิสิตที่มีข้อมูลผลการเรียนในภาคนั้น"
-                axisLabel={(category) => axisLabels.get(category) ?? category} series={planSeries.filter((item) => item.key !== 'retired')}
-                rows={terms.map((term) => ({ category: term.term_label, counts: { on_plan: term.on_plan, off_plan: term.off_plan, unknown: term.unknown } }))} />
+                axisLabel={(category) => axisLabels.get(category) ?? category} series={[...planSeries.filter((item) => item.key !== 'retired'), ...(hasUnavailable ? [unavailableSeries] : [])]}
+                rows={terms.map((term) => ({ category: term.term_label, counts: { on_plan: term.on_plan, off_plan: term.off_plan, unknown: term.unknown, curriculum_unavailable: term.curriculum_unavailable ?? 0 } }))} />
             <Table<AdvisorTermRow> key={year} className="advisor-cohort-table" rowKey={(term) => `${term.academic_year}-${term.semester_order}`}
                 columns={columns} dataSource={termRows.toReversed()} size="middle" scroll={{ x: 790 }}
                 pagination={{ pageSize: 8, showSizeChanger: false, hideOnSinglePage: true }} />
+            {terms.some(term => term.incomplete_curriculum) && <p className="advisor-footnote">{curriculumMessage}</p>}
             <p className="advisor-footnote">“รอประเมิน” คือนิสิตที่มีข้อมูลผลการเรียนในภาคนั้น แต่ข้อมูลยังไม่พอที่จะเทียบกับแผนการเรียน</p>
         </>}
         <AdvisorStudentModal key={`term-${termView?.only}-${termView?.term.term_label}`}
@@ -276,6 +282,7 @@ function CohortSection({ summary }: { summary: AdvisorSummary }) {
     const cohortStudentIds = new Set(offPlanCohort?.students.map((student) => student.id) ?? [])
     const offPlanStudents = offPlanCohort === null ? null : summary.off_plan_students.filter((student) => cohortStudentIds.has(student.id))
     const planAvailable = summary.blocks.plan_status.available
+    const hasUnavailable = rows.some(row => row.plan.curriculum_unavailable)
     const columns: ColumnsType<AdvisorSummaryEntryYear> = [
         { title: 'ปีที่เข้าศึกษา', dataIndex: 'entry_year', fixed: 'left', width: 120, render: (year: number) => <strong>{year + 543}</strong>, sorter: (a, b) => a.entry_year - b.entry_year },
         { title: 'ทั้งหมด', dataIndex: 'total', align: 'right', sorter: (a, b) => a.total - b.total },
@@ -286,6 +293,7 @@ function CohortSection({ summary }: { summary: AdvisorSummary }) {
         { title: 'จบการศึกษา', dataIndex: 'graduated', align: 'right' },
         { title: 'พ้นสภาพ', dataIndex: 'retired', align: 'right' },
         { title: 'อื่น ๆ', dataIndex: 'other', align: 'right' },
+        ...(hasUnavailable ? [{ title: unavailableSeries.label, key: unavailableSeries.key, render: (_: unknown, row: AdvisorSummaryEntryYear) => number(row.plan.curriculum_unavailable ?? 0) }] : []),
         { title: 'รายชื่อในรุ่น', key: 'detail', width: 112, align: 'left', render: (_, row) =>
             <Button type="link" className="advisor-cohort-roster" aria-haspopup="dialog"
                 aria-label={`ดูรายชื่อนิสิตที่${cohortLabel(row.entry_year)}`} onClick={() => setDetail(row)}>
@@ -296,10 +304,10 @@ function CohortSection({ summary }: { summary: AdvisorSummary }) {
     return <div className="advisor-content"><SectionCard title="สถานะนิสิตแยกตามปีที่เข้าศึกษา" description="สถานะล่าสุดของนิสิตที่เริ่มเรียนในปีเดียวกัน" extra={
         <Select aria-label="กรองปีที่เข้าศึกษา" value={entryYear} onChange={setEntryYear} options={[{ label: 'ทุกปีที่เข้าศึกษา', value: 'all' as const }, ...summary.by_entry_year.map((row) => ({ label: cohortLabel(row.entry_year), value: row.entry_year }))]} style={{ minWidth: 185 }} />
     }>
-        <StackChart title={entryYear === 'all' ? 'นิสิตแยกตามปีที่เข้าศึกษา' : `นิสิต${cohortLabel(entryYear)}`} rows={rows.map((row) => ({ category: String(row.entry_year + 543), counts: { ...row.plan, graduated: row.graduated, retired: row.retired, other: row.other } }))} series={[...planSeries, { key: 'graduated', label: 'จบการศึกษา', color: '#4f91db' }, { key: 'other', label: 'สถานะอื่น', color: '#cbd5e1' }]} />
+        <StackChart title={entryYear === 'all' ? 'นิสิตแยกตามปีที่เข้าศึกษา' : `นิสิต${cohortLabel(entryYear)}`} rows={rows.map((row) => ({ category: String(row.entry_year + 543), counts: { ...row.plan, graduated: row.graduated, retired: row.retired, other: row.other } }))} series={[...planSeries, ...(hasUnavailable ? [unavailableSeries] : []), { key: 'graduated', label: 'จบการศึกษา', color: '#4f91db' }, { key: 'other', label: 'สถานะอื่น', color: '#cbd5e1' }]} />
         <Table<AdvisorSummaryEntryYear> className="advisor-cohort-table" rowKey="entry_year" size="middle" columns={columns} dataSource={rows} pagination={false} scroll={{ x: 950 }}
-            summary={() => <Table.Summary.Row><Table.Summary.Cell index={0}><strong>รวม</strong></Table.Summary.Cell>{totals.map((value, index) => <Table.Summary.Cell key={index} index={index + 1} align="right"><strong>{!planAvailable && (index === 2 || index === 3) ? '—' : number(value)}</strong></Table.Summary.Cell>)}</Table.Summary.Row>} />
-        <p className="advisor-footnote">กดตัวเลข “ไม่ตามแผน” เพื่อดูรายชื่อและรายการค้างของรุ่นนั้น • ตามแผน/ไม่ตามแผนของรุ่นนับเฉพาะนิสิตที่ยังกำลังศึกษาในปัจจุบัน (รุ่นที่จบแล้วจึงเป็น 0) • รอประเมินแผน = ยังไม่มีข้อมูลสำหรับเทียบแผนการเรียน</p>
+            summary={() => <Table.Summary.Row><Table.Summary.Cell index={0}><strong>รวม</strong></Table.Summary.Cell>{totals.map((value, index) => <Table.Summary.Cell key={index} index={index + 1} align="right"><strong>{!planAvailable && (index === 2 || index === 3) ? '—' : number(value)}</strong></Table.Summary.Cell>)}{hasUnavailable && <Table.Summary.Cell index={9}><strong>{number(rows.reduce((sum, row) => sum + (row.plan.curriculum_unavailable ?? 0), 0))}</strong></Table.Summary.Cell>}</Table.Summary.Row>} />
+        <p className="advisor-footnote">กดตัวเลข “ไม่ตามแผน” เพื่อดูรายชื่อและรายการค้างของรุ่นนั้น • ตามแผน/ไม่ตามแผนของรุ่นนับเฉพาะนิสิตที่ยังกำลังศึกษาในปัจจุบัน (รุ่นที่จบแล้วจึงเป็น 0) • รอประเมินแผน = ข้อมูลยังไม่พอที่จะเทียบกับเกณฑ์ของหลักสูตร</p>
         <AdvisorStudentModal key={detail?.entry_year ?? 'closed'} title={detail ? cohortLabel(detail.entry_year) : ''} students={detail?.students ?? null} onClose={() => setDetail(null)} />
         <AdvisorStudentModal key={`off-plan-${offPlanCohort?.entry_year ?? 'closed'}`} title={offPlanCohort ? `นิสิตที่ยังไม่ตามแผน · ${cohortLabel(offPlanCohort.entry_year)}` : ''} students={offPlanStudents} showPending showLatestTerm onClose={() => setOffPlanCohort(null)} />
     </SectionCard>
@@ -341,18 +349,26 @@ function SummaryContent({ summary, historyState }: { summary: AdvisorSummary; hi
             <div className="advisor-current-total">กำลังศึกษา <strong>{number(totals.studying)}</strong> คน</div>
             {planAvailable ? <>
                 <div className="advisor-plan-bar" aria-hidden="true">
-                    {([['on_plan', '#64b396'], ['off_plan', '#f18484'], ['unknown', '#94a3b8']] as const).map(([key, color]) =>
-                        plan[key] > 0 && <span key={key} style={{ flexGrow: plan[key], background: color }} />)}
+                    {([['on_plan', '#64b396'], ['off_plan', '#f18484'], ['unknown', '#94a3b8'], ['curriculum_unavailable', unavailableSeries.color]] as const).map(([key, color]) =>
+                        (plan[key] ?? 0) > 0 && <span key={key} style={{ flexGrow: plan[key], background: color }} />)}
                 </div>
                 <div className="advisor-plan-counts">
                     <span>ตามแผน <strong>{number(plan.on_plan)} คน</strong></span>
                     {plan.off_plan > 0 ? <Button className="advisor-off-plan-count" type="link" danger onClick={() => setOffPlanOpen(true)}>ยังไม่ตามแผน {number(plan.off_plan)} คน · ดูรายชื่อ <ArrowRightOutlined /></Button> : <span>ยังไม่ตามแผน <strong>0 คน</strong></span>}
                     <span>รอประเมิน <strong>{number(plan.unknown)} คน</strong></span>
+                    {!!plan.curriculum_unavailable && <span>{unavailableSeries.label} <strong>{number(plan.curriculum_unavailable)} คน</strong></span>}
                 </div>
                 <p className="advisor-footnote">ประเมินได้ {number(knownPlan)} จาก {number(totals.studying)} คน</p>
-            </> : <PendingPanel title="สถานะตามแผนการเรียน" block={summary.blocks.plan_status}>ยังไม่มีข้อมูลเพียงพอสำหรับประเมินแผนการเรียน</PendingPanel>}
+            </> : <PendingPanel title="สถานะตามแผนการเรียน" block={summary.blocks.plan_status}>{plan.unknown > 0 ? `ยังประเมินไม่ได้ ${number(plan.unknown)} คน ข้อมูลยังไม่พอที่จะเทียบกับเกณฑ์ของหลักสูตร` : 'ยังไม่มีข้อมูลเพียงพอสำหรับประเมินแผนการเรียน'}</PendingPanel>}
+            {summary.blocks.plan_status.reason === 'imported_plan_result' && <Alert type="info" showIcon title="ติดต่อ CMIS ไม่ได้ สถานะของนิสิตที่ได้รับผลกระทบอ้างอิงจากการนำเข้าเกรดครั้งล่าสุด" />}
+            {summary.blocks.plan_status.reason === 'curriculum_unavailable' && <Alert type="warning" showIcon title={curriculumMessage} />}
             <div className="advisor-lifetime"><span>นิสิตทั้งหมด {number(totals.all)} คน</span><span>จบการศึกษา {number(totals.graduated)} คน</span>
                 <span>พ้นสภาพ {number(totals.retired)} คน</span><span>สถานะอื่น {number(totals.other)} คน</span></div>
+        </SectionCard>
+        <SectionCard title="นิสิตตกค้างรายวิชา" description="วิชาที่นิสิตในที่ปรึกษายังเรียนไม่ผ่าน แยกตามปีที่เข้าศึกษา">
+            {summary.blocks.plan_status.reason === 'curriculum_unavailable' && <p className="advisor-footnote">แสดงเฉพาะรายการค้างที่ยืนยันได้ ข้อมูลหลักสูตรบางส่วนยังโหลดไม่ได้</p>}
+            {summary.blocks.plan_status.reason === 'imported_plan_result' && <p className="advisor-footnote">บางรายการใช้ผลนำเข้าเกรดล่าสุด จะแสดงจำนวนหน่วยกิตหรือชั่วโมงเฉพาะเมื่อยืนยันหน่วยได้</p>}
+            <CourseBacklog summary={summary} history={historyState.history} />
         </SectionCard>
         {dataIssues > 0 && <div className="advisor-attention"><span className="advisor-attention-icon"><InfoCircleOutlined /></span>
             <div><strong>{dataIssues > 0 ? 'ตรวจสอบความครบถ้วนของผลการเรียนก่อนใช้ตัวเลขติดตามนิสิต' : 'ข้อมูลสำหรับติดตามนิสิตในที่ปรึกษา'}</strong>
