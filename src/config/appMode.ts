@@ -17,6 +17,6 @@ export function isRoleAllowedInApp(role: AppRole): boolean {
 
 export function getDefaultRouteForRole(role: AppRole): string {
     if (role === 'student') return '/student/home'
-    if (role === 'teacher') return '/students/advisor'
+    if (role === 'teacher') return '/advisor-dashboard'
     return '/students/department'
 }
