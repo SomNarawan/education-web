@@ -6,6 +6,7 @@ Col,
 DatePicker,
 Form,
 Input,
+message,
 Modal,
 Row,
 } from 'antd'
@@ -47,38 +48,16 @@ onSave,
 }: StudentFormModalProps) {
 const [form] = Form.useForm<FormValues>()
 const selectedCurriculumId = Form.useWatch('curriculum_id', form)
-const {
-    options: editOptions,
-    loading: editOptionsLoading,
-    studyPlansLoading,
-    systemTeachersLoading,
-    error: editOptionsError,
-    clearStudyPlans,
-} = useStudentFormOptions(
-    open,
-    selectedCurriculumId,
-    editingStudent,
+const dropdownData = useStudentFormOptions(
+    createFormOptions.options,
+    open ? selectedCurriculumId : undefined,
+    open ? editingStudent : null,
 )
-const createOptions = createFormOptions.options
-const optionsLoading = editingStudent
-    ? editOptionsLoading
-    : createFormOptions.loading
-const createOptionsError = editingStudent ? null : createFormOptions.error
-const optionsError = editingStudent ? editOptionsError : createOptionsError
-const dropdownData = editingStudent
-    ? editOptions
-    : {
-          titles: createOptions?.titles ?? [],
-          curriculums: createOptions?.curriculums ?? [],
-          systemDepartments: createOptions?.system_departments ?? [],
-          studentStatuses: createOptions?.student_statuses ?? [],
-          admissionChannels: createOptions?.admission_channels ?? [],
-          highSchools: createOptions?.high_schools ?? [],
-          guardianRelationships: createOptions?.guardian_relationships ?? [],
-          studyPlans: editOptions.studyPlans,
-          systemTeachers: editOptions.systemTeachers,
-      }
-const highSchools = dropdownData.highSchools
+const optionLists = Object.values(dropdownData)
+const optionsLoading = optionLists.some((list) => list.loading)
+const optionsError = optionLists.find((list) => list.error)?.error
+const { error: baseOptionsError, loading: baseOptionsLoading } = createFormOptions
+const highSchools = dropdownData.highSchools.options
 const highSchoolOptions = useMemo(
     () => toListOfValueOptions(highSchools),
     [highSchools],
@@ -115,9 +94,8 @@ useEffect(() => {
         })
     } else {
         form.resetFields()
-        clearStudyPlans()
     }
-}, [open, editingStudent, form, clearStudyPlans])
+}, [open, editingStudent, form])
 
 const handleCurriculumChange = (curriculumId?: number) => {
     form.setFieldsValue({
@@ -125,19 +103,21 @@ const handleCurriculumChange = (curriculumId?: number) => {
         study_plan_id: undefined,
         teacher_id: undefined,
     })
-    clearStudyPlans()
 }
 
 const handleOk = async () => {
+    if (loading || baseOptionsLoading || optionsLoading || baseOptionsError) return
+
     const values = await form.validateFields()
-    const curriculum = dropdownData.curriculums.find(
+    const curriculum = dropdownData.curriculums.options.find(
         (item) => item.id === values.curriculum_id,
     )
-    const studyPlan = dropdownData.studyPlans.find(
+    const studyPlan = dropdownData.studyPlans.options.find(
         (item) => item.id === values.study_plan_id,
     )
 
     if (!curriculum || !studyPlan) {
+        message.warning('ไม่พบหลักสูตรหรือแผนการเรียนที่เลือก กรุณาเลือกใหม่')
         return
     }
 
@@ -163,7 +143,7 @@ const handleOk = async () => {
         entry_year:
             toChristianYear(values.entry_year.year()),
         teacher_id: values.teacher_id ?? null,
-        teacher_full_name: dropdownData.systemTeachers.find(
+        teacher_full_name: dropdownData.systemTeachers.options.find(
             (teacher) => teacher.id === values.teacher_id,
         )?.name_th ?? null,
     }
@@ -180,24 +160,27 @@ return (
         okText="บันทึก"
         cancelText="ยกเลิก"
         width={1000}
-        okButtonProps={{ disabled: !!createOptionsError }}
-        confirmLoading={
-            loading ||
-            optionsLoading ||
-            studyPlansLoading ||
-            systemTeachersLoading
-        }
+        okButtonProps={{ disabled: !!baseOptionsError }}
+        confirmLoading={loading || baseOptionsLoading || optionsLoading}
     >
-        {createOptionsError && (
+        {baseOptionsError && (
             <Alert
                 type="error"
                 showIcon
-                title={createOptionsError}
+                title={baseOptionsError}
                 action={
                     <Button size="small" onClick={createFormOptions.retry}>
                         ลองใหม่
                     </Button>
                 }
+                style={{ marginBottom: 16 }}
+            />
+        )}
+        {optionsError && (
+            <Alert
+                type="warning"
+                showIcon
+                title={optionsError}
                 style={{ marginBottom: 16 }}
             />
         )}
@@ -251,11 +234,11 @@ return (
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={optionsLoading}
-                                error={optionsError}
+                                loading={baseOptionsLoading || dropdownData.titles.loading}
+                                error={baseOptionsError ?? dropdownData.titles.error}
                                 placeholder="เลือกคำนำหน้า"
                                 options={toListOfValueOptions(
-                                    dropdownData.titles,
+                                    dropdownData.titles.options,
                                 )}
                             />
                         </Form.Item>
@@ -383,11 +366,11 @@ return (
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={optionsLoading}
-                                error={optionsError}
+                                loading={baseOptionsLoading || dropdownData.systemDepartments.loading}
+                                error={baseOptionsError ?? dropdownData.systemDepartments.error}
                                 placeholder="เลือกภาควิชา"
                                 options={toListOfValueOptions(
-                                    dropdownData.systemDepartments,
+                                    dropdownData.systemDepartments.options,
                                 )}
                             />
                         </Form.Item>
@@ -409,13 +392,12 @@ return (
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={optionsLoading}
-                                error={optionsError}
+                                loading={baseOptionsLoading || dropdownData.curriculums.loading}
+                                error={baseOptionsError ?? dropdownData.curriculums.error}
                                 placeholder="เลือกหลักสูตร"
-                                options={dropdownData.curriculums.map((item) => ({
-                                    label: item.name_th,
-                                    value: item.id,
-                                }))}
+                                options={toListOfValueOptions(
+                                    dropdownData.curriculums.options,
+                                )}
                                 onChange={handleCurriculumChange}
                             />
                         </Form.Item>
@@ -436,17 +418,17 @@ return (
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={studyPlansLoading}
+                                loading={dropdownData.studyPlans.loading}
+                                error={dropdownData.studyPlans.error}
                                 disabled={!selectedCurriculumId}
                                 placeholder={
                                     selectedCurriculumId
                                         ? 'เลือกแผนการเรียน'
                                         : 'กรุณาเลือกหลักสูตรก่อน'
                                 }
-                                options={dropdownData.studyPlans.map((item) => ({
-                                    label: item.name_th,
-                                    value: item.id,
-                                }))}
+                                options={toListOfValueOptions(
+                                    dropdownData.studyPlans.options,
+                                )}
                             />
                         </Form.Item>
                     </Col>
@@ -462,16 +444,16 @@ return (
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={systemTeachersLoading}
+                        loading={dropdownData.systemTeachers.loading}
                         disabled={!selectedCurriculumId}
-                        error={optionsError}
+                        error={dropdownData.systemTeachers.error}
                         placeholder={
                             selectedCurriculumId
                                 ? 'เลือกอาจารย์ที่ปรึกษา'
                                 : 'กรุณาเลือกหลักสูตรก่อน'
                         }
                         options={toListOfValueOptions(
-                            dropdownData.systemTeachers,
+                            dropdownData.systemTeachers.options,
                         )}
                     />
                 </Form.Item>
@@ -492,11 +474,11 @@ return (
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={optionsLoading}
-                        error={optionsError}
+                        loading={baseOptionsLoading || dropdownData.admissionChannels.loading}
+                        error={baseOptionsError ?? dropdownData.admissionChannels.error}
                         placeholder="เลือกช่องทางรับเข้า"
                         options={toListOfValueOptions(
-                            dropdownData.admissionChannels,
+                            dropdownData.admissionChannels.options,
                         )}
                     />
                 </Form.Item>
@@ -511,8 +493,8 @@ return (
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={optionsLoading}
-                        error={optionsError}
+                        loading={baseOptionsLoading || dropdownData.highSchools.loading}
+                        error={baseOptionsError ?? dropdownData.highSchools.error}
                         placeholder="เลือกโรงเรียน"
                         options={highSchoolOptions}
                     />
@@ -530,11 +512,11 @@ return (
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={optionsLoading}
-                                error={optionsError}
+                                loading={baseOptionsLoading || dropdownData.titles.loading}
+                                error={baseOptionsError ?? dropdownData.titles.error}
                                 placeholder="เลือกคำนำหน้า"
                                 options={toListOfValueOptions(
-                                    dropdownData.titles,
+                                    dropdownData.titles.options,
                                 )}
                             />
                         </Form.Item>
@@ -567,11 +549,11 @@ return (
                                 allowClear
                                 showSearch
                                 optionFilterProp={'label'}
-                                loading={optionsLoading}
-                                error={optionsError}
+                                loading={baseOptionsLoading || dropdownData.guardianRelationships.loading}
+                                error={baseOptionsError ?? dropdownData.guardianRelationships.error}
                                 placeholder="เลือกความสัมพันธ์"
                                 options={toListOfValueOptions(
-                                    dropdownData.guardianRelationships,
+                                    dropdownData.guardianRelationships.options,
                                 )}
                             />
                         </Form.Item>
@@ -603,11 +585,11 @@ return (
                         allowClear
                         showSearch
                         optionFilterProp={'label'}
-                        loading={optionsLoading}
-                        error={optionsError}
+                        loading={baseOptionsLoading || dropdownData.studentStatuses.loading}
+                        error={baseOptionsError ?? dropdownData.studentStatuses.error}
                         placeholder="เลือกสถานะ"
                         options={toListOfValueOptions(
-                            dropdownData.studentStatuses,
+                            dropdownData.studentStatuses.options,
                         )}
                     />
                 </Form.Item>
