@@ -11,7 +11,7 @@ Modal,
 Row,
 } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { StudentFormValues } from '../../../types/StudentFormValues'
 import type { StudentDetailResponse } from '../../../types/StudentDetailResponse'
 import { useStudentFormOptions } from './useStudentFormOptions'
@@ -55,8 +55,6 @@ onCancel,
 onSave,
 }: StudentFormModalProps) {
 const [form] = Form.useForm<FormValues>()
-const [phoneBlurred, setPhoneBlurred] = useState(false)
-const [guardianPhoneBlurred, setGuardianPhoneBlurred] = useState(false)
 const selectedCurriculumId = Form.useWatch('curriculum_id', form)
 const dropdownData = useStudentFormOptions(
     createFormOptions.options,
@@ -107,12 +105,6 @@ useEffect(() => {
     }
 }, [open, editingStudent, form])
 
-const handleAfterClose = () => {
-    form.resetFields()
-    setPhoneBlurred(false)
-    setGuardianPhoneBlurred(false)
-}
-
 const handleCurriculumChange = (curriculumId?: number) => {
     form.setFieldsValue({
         curriculum_id: curriculumId,
@@ -124,7 +116,14 @@ const handleCurriculumChange = (curriculumId?: number) => {
 const handleOk = async () => {
     if (loading || baseOptionsLoading || optionsLoading || baseOptionsError) return
 
-    const values = await form.validateFields()
+    let values: FormValues
+
+    try {
+        values = await form.validateFields()
+    } catch {
+        return
+    }
+
     const curriculum = dropdownData.curriculums.options.find(
         (item) => item.id === values.curriculum_id,
     )
@@ -170,7 +169,7 @@ return (
     <Modal
         title={editingStudent ? 'แก้ไขข้อมูลนิสิต' : 'เพิ่มข้อมูลนิสิต'}
         open={open}
-        afterClose={handleAfterClose}
+        afterClose={form.resetFields}
         onOk={handleOk}
         onCancel={onCancel}
         okText="บันทึก"
@@ -313,12 +312,11 @@ return (
                             label="เบอร์โทร"
                             name="phone"
                             rules={editingStudent ? undefined : phoneRules}
-                            validateTrigger={phoneBlurred ? ['onBlur', 'onChange'] : 'onBlur'}
+                            validateTrigger={[]}
                         >
                             <Input
                                 inputMode="numeric"
                                 maxLength={editingStudent ? 10 : undefined}
-                                onBlur={() => setPhoneBlurred(true)}
                             />
                         </Form.Item>
                     </Col>
@@ -586,12 +584,11 @@ return (
                             label="เบอร์โทรผู้ปกครอง"
                             name="guardian_phone"
                             rules={editingStudent ? undefined : phoneRules}
-                            validateTrigger={guardianPhoneBlurred ? ['onBlur', 'onChange'] : 'onBlur'}
+                            validateTrigger={[]}
                         >
                             <Input
                                 inputMode="numeric"
                                 maxLength={editingStudent ? 10 : undefined}
-                                onBlur={() => setGuardianPhoneBlurred(true)}
                             />
                         </Form.Item>
                     </Col>
