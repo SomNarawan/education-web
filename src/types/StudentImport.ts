@@ -32,7 +32,7 @@ export interface StudentImportSummary {
 }
 
 export interface StudentImportResult {
-    summary: StudentImportSummary
+    summary: StudentImportSummary | null
 }
 
 export interface StudentImportDownload {

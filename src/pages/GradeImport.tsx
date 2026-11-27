@@ -28,7 +28,7 @@ import {
 import type { UploadProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ListOfValueSelect from '../components/custom/ListOfValueSelect'
 import { renderRequiredFormMark } from '../components/custom/RequiredFormMark'
 import {
@@ -112,8 +112,36 @@ function getProgressStatus(status: GradeImportStatus) {
     return 'normal' as const
 }
 
+function isGradeImportRunning(status: GradeImportStatus) {
+    return status === 'queued' || status === 'processing'
+}
+
+function notifyGradeImportResult(record: GradeImportHistory) {
+    const { file_name, status, total_count, success_count, failed_count } = record
+
+    if (status === 'failed' && total_count === 0) {
+        message.error(`นำเข้าเกรด ${file_name} ไม่สำเร็จ กรุณาตรวจสอบสาเหตุในประวัติการ Import`)
+        return
+    }
+
+    const summary = `นำเข้าเกรด ${file_name} ทั้งหมด ${total_count} รายการ สำเร็จ ${success_count} รายการ และไม่สำเร็จ ${failed_count} รายการ`
+
+    switch (status) {
+        case 'completed':
+            message.success(summary)
+            break
+        case 'completed_with_errors':
+            message.warning(summary)
+            break
+        case 'failed':
+            message.error(summary)
+            break
+    }
+}
+
 export default function GradeImport() {
     const [selectionForm] = Form.useForm<GradeImportFormValues>()
+    const pendingImports = useRef(new Map<number, GradeImportHistory>())
     const [curriculums, setCurriculums] = useState<Curriculum[]>([])
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [fileError, setFileError] = useState<string | null>(null)
@@ -130,7 +158,14 @@ export default function GradeImport() {
     const loadHistory = useCallback(async (showLoading = true) => {
         try {
             if (showLoading) setHistoryLoading(true)
-            setHistory(await getGradeImportHistory())
+            const records = await getGradeImportHistory()
+            const missingImports = new Map(pendingImports.current)
+
+            for (const record of records) {
+                missingImports.delete(record.id)
+            }
+
+            setHistory([...missingImports.values(), ...records])
         } catch (error) {
             console.error('Unable to load grade import history', error)
             if (showLoading) {
@@ -175,9 +210,15 @@ export default function GradeImport() {
         }
     }, [loadHistory])
 
-    const hasRunningJobs = history.some(
-        (item) => item.status === 'queued' || item.status === 'processing',
-    )
+    const hasRunningJobs = history.some((item) => isGradeImportRunning(item.status))
+
+    useEffect(() => {
+        for (const record of history) {
+            if (!isGradeImportRunning(record.status) && pendingImports.current.delete(record.id)) {
+                notifyGradeImportResult(record)
+            }
+        }
+    }, [history])
 
     useEffect(() => {
         if (!hasRunningJobs) return
@@ -248,13 +289,21 @@ export default function GradeImport() {
 
         try {
             setImporting(true)
-            await importGrades(
+            const record = await importGrades(
                 selectedFile,
                 curriculum.id,
                 curriculum.name_th,
             )
             setSelectedFile(null)
-            message.success('เพิ่มงานนำเข้าเกรดลงในคิวแล้ว')
+
+            if (isGradeImportRunning(record.status)) {
+                pendingImports.current.set(record.id, record)
+                message.info('เพิ่มงานนำเข้าเกรดลงในคิวแล้ว')
+            } else {
+                notifyGradeImportResult(record)
+            }
+
+            setHistory((current) => [record, ...current.filter((item) => item.id !== record.id)])
             await loadHistory(false)
         } catch (error) {
             console.error('Unable to import grades', error)
@@ -375,9 +424,7 @@ export default function GradeImport() {
                 align: 'center',
                 fixed: 'right',
                 render: (_, record) => {
-                    const isRunning =
-                        record.status === 'queued' ||
-                        record.status === 'processing'
+                    const isRunning = isGradeImportRunning(record.status)
                     const canDownload = canDownloadImportResult(record)
 
                     return (

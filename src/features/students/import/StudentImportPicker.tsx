@@ -268,13 +268,19 @@ export default function StudentImportPicker({
                 )
 
                 setUploadPercent(100)
-                const summary = result.summary
-                const summaryMessage = `นำเข้าทั้งหมด ${summary.total} รายการ สำเร็จ ${summary.success} รายการ และไม่สำเร็จ ${summary.failed} รายการ`
-
-                if (summary.failed > 0) {
-                    message.warning(summaryMessage)
+                const { summary } = result
+                if (!summary) {
+                    message.warning('ไม่ได้รับข้อมูลสรุปการนำเข้า กรุณาตรวจสอบประวัติการ Import')
                 } else {
-                    message.success(summaryMessage)
+                    const summaryMessage = `นำเข้าทั้งหมด ${summary.total} รายการ สำเร็จ ${summary.success} รายการ และไม่สำเร็จ ${summary.failed} รายการ`
+
+                    if (summary.failed === 0) {
+                        message.success(summaryMessage)
+                    } else if (summary.success === 0) {
+                        message.error(summaryMessage)
+                    } else {
+                        message.warning(summaryMessage)
+                    }
                 }
 
                 setSelectedFile(null)

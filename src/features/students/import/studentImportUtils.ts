@@ -1,43 +1,51 @@
+import { AxiosHeaders } from 'axios'
+import type { AxiosHeaderValue, AxiosResponse } from 'axios'
 import type { StudentImportSummary } from '../../../types/StudentImport'
 
 interface SubmissionLock {
     current: boolean
 }
 
-function readHeader(headers: unknown, name: string): unknown {
-    if (!headers || typeof headers !== 'object') return undefined
+function readHeader(
+    headers: AxiosResponse['headers'],
+    name: string,
+): AxiosHeaderValue | undefined {
+    if (headers instanceof AxiosHeaders) return headers.get(name)
 
-    const headerContainer = headers as {
-        get?: (headerName: string) => unknown
-        [key: string]: unknown
-    }
-    const getterValue = headerContainer.get?.(name)
-
-    if (getterValue !== undefined && getterValue !== null) {
-        return getterValue
-    }
-
-    return (
-        headerContainer[name] ??
-        headerContainer[name.toLowerCase()] ??
-        headerContainer[name.toUpperCase()]
-    )
+    const key = Object.keys(headers).find((header) => header.toLowerCase() === name)
+    return key === undefined ? undefined : headers[key]
 }
 
-function parseHeaderNumber(headers: unknown, name: string): number {
-    const parsedValue = Number(readHeader(headers, name) ?? 0)
-    return Number.isFinite(parsedValue) ? parsedValue : 0
+function parseHeaderNumber(headers: AxiosResponse['headers'], name: string): number | null {
+    const value = readHeader(headers, name)
+    const text = typeof value === 'number' ? String(value) : value
+    if (typeof text !== 'string' || !/^[0-9]+$/.test(text.trim())) return null
+
+    const parsedValue = Number(text)
+    return Number.isSafeInteger(parsedValue) ? parsedValue : null
 }
 
 export function parseStudentImportSummary(
-    headers: unknown,
-): StudentImportSummary {
-    return {
-        importId: parseHeaderNumber(headers, 'x-import-id'),
-        total: parseHeaderNumber(headers, 'x-import-total'),
-        success: parseHeaderNumber(headers, 'x-import-success'),
-        failed: parseHeaderNumber(headers, 'x-import-failed'),
+    headers: AxiosResponse['headers'],
+): StudentImportSummary | null {
+    const importId = parseHeaderNumber(headers, 'x-import-id')
+    const total = parseHeaderNumber(headers, 'x-import-total')
+    const success = parseHeaderNumber(headers, 'x-import-success')
+    const failed = parseHeaderNumber(headers, 'x-import-failed')
+
+    if (
+        importId === null ||
+        importId === 0 ||
+        total === null ||
+        total === 0 ||
+        success === null ||
+        failed === null ||
+        total !== success + failed
+    ) {
+        return null
     }
+
+    return { importId, total, success, failed }
 }
 
 export async function runStudentImportOnce<T>(
